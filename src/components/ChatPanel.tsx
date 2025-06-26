@@ -39,16 +39,12 @@ export function ChatPanel({
       {/* Chat Content */}
       <div className="flex-1 p-4">
         <div className="flex items-center gap-2 mb-4">
-          <div className="w-6 h-6 bg-[#4fc3f7] rounded-full flex items-center justify-center">
-            <span className="text-xs font-medium text-white">@</span>
-          </div>
-          <span className="text-sm text-[#cccccc]">New Notepad</span>
-          <span className="text-xs text-[#6a6a6a]">Notepad</span>
+          
+          
+          
         </div>
         
-        <div className="text-sm text-[#6a6a6a] mb-6">
-          Plan, search, build anything
-        </div>
+        
       </div>
 
       {/* Chat Input */}
