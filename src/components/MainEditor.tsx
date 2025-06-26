@@ -33,9 +33,7 @@ export function MainEditor() {
           </div>
           
           {/* Editor Area */}
-          <div className="min-h-96">
-            <textarea className="w-full h-full bg-transparent text-[#cccccc] border-none outline-none resize-none text-sm leading-relaxed" placeholder="Start typing your thoughts..." />
-          </div>
+          
         </div>
       </div>
     </div>;
