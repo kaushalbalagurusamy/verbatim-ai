@@ -1,30 +1,22 @@
-
 import { MessageSquare, Settings, Minimize2, Plus, Send, Paperclip, Mic, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
-
 interface ChatPanelProps {
   collapsed: boolean;
   onToggle: () => void;
 }
-
-export function ChatPanel({ collapsed, onToggle }: ChatPanelProps) {
+export function ChatPanel({
+  collapsed,
+  onToggle
+}: ChatPanelProps) {
   const [message, setMessage] = useState('');
-
   if (collapsed) {
-    return (
-      <div className="w-12 bg-[#252526] border-l border-[#3c3c3c] flex flex-col items-center py-2">
-        <button
-          onClick={onToggle}
-          className="p-2 hover:bg-[#2a2d2e] rounded"
-        >
+    return <div className="w-12 bg-[#252526] border-l border-[#3c3c3c] flex flex-col items-center py-2">
+        <button onClick={onToggle} className="p-2 hover:bg-[#2a2d2e] rounded">
           <MessageSquare className="w-5 h-5 text-[#cccccc]" />
         </button>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="w-80 bg-[#252526] border-l border-[#3c3c3c] flex flex-col">
+  return <div className="w-80 bg-[#252526] border-l border-[#3c3c3c] flex flex-col">
       {/* Chat Header */}
       <div className="h-12 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
@@ -66,13 +58,7 @@ export function ChatPanel({ collapsed, onToggle }: ChatPanelProps) {
             <button className="p-1 hover:bg-[#4c4c4c] rounded">
               <Paperclip className="w-4 h-4 text-[#cccccc]" />
             </button>
-            <input
-              type="text"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 bg-transparent text-[#cccccc] text-sm outline-none placeholder-[#6a6a6a]"
-            />
+            <input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Type a message..." className="flex-1 bg-transparent text-[#cccccc] text-sm outline-none placeholder-[#6a6a6a]" />
             <button className="p-1 hover:bg-[#4c4c4c] rounded">
               <Mic className="w-4 h-4 text-[#cccccc]" />
             </button>
@@ -86,11 +72,10 @@ export function ChatPanel({ collapsed, onToggle }: ChatPanelProps) {
         <div className="flex items-center gap-2 mt-3">
           <span className="text-xs text-[#6a6a6a]">∞ Agent</span>
           <span className="text-xs text-[#6a6a6a]">x1</span>
-          <span className="text-xs text-[#6a6a6a]">🤖 gemini...</span>
+          
           <span className="text-xs text-[#6a6a6a]">📄</span>
           <span className="text-xs text-[#6a6a6a]">🔗</span>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
