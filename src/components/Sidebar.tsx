@@ -5,10 +5,12 @@ import { FileTree } from './FileTree';
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  onActiveViewChange?: (view: 'document' | 'pen' | 'source' | 'recordings' | null) => void;
 }
 
 export function Sidebar({
-  collapsed
+  collapsed,
+  onActiveViewChange
 }: SidebarProps) {
   const [expandedSections, setExpandedSections] = useState({
     logos: true,
@@ -28,7 +30,9 @@ export function Sidebar({
   };
 
   const handleIconClick = (view: 'document' | 'pen' | 'source' | 'recordings') => {
-    setActiveView(activeView === view ? null : view);
+    const newView = activeView === view ? null : view;
+    setActiveView(newView);
+    onActiveViewChange?.(newView);
   };
 
   if (collapsed) {
