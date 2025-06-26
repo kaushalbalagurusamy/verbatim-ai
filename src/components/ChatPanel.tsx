@@ -1,4 +1,3 @@
-
 import { MessageSquare, Settings, Minimize2, Plus, Send, Paperclip, Mic, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 
@@ -7,7 +6,7 @@ interface ChatPanelProps {
   onToggle: () => void;
 }
 
-export function ChatPanel({ collapsed }: ChatPanelProps) {
+export function ChatPanel({ collapsed, onToggle }: ChatPanelProps) {
   const [message, setMessage] = useState('');
 
   if (collapsed) {
