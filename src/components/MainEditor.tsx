@@ -27,7 +27,7 @@ export function MainEditor() {
       {/* Editor Content */}
       <div className="flex-1 bg-[#1e1e1e] p-6">
         <div className="max-w-4xl">
-          <h1 className="text-2xl font-light text-[#cccccc] mb-6">New Notepad</h1>
+          <h1 className="text-2xl font-light text-[#cccccc] mb-6">New Doc</h1>
           <div className="text-sm text-[#6a6a6a] mb-4">
             Type your thoughts, use @ to mention files
           </div>
