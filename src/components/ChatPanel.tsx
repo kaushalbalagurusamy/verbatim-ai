@@ -71,10 +71,10 @@ export function ChatPanel({
         {/* Agent Info - moved below input */}
         <div className="flex items-center gap-2 mt-3">
           <span className="text-xs text-[#6a6a6a]">∞ Agent</span>
-          <span className="text-xs text-[#6a6a6a]">x1</span>
+          
           
           <span className="text-xs text-[#6a6a6a]">📄</span>
-          <span className="text-xs text-[#6a6a6a]">🔗</span>
+          
         </div>
       </div>
     </div>;
