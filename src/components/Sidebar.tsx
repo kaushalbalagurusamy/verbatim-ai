@@ -1,5 +1,4 @@
-
-import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code, AudioWaveform } from 'lucide-react';
 import { useState } from 'react';
 import { FileTree } from './FileTree';
 
@@ -19,7 +18,7 @@ export function Sidebar({
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeView, setActiveView] = useState<'document' | 'pen' | 'source' | null>(null);
+  const [activeView, setActiveView] = useState<'document' | 'pen' | 'source' | 'recordings' | null>(null);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -28,7 +27,7 @@ export function Sidebar({
     }));
   };
 
-  const handleIconClick = (view: 'document' | 'pen' | 'source') => {
+  const handleIconClick = (view: 'document' | 'pen' | 'source' | 'recordings') => {
     setActiveView(activeView === view ? null : view);
   };
 
@@ -53,7 +52,7 @@ export function Sidebar({
       </div>
 
       {/* Icon Bar */}
-      <div className="h-10 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-center gap-4">
+      <div className="h-10 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-center gap-3">
         <button 
           onClick={() => handleIconClick('document')}
           className={`p-2 rounded transition-colors ${
@@ -77,6 +76,14 @@ export function Sidebar({
           }`}
         >
           <Code className="w-4 h-4" />
+        </button>
+        <button 
+          onClick={() => handleIconClick('recordings')}
+          className={`p-2 rounded transition-colors ${
+            activeView === 'recordings' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
+          }`}
+        >
+          <AudioWaveform className="w-4 h-4" />
         </button>
       </div>
 
