@@ -1,6 +1,7 @@
 
 import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code } from 'lucide-react';
 import { useState } from 'react';
+import { FileTree } from './FileTree';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -18,12 +19,17 @@ export function Sidebar({
   });
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeView, setActiveView] = useState<'document' | 'pen' | 'source' | null>(null);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
+  };
+
+  const handleIconClick = (view: 'document' | 'pen' | 'source') => {
+    setActiveView(activeView === view ? null : view);
   };
 
   if (collapsed) {
@@ -48,14 +54,29 @@ export function Sidebar({
 
       {/* Icon Bar */}
       <div className="h-10 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-center gap-4">
-        <button className="p-2 hover:bg-[#383838] rounded transition-colors">
-          <File className="w-4 h-4 text-[#cccccc]" />
+        <button 
+          onClick={() => handleIconClick('document')}
+          className={`p-2 rounded transition-colors ${
+            activeView === 'document' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
+          }`}
+        >
+          <File className="w-4 h-4" />
         </button>
-        <button className="p-2 hover:bg-[#383838] rounded transition-colors">
-          <Pen className="w-4 h-4 text-[#cccccc]" />
+        <button 
+          onClick={() => handleIconClick('pen')}
+          className={`p-2 rounded transition-colors ${
+            activeView === 'pen' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
+          }`}
+        >
+          <Pen className="w-4 h-4" />
         </button>
-        <button className="p-2 hover:bg-[#383838] rounded transition-colors">
-          <Code className="w-4 h-4 text-[#cccccc]" />
+        <button 
+          onClick={() => handleIconClick('source')}
+          className={`p-2 rounded transition-colors ${
+            activeView === 'source' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
+          }`}
+        >
+          <Code className="w-4 h-4" />
         </button>
       </div>
 
@@ -73,33 +94,37 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Navigation Sections */}
-      <div className="flex-1 overflow-y-auto">
-        {/* LOGOS-AI Section */}
-        <div className="border-b border-[#3c3c3c]">
-          
-        </div>
+      {/* File Tree or Original Navigation */}
+      {activeView ? (
+        <FileTree mode={activeView} />
+      ) : (
+        <div className="flex-1 overflow-y-auto">
+          {/* LOGOS-AI Section */}
+          <div className="border-b border-[#3c3c3c]">
+            
+          </div>
 
-        {/* NOTEPADS Section */}
-        <div className="border-b border-[#3c3c3c]">
-          
-          {expandedSections.notepads && (
-            <div className="ml-4">
-              
-            </div>
-          )}
-        </div>
+          {/* NOTEPADS Section */}
+          <div className="border-b border-[#3c3c3c]">
+            
+            {expandedSections.notepads && (
+              <div className="ml-4">
+                
+              </div>
+            )}
+          </div>
 
-        {/* OUTLINE Section */}
-        <div className="border-b border-[#3c3c3c]">
-          
-        </div>
+          {/* OUTLINE Section */}
+          <div className="border-b border-[#3c3c3c]">
+            
+          </div>
 
-        {/* TIMELINE Section */}
-        <div>
-          
+          {/* TIMELINE Section */}
+          <div>
+            
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
