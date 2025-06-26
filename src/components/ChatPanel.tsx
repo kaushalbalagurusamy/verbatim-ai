@@ -1,3 +1,4 @@
+
 import { MessageSquare, Settings, Minimize2, Plus, Send, Paperclip, Mic, MoreHorizontal } from 'lucide-react';
 import { useState } from 'react';
 
@@ -56,15 +57,6 @@ export function ChatPanel({ collapsed, onToggle }: ChatPanelProps) {
         <div className="text-sm text-[#6a6a6a] mb-6">
           Plan, search, build anything
         </div>
-
-        {/* Agent Info */}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs text-[#6a6a6a]">∞ Agent</span>
-          <span className="text-xs text-[#6a6a6a]">x1</span>
-          <span className="text-xs text-[#6a6a6a]">🤖 gemini...</span>
-          <span className="text-xs text-[#6a6a6a]">📄</span>
-          <span className="text-xs text-[#6a6a6a]">🔗</span>
-        </div>
       </div>
 
       {/* Chat Input */}
@@ -88,6 +80,15 @@ export function ChatPanel({ collapsed, onToggle }: ChatPanelProps) {
               <Send className="w-4 h-4 text-[#cccccc]" />
             </button>
           </div>
+        </div>
+        
+        {/* Agent Info - moved below input */}
+        <div className="flex items-center gap-2 mt-3">
+          <span className="text-xs text-[#6a6a6a]">∞ Agent</span>
+          <span className="text-xs text-[#6a6a6a]">x1</span>
+          <span className="text-xs text-[#6a6a6a]">🤖 gemini...</span>
+          <span className="text-xs text-[#6a6a6a]">📄</span>
+          <span className="text-xs text-[#6a6a6a]">🔗</span>
         </div>
       </div>
     </div>
