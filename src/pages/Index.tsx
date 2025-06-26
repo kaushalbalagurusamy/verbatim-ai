@@ -1,12 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState } from 'react';
+import { Sidebar } from '@/components/Sidebar';
+import { MainEditor } from '@/components/MainEditor';
+import { ChatPanel } from '@/components/ChatPanel';
 
 const Index = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [chatCollapsed, setChatCollapsed] = useState(false);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-[#1e1e1e] text-[#cccccc] flex">
+      {/* Sidebar */}
+      <Sidebar 
+        collapsed={sidebarCollapsed} 
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        <MainEditor />
       </div>
+      
+      {/* Chat Panel */}
+      <ChatPanel 
+        collapsed={chatCollapsed}
+        onToggle={() => setChatCollapsed(!chatCollapsed)}
+      />
     </div>
   );
 };
