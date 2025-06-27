@@ -1,3 +1,4 @@
+
 import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
@@ -105,7 +106,7 @@ export function MainEditor({ activeView }: MainEditorProps) {
             </div>
             
             <div className="text-sm text-[#6a6a6a] mb-4">
-              Type your thoughts, use @ to mention files, / to use agent
+              Type anything, use @ to mention files, use / to spawn agent
             </div>
           </div>
         </div>
