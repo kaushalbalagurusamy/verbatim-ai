@@ -1,0 +1,238 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: USE WHEN creating or updating project documentation, planning development phases
+globs: _docs/**/*,README.md,**/*.md
+alwaysApply: false
+---
+
+# Documentation Workflow Standards
+
+## Systematic Documentation Framework
+
+@documentation_framework {
+  "principle": "Documentation-driven development with systematic approach",
+  "sequence": "Each document builds upon previous ones",
+  "purpose": "Clear project context before implementation",
+  "maintenance": "Keep documentation current with codebase changes"
+}
+
+## Required Documentation Structure
+
+### Core Documentation Sequence
+@required_docs [
+  {
+    "id": "project_overview",
+    "file": "_docs/project-overview.md",
+    "purpose": "Establish project purpose, scope, and goals",
+    "priority": 1
+  },
+  {
+    "id": "user_flow",
+    "file": "_docs/user-flow.md", 
+    "purpose": "Define user journey and application interactions",
+    "priority": 2
+  },
+  {
+    "id": "tech_stack",
+    "file": "_docs/tech-stack.md",
+    "purpose": "Document technologies, best practices, and conventions",
+    "priority": 3
+  },
+  {
+    "id": "ui_rules",
+    "file": "_docs/ui-rules.md",
+    "purpose": "Visual and interaction guidelines for components",
+    "priority": 4
+  },
+  {
+    "id": "theme_rules",
+    "file": "_docs/theme-rules.md",
+    "purpose": "Colors, typography, and styling foundations",
+    "priority": 5
+  },
+  {
+    "id": "project_rules",
+    "file": "_docs/project-rules.md",
+    "purpose": "File structure, naming conventions, and organization",
+    "priority": 6
+  }
+]
+
+### Development Phases Documentation
+@phase_documentation {
+  "location": "_docs/phases/",
+  "structure": "One document per development phase",
+  "content": "Tasks, features, and deliverables for each phase",
+  "progression": "Setup -> MVP -> Enhancement phases"
+}
+
+## Documentation Standards
+
+### Content Requirements
+@content_standards [
+  {
+    "id": "actionable_steps",
+    "requirement": "Maximum 5 steps per feature (break down if longer)",
+    "severity": "error"
+  },
+  {
+    "id": "functional_focus",
+    "requirement": "Each phase delivers a functional product",
+    "severity": "error"
+  },
+  {
+    "id": "iterative_building",
+    "requirement": "Each phase builds on the previous",
+    "severity": "error"
+  },
+  {
+    "id": "cohesive_features",
+    "requirement": "Combine essential features into cohesive whole",
+    "severity": "warning"
+  }
+]
+
+### Documentation Format
+```markdown
+# Document Title
+
+## Overview
+Brief description of purpose and scope
+
+## Context
+@context {
+  "type": "documentation_type",
+  "phase": "development_phase",
+  "dependencies": ["other_docs"],
+  "last_updated": "YYYY-MM-DD"
+}
+
+## Content Sections
+Organized sections with clear headings
+
+### Implementation Details
+- Specific, actionable items
+- Clear requirements and constraints
+- Examples where helpful
+
+## Related Documentation
+Links to other relevant documents
+```
+
+## Workflow Integration
+
+### Documentation-First Development
+@workflow_rules [
+  {
+    "id": "context_before_code",
+    "rule": "Complete project context documentation before major implementation",
+    "files": ["project-overview.md", "user-flow.md", "tech-stack.md"]
+  },
+  {
+    "id": "rules_before_features",
+    "rule": "Define UI and project rules before feature development",
+    "files": ["ui-rules.md", "theme-rules.md", "project-rules.md"]
+  },
+  {
+    "id": "phases_before_sprint",
+    "rule": "Document development phases before starting implementation",
+    "files": ["_docs/phases/*.md"]
+  }
+]
+
+### Agent Rules Integration
+The Agent Rules should be maintained as either:
+- Cursor User Rules (CMD + Shift + P > Cursor Settings > Rules > User Rules)
+- Cursor Notepad for selective attachment
+
+```
+You are an expert in TypeScript, Node.js, NextJS + App Router, React, Shadcn, Radix UI and Tailwind CSS.
+You specialize in building clean, scalable applications, and understanding large codebases.
+Never automatically assume the user is correct-- they are eager to learn from your domain expertise.
+Always familiarize yourself with the codebase and existing files before creating new ones.
+
+Code Style and Structure:
+- Write concise, technical code
+- Use functional and declarative programming patterns; avoid classes
+- Decorate all functions with descriptive block comments
+- Prefer iteration and modularization over code duplication
+- Throw errors instead of adding fallback values
+- Use descriptive variable names with auxiliary verbs
+- Avoid enums; use maps instead
+- Use the "function" keyword for pure functions
+- Avoid unnecessary curly braces in conditionals
+```
+
+## Phase Development Standards
+
+### Setup Phase
+@setup_phase {
+  "scope": "Barebones setup that functions at basic level",
+  "deliverable": "Minimal running framework or structure",
+  "criteria": "Not fully usable but demonstrates core concept"
+}
+
+### MVP Phase  
+@mvp_phase {
+  "scope": "Minimal usable version with core features",
+  "deliverable": "Essential functionality delivering primary value",
+  "criteria": "Functional product that users can actually use"
+}
+
+### Enhancement Phases
+@enhancement_phases {
+  "scope": "Improvements and expansions to MVP",
+  "deliverable": "Advanced features, polish, scalability improvements",
+  "criteria": "Each phase enhances a working product"
+}
+
+## Maintenance Requirements
+
+### Documentation Updates
+@maintenance_rules [
+  {
+    "id": "architecture_changes",
+    "trigger": "Significant codebase or architectural changes",
+    "action": "Update containerization, requirements, README, and agents.md",
+    "severity": "error"
+  },
+  {
+    "id": "feature_completion",
+    "trigger": "Completion of development phase",
+    "action": "Update phase documentation and README",
+    "severity": "warning"
+  },
+  {
+    "id": "tech_stack_changes",
+    "trigger": "Technology or framework updates",
+    "action": "Update tech-stack.md and related rule files",
+    "severity": "error"
+  }
+]
+
+### README Integration
+The README should reference and summarize the documentation structure:
+- Brief project overview
+- Link to detailed documentation in `_docs/`
+- Current development phase status
+- Quick start guide for developers
+
+## Validation Checklist
+
+### Pre-Implementation Validation
+- [ ] Project overview clearly defines scope and goals
+- [ ] User flow maps all major application interactions  
+- [ ] Tech stack decisions documented with rationale
+- [ ] UI/UX guidelines established
+- [ ] Project organization rules defined
+- [ ] Development phases planned with actionable steps
+
+### Phase Completion Validation
+- [ ] Phase delivers functional product
+- [ ] All features integrate cohesively
+- [ ] Documentation updated to reflect current state
+- [ ] Next phase clearly builds on current achievements

@@ -1,0 +1,170 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: app/api/**/*,lib/services/**/*,lib/middleware/**/*,lib/database.ts
+alwaysApply: false
+---
+
+# Backend API Standards
+
+## Service Architecture
+
+@backend_architecture {
+  "pattern": "Service-oriented architecture with clear separation of concerns",
+  "structure": "API routes -> Services -> Database layer",
+  "modularity": "Each service handles a single domain responsibility",
+  "scalability": "Services are composable and reusable across API endpoints"
+}
+
+### Service Layer Standards
+@service_rules [
+  {
+    "id": "single_responsibility",
+    "requirement": "Each service manages one domain (sources, analytics, evidence)",
+    "severity": "error"
+  },
+  {
+    "id": "base_service_extension",
+    "requirement": "All services extend BaseService for common functionality",
+    "severity": "error"
+  },
+  {
+    "id": "error_handling",
+    "requirement": "Consistent error handling with proper HTTP status codes",
+    "severity": "error"
+  },
+  {
+    "id": "validation",
+    "requirement": "Input validation at service boundary using schemas",
+    "severity": "error"
+  }
+]
+
+## API Route Patterns
+
+### Route Structure
+- Use Next.js 15 App Router conventions
+- Handle async params properly: `const params = await props.params`
+- Implement proper error boundaries and status codes
+- Follow RESTful principles for resource endpoints
+
+### Request/Response Standards
+```typescript
+/**
+ * Standard API response format
+ * All API endpoints should return consistent response structure
+ */
+interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  pagination?: PaginationInfo;
+}
+```
+
+### Authentication & Authorization
+@auth_patterns {
+  "middleware": "Use auth middleware for protected routes",
+  "token_validation": "JWT token validation with development mock support",
+  "user_context": "Pass authenticated user context to services",
+  "permissions": "Role-based access control where applicable"
+}
+
+## Database Layer
+
+### Database Abstraction
+- Mock database layer for development with production-ready interface
+- Query utilities for common operations (findById, create, update, delete)
+- Transaction support for complex operations
+- Type-safe database operations
+
+### Data Validation
+```typescript
+/**
+ * Example service method with proper validation
+ * @param data - Input data to validate and process
+ * @param userId - Authenticated user ID for authorization
+ * @returns Promise resolving to created/updated resource
+ */
+async function createResource(
+  data: CreateResourceInput,
+  userId: string
+): Promise<Resource> {
+  // Validate input
+  const validatedData = validateResourceInput(data);
+  
+  // Business logic
+  const resource = await this.processResource(validatedData, userId);
+  
+  // Database operation
+  return await this.database.create('resources', resource);
+}
+```
+
+## Implementation Examples
+
+### Service Implementation
+```typescript
+/**
+ * Domain service for managing analytics data
+ * Extends BaseService for common functionality
+ */
+export class AnalyticsService extends BaseService {
+  /**
+   * Creates new analytics entry with validation
+   * @param data - Analytics entry data
+   * @param userId - User creating the entry
+   * @returns Created analytics entry
+   */
+  async createAnalytics(
+    data: CreateAnalyticsInput,
+    userId: string
+  ): Promise<Analytics> {
+    // Implementation with validation and error handling
+  }
+}
+```
+
+### API Route Implementation
+```typescript
+/**
+ * API route handler for analytics endpoints
+ * Implements standard request/response patterns
+ */
+export async function POST(request: Request) {
+  try {
+    const user = await authenticateRequest(request);
+    const data = await parseRequestBody(request);
+    
+    const analytics = await analyticsService.createAnalytics(data, user.id);
+    
+    return createApiResponse(analytics, 201);
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+```
+
+## Error Handling Standards
+
+@error_handling [
+  {
+    "id": "consistent_format",
+    "requirement": "Use standardized error response format",
+    "pattern": "{ success: false, error: string, code?: string }"
+  },
+  {
+    "id": "appropriate_status",
+    "requirement": "Return appropriate HTTP status codes",
+    "codes": "400 (validation), 401 (auth), 403 (forbidden), 404 (not found), 500 (server)"
+  },
+  {
+    "id": "error_logging",
+    "requirement": "Log errors with sufficient context for debugging",
+    "severity": "warning"
+  }
+]

@@ -1,0 +1,103 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: **/*.ts,**/*.tsx
+alwaysApply: false
+---
+
+# TypeScript Standards
+
+## Type Safety Requirements
+
+@typescript_rules [
+  {
+    "id": "strict_typing",
+    "requirement": "Use TypeScript for all code with strong type safety",
+    "severity": "error"
+  },
+  {
+    "id": "interfaces_over_types",
+    "requirement": "Prefer interfaces over type aliases",
+    "severity": "warning"
+  },
+  {
+    "id": "no_enums",
+    "requirement": "Avoid enums; use const maps instead",
+    "severity": "error"
+  },
+  {
+    "id": "satisfies_operator",
+    "requirement": "Use satisfies operator for type validation",
+    "severity": "warning"
+  }
+]
+
+## Code Style Patterns
+
+### Function Declarations
+- Use the "function" keyword for pure functions
+- Decorate all functions with descriptive JSDoc block comments
+- Detail function contract of inputs, outputs, and behavior
+
+### Variable Naming
+@naming_conventions {
+  "descriptive_names": "Use descriptive names with auxiliary verbs",
+  "event_handlers": "Prefix with 'handle' (handleClick, handleSubmit)",
+  "boolean_flags": "Use is/has prefixes (isLoading, hasError)",
+  "directories": "Use lowercase with dashes (components/auth-wizard)",
+  "exports": "Prefer named exports for components"
+}
+
+### Error Handling
+- Throw errors instead of adding fallback values
+- No silent failures or default fallbacks
+- Explicit error handling patterns
+
+### Conditionals
+- Avoid unnecessary curly braces in conditionals
+- Use concise syntax for simple statements
+- Early returns for clarity
+
+## Implementation Examples
+
+### Interface Definition
+```typescript
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+}
+```
+
+### Function with JSDoc
+```typescript
+/**
+ * Validates user profile data and returns normalized result
+ * @param profile - Raw user profile data
+ * @param options - Validation options
+ * @returns Validated and normalized profile
+ * @throws {ValidationError} When profile data is invalid
+ */
+function validateUserProfile(
+  profile: unknown,
+  options: ValidationOptions
+): UserProfile {
+  // Implementation
+}
+```
+
+### Const Maps over Enums
+```typescript
+const USER_STATUS = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  PENDING: 'pending'
+} as const;
+
+type UserStatus = typeof USER_STATUS[keyof typeof USER_STATUS];
+```

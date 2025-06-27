@@ -1,0 +1,62 @@
+{
+  "agents": [
+    {
+      "name": "claude-code",
+      "type": "shell",
+      "description": "Invoke Claude Code CLI using Claude 4 Opus with fallback to Claude 4 Sonnet when Opus credits deplete",
+      "cmd": "claude-code",
+      "modelPriority": ["claude-4-opus", "claude-4 sonnet"],
+      "args": [
+        "--model", "claude-4-opus",        
+        "--stdin",                           
+        "--format", "delta",              
+        "--stream"                          
+      ],
+      "fallbackModel": "claude-4-sonnet",
+      "env": {
+        "CLAUDE_API_KEY": "${CLAUDE_API_KEY}"
+      },
+      "scopes": [
+        "*.js", "*.ts", "*.py", "*.java", "*.go",
+        "*.rb", "*.cs", "*.cpp", "*.c"
+      ],
+      "languages": [
+        "javascript", "typescript", "python",
+        "java", "go", "ruby", "csharp", "cpp", "c"
+      ],
+      "maxTokens": 8000,
+      "timeoutMs": 120000,
+      "concurrency": 2,
+      "promptTemplates": {
+        "system": "You are Claude Code (Claude 4 Opus), an AI coding assistant. Use Opus tokens until they run out, then fall back to Claude 2. Output valid unified diff patches only.",
+        "user": "{{instruction}}"
+      }
+    },
+    {
+      "name": "claude-code-http",
+      "type": "http",
+      "description": "Invoke Claude Code API endpoint using Claude 4 Opus with fallback to Claude 2",
+      "url": "https://api.anthropic.com/v1/code",
+      "method": "POST",
+      "headers": {
+        "Authorization": "Bearer ${CLAUDE_API_KEY}",
+        "Content-Type": "application/json"
+      },
+      "modelPriority": ["claude-4-opus", "claude-4-sonnet"],
+      "bodyTemplate": {
+        "model": "claude-4-opus",
+        "messages": [
+          {"role": "system", "content": "You are Claude Code (Claude 4 Opus), an AI coding assistant. Use Opus tokens until they run out, then fall back to Claude 2. Output unified diff patches only."},
+          {"role": "user",   "content": "{{instruction}}"}
+        ],
+        "max_tokens_to_sample": 8000,
+        "stream": true,
+        "format": "delta"
+      },
+      "fallbackModel": "claude-4-sonnet",
+      "scopes": ["*.js", "*.ts", "*.py"],
+      "timeoutMs": 120000,
+      "concurrency": 2
+    }
+  ]
+}

@@ -1,0 +1,279 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: USE WHEN creating, updating, or managing .mdc rule files
+globs: .cursor/rules/*.mdc
+alwaysApply: false
+---
+
+# Cursor Rules Management
+
+## Rule File Organization
+
+@rule_organization {
+  "numbering_system": "NNN-descriptive-name.mdc format",
+  "categories": {
+    "001-099": "Core architecture and foundational rules",
+    "100-199": "Language and framework specific rules", 
+    "200-299": "Domain and application specific rules",
+    "300-499": "Development workflow and process rules",
+    "500-899": "Specialized feature and component rules",
+    "900-999": "Meta-rules and rule management"
+  },
+  "precedence": "Higher numbers override lower numbers in conflicts"
+}
+
+## Rule File Structure Standards
+
+### Required Frontmatter Format
+@frontmatter_requirements [
+  {
+    "id": "yaml_structure",
+    "requirement": "CRITICAL: First line must be '---' followed immediately by YAML properties",
+    "note": "Cursor will not recognize rules with malformed YAML frontmatter",
+    "severity": "error"
+  },
+  {
+    "id": "description",
+    "requirement": "Single sentence clearly describing rule purpose",
+    "max_length": "120 characters for AI optimization",
+    "severity": "error"
+  },
+  {
+    "id": "globs",
+    "requirement": "Array of file patterns where rule applies",
+    "format": "Standard glob patterns without quotes",
+    "severity": "error"
+  }
+]
+
+### Content Structure Best Practices
+```markdown
+---
+description: Brief, clear description of rule purpose
+globs: ["**/*.pattern", "specific/paths/**/*"]
+---
+
+# Rule Title
+
+## Context/Purpose
+@context {
+  "type": "rule_type",
+  "scope": "application_scope",
+  "priority": "high|medium|low"
+}
+
+## Rules/Requirements
+@rule_name [
+  {
+    "id": "unique_identifier",
+    "requirement": "Clear, actionable requirement",
+    "severity": "error|warning|info"
+  }
+]
+
+## Implementation Examples
+```language
+// Code examples demonstrating the rule
+```
+
+## Validation/Checklist
+- [ ] Specific validation criteria
+```
+
+## Rule Creation Guidelines
+
+### Content Optimization for AI
+@ai_optimization [
+  {
+    "id": "concise_content",
+    "rule": "Keep rules under 200 lines for optimal AI parsing",
+    "severity": "warning"
+  },
+  {
+    "id": "structured_data",
+    "rule": "Use JSON annotations for structured rule data",
+    "severity": "error"
+  },
+  {
+    "id": "actionable_language",
+    "rule": "Use precise, deterministic ACTION TRIGGER OUTCOME format",
+    "severity": "error"
+  },
+  {
+    "id": "minimal_redundancy",
+    "rule": "Remove verbose explanations that increase token overhead",
+    "severity": "warning"
+  }
+]
+
+### JSON Annotation Standards
+```typescript
+// Standard annotation format
+@annotation_name {
+  "property": "value",
+  "array_property": ["item1", "item2"],
+  "object_property": {
+    "nested": "structure"
+  }
+}
+
+// Rule array format
+@rules_annotation [
+  {
+    "id": "unique_rule_id",
+    "requirement": "What must be done",
+    "severity": "error|warning|info",
+    "example": "Optional example"
+  }
+]
+```
+
+## Rule Management Workflow
+
+### Creation Process
+@creation_workflow [
+  {
+    "step": 1,
+    "action": "Identify need for new rule or update existing",
+    "trigger": "Code patterns, team feedback, or systematic documentation"
+  },
+  {
+    "step": 2,
+    "action": "Determine appropriate number and category",
+    "reference": "Use numbering system for proper precedence"
+  },
+  {
+    "step": 3,
+    "action": "Create rule using Cursor Settings UI",
+    "note": "Always use UI, never edit .mdc files directly"
+  },
+  {
+    "step": 4,
+    "action": "Test rule effectiveness with relevant files",
+    "validation": "Ensure AI picks up and applies rule appropriately"
+  }
+]
+
+### Maintenance Requirements
+@maintenance_rules [
+  {
+    "id": "regular_review",
+    "schedule": "Review rules quarterly for relevance and accuracy",
+    "action": "Update or retire outdated rules"
+  },
+  {
+    "id": "conflict_resolution",
+    "trigger": "When rules conflict or contradict",
+    "action": "Use numbering precedence or consolidate rules"
+  },
+  {
+    "id": "documentation_sync",
+    "trigger": "When project documentation changes",
+    "action": "Update related rules to maintain consistency"
+  }
+]
+
+## Common Patterns and Templates
+
+### Framework Rule Template
+```markdown
+---
+description: [Framework] development standards and best practices
+globs: ["**/*.[ext]", "framework/paths/**/*"]
+---
+
+# [Framework] Standards
+
+@framework_rules [
+  {
+    "id": "core_principle",
+    "requirement": "Primary framework usage requirement",
+    "severity": "error"
+  },
+  {
+    "id": "best_practice",
+    "requirement": "Recommended pattern or approach",
+    "severity": "warning"
+  }
+]
+
+## Implementation Examples
+[Code examples]
+
+## Common Patterns
+[Reusable patterns]
+```
+
+### Domain Rule Template
+```markdown
+---
+description: [Domain] specific rules and patterns
+globs: ["domain/paths/**/*"]
+---
+
+# [Domain] Rules
+
+@domain_context {
+  "scope": "Specific domain or feature area",
+  "purpose": "Business logic and domain-specific patterns"
+}
+
+@domain_rules [
+  {
+    "id": "business_logic",
+    "requirement": "Domain-specific business rule",
+    "severity": "error"
+  }
+]
+```
+
+## Rule Effectiveness Validation
+
+### Testing Rule Application
+@validation_checklist [
+  {
+    "check": "Rule appears in relevant file contexts",
+    "method": "Open files matching glob patterns, verify rule loads"
+  },
+  {
+    "check": "AI references rule in suggestions",
+    "method": "Ask AI about patterns covered by the rule"
+  },
+  {
+    "check": "No conflicting rules active",
+    "method": "Review rule precedence and content overlap"
+  },
+  {
+    "check": "Rule content is actionable",
+    "method": "Verify rules provide clear, implementable guidance"
+  }
+]
+
+### Performance Optimization
+@performance_guidelines {
+  "glob_specificity": "Use specific globs to avoid unnecessary rule loading",
+  "content_density": "High information density with minimal tokens",
+  "structured_format": "JSON annotations for machine-readable content",
+  "avoid_redundancy": "Don't repeat information across multiple rules"
+}
+
+## Integration with Development Workflow
+
+### Documentation Integration
+- Rules should complement and reference `_docs/` project documentation
+- Maintain consistency between rules and documented standards
+- Update rules when project documentation changes
+
+### Version Control
+- All rule files are version controlled in `.cursor/rules/`
+- Include rule changes in commit messages
+- Document significant rule updates in project changelog
+
+### Team Collaboration
+- Rules serve as shared team standards
+- New team members can understand project through rules
+- Rules encode institutional knowledge and decisions

@@ -1,0 +1,162 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: USE WHEN organizing files, creating directories, or setting up project structure
+alwaysApply: false
+---
+
+# Project Organization Standards
+
+## File Structure Guidelines
+
+@project_structure {
+  "principle": "Highly navigable file structure with logical grouping",
+  "naming": "Descriptive names that clearly indicate file purpose",
+  "modularity": "Related functionality grouped together",
+  "scalability": "Structure supports growth without reorganization"
+}
+
+### Directory Organization
+```
+logos-ai/
+├── app/                    # Next.js App Router
+│   ├── api/               # API route handlers  
+│   ├── (auth)/            # Route groups for organization
+│   └── globals.css        # Global styles
+├── components/            # React components
+│   ├── ui/               # Reusable UI components (Shadcn)
+│   └── [domain]/         # Domain-specific components
+├── lib/                  # Core utilities and services
+│   ├── services/         # Business logic services
+│   ├── middleware/       # Custom middleware
+│   └── utils.ts          # Utility functions
+├── hooks/                # Custom React hooks
+├── public/               # Static assets
+└── _docs/                # Project documentation
+    ├── phases/           # Development phase documents
+    ├── project-overview.md
+    ├── user-flow.md
+    ├── tech-stack.md
+    ├── ui-rules.md
+    ├── theme-rules.md
+    └── project-rules.md
+```
+
+## Naming Conventions
+
+@naming_rules [
+  {
+    "id": "directories",
+    "convention": "kebab-case for directories (auth-wizard, user-profile)",
+    "severity": "error"
+  },
+  {
+    "id": "components", 
+    "convention": "PascalCase for React components (UserProfile.tsx)",
+    "severity": "error"
+  },
+  {
+    "id": "utilities",
+    "convention": "camelCase for utility files and functions",
+    "severity": "error"
+  },
+  {
+    "id": "constants",
+    "convention": "SCREAMING_SNAKE_CASE for constants",
+    "severity": "warning"
+  }
+]
+
+### File Naming Patterns
+- **Components**: `ComponentName.tsx`
+- **Services**: `domain-service.ts`
+- **Utilities**: `utility-name.ts`
+- **Types**: `types.ts` or `domain.types.ts`
+- **API Routes**: `route.ts` in appropriate directory
+
+## Documentation Requirements
+
+### File Header Documentation
+@documentation_standards [
+  {
+    "id": "file_purpose",
+    "requirement": "Every file must have explanation of contents at the top",
+    "example": "// Authentication middleware for validating JWT tokens",
+    "severity": "error"
+  },
+  {
+    "id": "function_documentation",
+    "requirement": "All functions must have JSDoc comments detailing purpose and parameters",
+    "severity": "error"
+  },
+  {
+    "id": "interface_documentation",
+    "requirement": "Complex interfaces and types should include usage examples",
+    "severity": "warning"
+  }
+]
+
+### Project Documentation Structure
+Following the systematic approach outlined in the development framework:
+
+1. **project-overview.md** - Project purpose, scope, and goals
+2. **user-flow.md** - User journey and application flow
+3. **tech-stack.md** - Technologies, best practices, and conventions
+4. **ui-rules.md** - Visual and interaction guidelines
+5. **theme-rules.md** - Colors, typography, and styling foundations
+6. **project-rules.md** - File structure and naming conventions
+7. **phases/** directory - Iterative development planning
+
+## Code Organization Standards
+
+### File Size Limits
+@file_limits [
+  {
+    "id": "max_lines",
+    "limit": "200 lines maximum per file (user rule override)",
+    "enforcement": "Split into multiple files if exceeded",
+    "severity": "error"
+  },
+  {
+    "id": "ai_compatibility",
+    "limit": "Optimize for AI tool compatibility",
+    "guideline": "Clear structure, well-documented functions",
+    "severity": "warning"
+  }
+]
+
+## Quality Standards
+
+### Code Review Checklist
+@quality_checks [
+  {
+    "id": "documentation",
+    "check": "File headers and function documentation present",
+    "required": true
+  },
+  {
+    "id": "naming",
+    "check": "Follows established naming conventions",
+    "required": true
+  },
+  {
+    "id": "structure",
+    "check": "Logical organization and proper imports",
+    "required": true
+  },
+  {
+    "id": "size_limit",
+    "check": "File under 200 lines, split if necessary",
+    "required": true
+  }
+]
+
+### Architecture Compliance
+- Services follow single responsibility principle
+- Components are properly composed and reusable
+- Database layer maintains abstraction
+- API routes follow RESTful conventions
+- Error handling is consistent across the application

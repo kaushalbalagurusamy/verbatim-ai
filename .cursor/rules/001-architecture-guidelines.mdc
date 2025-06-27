@@ -1,0 +1,76 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: **/*
+alwaysApply: true
+---
+
+# Architecture Guidelines
+
+## AI-First Codebase Principles
+
+@context {
+  "type": "architecture",
+  "purpose": "ai_first_development",
+  "scope": "project_wide",
+  "priority": "core"
+}
+
+### Modularity Requirements
+- Files should not exceed 200 lines (per user rules)
+- Break down functionality into logical, reusable modules
+- Maintain high navigability through descriptive file structure
+- Each file must have descriptive names and purpose documentation
+
+### Scalability Patterns
+- Favor functional and declarative programming patterns
+- Avoid classes, prefer composition over inheritance
+- Use early returns for clarity and readability
+- Structure components logically: exports, subcomponents, helpers, types
+
+### Documentation Standards
+@documentation_rules [
+  {
+    "id": "file_headers",
+    "requirement": "All files must have explanation of contents at the top",
+    "severity": "error"
+  },
+  {
+    "id": "function_comments",
+    "requirement": "All functions must have JSDoc/TSDoc comments detailing purpose and parameters",
+    "severity": "error"
+  },
+  {
+    "id": "ai_compatibility",
+    "requirement": "Optimize for modern AI tools compatibility",
+    "severity": "warning"
+  }
+]
+
+### Code Organization
+- Prefer iteration and modularization over code duplication
+- Throw errors instead of adding fallback values
+- Use descriptive names with auxiliary verbs (isLoading, hasError)
+- Follow DRY (Don't Repeat Yourself) principles
+
+### Analysis Process
+Before implementing any feature:
+
+1. **Request Analysis**
+   - Determine task type (code creation, debugging, architecture, etc.)
+   - Identify languages and frameworks involved
+   - Note explicit and implicit requirements
+
+2. **Solution Planning**
+   - Break down solution into logical steps
+   - Consider modularity and reusability
+   - Identify necessary files and dependencies
+
+3. **Implementation Strategy**
+   - Choose appropriate design patterns
+   - Consider performance implications
+   - Plan for error handling and edge cases

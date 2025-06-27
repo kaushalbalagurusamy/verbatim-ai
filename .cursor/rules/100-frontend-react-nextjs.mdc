@@ -1,0 +1,152 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: app/**/*,components/**/*,**/*.tsx
+alwaysApply: false
+---
+
+# Frontend Development Standards
+
+## React 19 & Next.js 15 Best Practices
+
+@react_rules [
+  {
+    "id": "server_components_first",
+    "requirement": "Favor React Server Components (RSC) wherever possible",
+    "severity": "warning"
+  },
+  {
+    "id": "minimize_use_client",
+    "requirement": "Minimize 'use client' directives",
+    "severity": "warning"
+  },
+  {
+    "id": "error_boundaries",
+    "requirement": "Provide error boundaries for fault tolerance",
+    "severity": "error"
+  },
+  {
+    "id": "suspense_async",
+    "requirement": "Use Suspense for async operations",
+    "severity": "warning"
+  }
+]
+
+## Component Architecture
+
+### Component Structure
+- Structure components logically: exports, subcomponents, helpers, types
+- Use functional and declarative programming patterns
+- Avoid classes, prefer composition
+- Keep client-side state minimal
+
+### State Management
+@state_management {
+  "preferred_hooks": "Use useActionState instead of deprecated useFormState",
+  "form_status": "Leverage enhanced useFormStatus with data, method, action properties",
+  "url_state": "Manage URL state with nuqs when appropriate",
+  "client_state": "Keep client-side state minimal"
+}
+
+### Performance Optimization
+- Optimize for Web Vitals and overall performance
+- Use React Server Components as default
+- Minimize JavaScript bundle size
+- Implement proper loading states with Suspense
+
+## Next.js 15 App Router Patterns
+
+### Async API Usage
+```typescript
+// Always use async versions of runtime APIs
+const cookieStore = await cookies()
+const headersList = await headers()
+const { isEnabled } = await draftMode()
+
+// Handle async params in layouts/pages
+const params = await props.params
+const searchParams = await props.searchParams
+```
+
+### File-based Routing
+@routing_patterns {
+  "layouts": "Use layout.tsx for shared layouts",
+  "loading": "Implement loading.tsx for loading states", 
+  "error": "Use error.tsx for error handling",
+  "api_routes": "Utilize route handlers for API routes"
+}
+
+## UI Development Standards
+
+### Styling Guidelines
+- Use Tailwind CSS for styling
+- Follow consistent design system patterns
+- Implement responsive design principles
+- Use Shadcn UI and Radix UI components
+
+### Component Naming
+- Use descriptive component names
+- Prefer named exports
+- Follow PascalCase for component names
+- Use kebab-case for component directories
+
+## Implementation Examples
+
+### Server Component Example
+```typescript
+/**
+ * Server component for displaying user dashboard
+ * Fetches data server-side for optimal performance
+ */
+async function UserDashboard() {
+  const user = await fetchUserData();
+  
+  return (
+    <div className="dashboard-container">
+      <Suspense fallback={<DashboardSkeleton />}>
+        <UserProfile user={user} />
+      </Suspense>
+    </div>
+  );
+}
+```
+
+### Client Component with State
+```typescript
+"use client";
+
+/**
+ * Client component for interactive form handling
+ * Uses React 19 useActionState for form state management
+ */
+function ContactForm() {
+  const [state, formAction, isPending] = useActionState(
+    submitContactForm,
+    { message: '' }
+  );
+  
+  return (
+    <form action={formAction}>
+      {/* Form implementation */}
+    </form>
+  );
+}
+```
+
+### Error Boundary Pattern
+```typescript
+/**
+ * Error boundary for handling component errors gracefully
+ */
+function ComponentErrorBoundary({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary fallback={<ErrorFallback />}>
+      {children}
+    </ErrorBoundary>
+  );
+}
+```

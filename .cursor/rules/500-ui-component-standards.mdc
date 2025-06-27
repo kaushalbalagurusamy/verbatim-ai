@@ -1,0 +1,331 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: 
+globs: components/**/*,app/**/*.tsx,**/*.tsx
+alwaysApply: false
+---
+
+# UI Component Standards
+
+## Component Library Architecture
+
+@ui_architecture {
+  "foundation": "Shadcn UI built on Radix UI primitives",
+  "styling": "Tailwind CSS utility-first approach",
+  "customization": "Theme-based design system",
+  "accessibility": "ARIA compliant through Radix UI"
+}
+
+## Component Development Rules
+
+### Component Structure Standards
+@component_rules [
+  {
+    "id": "shadcn_base",
+    "requirement": "Use Shadcn UI components as base building blocks",
+    "severity": "error"
+  },
+  {
+    "id": "radix_primitives",
+    "requirement": "Leverage Radix UI primitives for complex interactions",
+    "severity": "warning"
+  },
+  {
+    "id": "tailwind_styling",
+    "requirement": "Use Tailwind CSS for all styling needs",
+    "severity": "error"
+  },
+  {
+    "id": "accessibility_first",
+    "requirement": "Ensure accessibility compliance through proper ARIA attributes",
+    "severity": "error"
+  }
+]
+
+### Component Composition Patterns
+```typescript
+/**
+ * Example of proper component composition
+ * Uses Shadcn base with custom business logic
+ */
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+interface AnalyticsCardProps {
+  title: string;
+  data: AnalyticsData;
+  onEdit: () => void;
+}
+
+/**
+ * Analytics card component following composition patterns
+ * @param title - Display title for the analytics entry
+ * @param data - Analytics data to display
+ * @param onEdit - Callback for edit action
+ */
+export function AnalyticsCard({ title, data, onEdit }: AnalyticsCardProps) {
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Content implementation */}
+        <Button onClick={onEdit} variant="outline">
+          Edit
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+## Design System Integration
+
+### Theme Implementation
+@theme_standards {
+  "colors": "Use CSS custom properties for theme colors",
+  "typography": "Tailwind typography scale with theme variants",
+  "spacing": "Consistent spacing using Tailwind scale",
+  "components": "Theme-aware component variants"
+}
+
+### Responsive Design Patterns
+```typescript
+/**
+ * Responsive component with mobile-first approach
+ * Uses Tailwind responsive utilities
+ */
+export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="
+      grid
+      grid-cols-1
+      md:grid-cols-2
+      lg:grid-cols-3
+      gap-4
+      p-4
+      md:p-6
+      lg:p-8
+    ">
+      {children}
+    </div>
+  );
+}
+```
+
+## Component Organization
+
+### Directory Structure
+```
+components/
+├── ui/                     # Shadcn UI components
+│   ├── button.tsx
+│   ├── card.tsx
+│   └── ...
+├── analytics/              # Domain-specific components
+│   ├── analytics-card.tsx
+│   ├── analytics-list.tsx
+│   └── analytics-editor.tsx
+├── sources/                # Source management components
+│   └── source-manager.tsx
+└── shared/                 # Reusable business components
+    ├── search-bar.tsx
+    └── pagination.tsx
+```
+
+### Component Naming and Exports
+@naming_standards [
+  {
+    "id": "component_names",
+    "convention": "PascalCase for component names (AnalyticsCard)",
+    "severity": "error"
+  },
+  {
+    "id": "file_names",
+    "convention": "kebab-case for file names (analytics-card.tsx)",
+    "severity": "error"
+  },
+  {
+    "id": "named_exports",
+    "convention": "Use named exports for all components",
+    "severity": "error"
+  },
+  {
+    "id": "prop_interfaces",
+    "convention": "Define prop interfaces with descriptive names (ComponentNameProps)",
+    "severity": "error"
+  }
+]
+
+## Interaction Patterns
+
+### Event Handling Standards
+```typescript
+/**
+ * Consistent event handling patterns
+ * Prefix handlers with 'handle' and use descriptive names
+ */
+interface FormComponentProps {
+  onSubmit: (data: FormData) => void;
+  onCancel: () => void;
+}
+
+export function FormComponent({ onSubmit, onCancel }: FormComponentProps) {
+  /**
+   * Handles form submission with validation
+   * @param event - Form submission event
+   */
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // Validation and submission logic
+    onSubmit(formData);
+  };
+
+  /**
+   * Handles form cancellation with confirmation
+   */
+  const handleCancel = () => {
+    // Confirmation logic if needed
+    onCancel();
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* Form content */}
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={handleCancel}>
+          Cancel
+        </Button>
+        <Button type="submit">
+          Submit
+        </Button>
+      </div>
+    </form>
+  );
+}
+```
+
+### State Management in Components
+@state_patterns [
+  {
+    "id": "minimal_state",
+    "rule": "Keep component state minimal and focused",
+    "severity": "warning"
+  },
+  {
+    "id": "derived_state",
+    "rule": "Prefer derived state over stored state when possible",
+    "severity": "warning"
+  },
+  {
+    "id": "controlled_components",
+    "rule": "Use controlled components for form inputs",
+    "severity": "error"
+  }
+]
+
+## Performance Optimization
+
+### Component Performance Patterns
+```typescript
+/**
+ * Optimized component with proper memoization
+ * Uses React.memo for expensive components
+ */
+import { memo } from 'react';
+
+interface ExpensiveComponentProps {
+  data: ComplexData[];
+  onItemClick: (id: string) => void;
+}
+
+/**
+ * Expensive component with memoization
+ * Only re-renders when props actually change
+ */
+export const ExpensiveComponent = memo(function ExpensiveComponent({ 
+  data, 
+  onItemClick 
+}: ExpensiveComponentProps) {
+  return (
+    <div>
+      {data.map(item => (
+        <div key={item.id} onClick={() => onItemClick(item.id)}>
+          {/* Expensive rendering logic */}
+        </div>
+      ))}
+    </div>
+  );
+});
+```
+
+### Loading and Error States
+@loading_patterns {
+  "suspense": "Use Suspense boundaries for async components",
+  "skeletons": "Implement loading skeletons matching content structure",
+  "error_boundaries": "Provide error boundaries with fallback UI",
+  "progressive_enhancement": "Design for graceful degradation"
+}
+
+## Accessibility Requirements
+
+### ARIA and Semantic HTML
+@accessibility_rules [
+  {
+    "id": "semantic_html",
+    "requirement": "Use proper semantic HTML elements",
+    "severity": "error"
+  },
+  {
+    "id": "aria_labels",
+    "requirement": "Provide ARIA labels for interactive elements",
+    "severity": "error"
+  },
+  {
+    "id": "keyboard_navigation",
+    "requirement": "Ensure full keyboard navigation support",
+    "severity": "error"
+  },
+  {
+    "id": "color_contrast",
+    "requirement": "Maintain WCAG AA color contrast ratios",
+    "severity": "warning"
+  }
+]
+
+### Focus Management
+```typescript
+/**
+ * Component with proper focus management
+ * Handles focus for accessibility
+ */
+export function SearchDialog({ isOpen, onClose }: SearchDialogProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Search</DialogTitle>
+        </DialogHeader>
+        <Input
+          ref={inputRef}
+          placeholder="Search..."
+          aria-label="Search input"
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
