@@ -27,6 +27,7 @@ interface HighlightColor {
   name: string;
   class: string;
   hex: string;
+  iconColor: string;
 }
 
 interface EditorToolbarProps {
@@ -41,10 +42,10 @@ interface EditorToolbarProps {
 }
 
 const highlightColors: HighlightColor[] = [
-  { name: 'Yellow', class: 'bg-yellow-200', hex: '#fef08a' },
-  { name: 'Blue', class: 'bg-blue-200', hex: '#bfdbfe' },
-  { name: 'Green', class: 'bg-green-200', hex: '#bbf7d0' },
-  { name: 'Pink', class: 'bg-pink-200', hex: '#fecaca' }
+  { name: 'Yellow', class: 'bg-yellow-200', hex: '#fef08a', iconColor: '#facc15' },
+  { name: 'Blue', class: 'bg-blue-200', hex: '#bfdbfe', iconColor: '#3b82f6' },
+  { name: 'Green', class: 'bg-green-200', hex: '#bbf7d0', iconColor: '#22c55e' },
+  { name: 'Pink', class: 'bg-pink-200', hex: '#fecaca', iconColor: '#ec4899' }
 ];
 
 export function EditorToolbar({
@@ -94,7 +95,7 @@ export function EditorToolbar({
         </TooltipContent>
       </Tooltip>
 
-      {/* Highlight Button with Color Picker */}
+      {/* Highlight Button with Color-Changing Icon */}
       <div className="flex">
         <Tooltip>
           <TooltipTrigger asChild>
@@ -102,16 +103,14 @@ export function EditorToolbar({
               variant="ghost"
               size="sm"
               onClick={handleHighlight}
-              className={`h-8 px-3 text-[#cccccc] border border-[#3c3c3c] border-r-0 rounded-r-none hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] ${
+              className={`h-8 px-3 border border-[#3c3c3c] border-r-0 rounded-r-none hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] ${
                 isHighlightActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
               }`}
             >
-              <div className="flex items-center gap-2">
-                <Highlighter className="w-4 h-4" />
-                <div 
-                  className={`w-2 h-2 rounded-full ${selectedHighlightColor.class} border border-[#3c3c3c]`}
-                />
-              </div>
+              <Highlighter 
+                className="w-4 h-4" 
+                style={{ color: selectedHighlightColor.iconColor }}
+              />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
