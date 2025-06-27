@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
-  Bold, 
   Highlighter, 
   Minimize2, 
   Eraser, 
@@ -75,7 +74,7 @@ export function EditorToolbar({
 
   return (
     <div className="flex items-center gap-1 p-2 bg-[#2d2d30] border-b border-[#3c3c3c]">
-      {/* Emphasis Button */}
+      {/* Emphasis Button with Underlined B */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -86,7 +85,7 @@ export function EditorToolbar({
               isEmphasisActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
             }`}
           >
-            <Bold className="w-4 h-4" />
+            <span className="font-bold text-sm underline">B</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
