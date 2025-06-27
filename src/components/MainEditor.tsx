@@ -1,5 +1,6 @@
 
-import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
+
+import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus, Telescope } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
 
@@ -68,13 +69,16 @@ export function MainEditor({ activeView }: MainEditorProps) {
             }`}
             onClick={() => setActiveTab(tab.id)}
           >
-            <input
-              type="text"
-              value={tab.title}
-              onChange={(e) => updateTabTitle(tab.id, e.target.value)}
-              className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
-              onKeyDown={(e) => e.stopPropagation()}
-            />
+            <div className="flex items-center gap-1">
+              <Telescope className="w-3 h-3 text-[#4fc3f7]" />
+              <input
+                type="text"
+                value={tab.title}
+                onChange={(e) => updateTabTitle(tab.id, e.target.value)}
+                className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+            </div>
             <button 
               onClick={(e) => {
                 e.stopPropagation();
@@ -114,3 +118,4 @@ export function MainEditor({ activeView }: MainEditorProps) {
     </div>
   );
 }
+
