@@ -1,4 +1,3 @@
-
 import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
@@ -94,20 +93,21 @@ export function MainEditor({ activeView }: MainEditorProps) {
         </button>
       </div>
 
-      {/* Editor Content with Integrated Toolbar */}
+      {/* Editor Content */}
       <div className="flex-1 bg-[#1e1e1e] flex flex-col">
         <div className="p-6 pb-0">
           <div className="max-w-4xl">
             <h1 className="text-2xl font-light text-[#cccccc] mb-6">New Doc</h1>
+            
+            {/* Formatting Toolbar */}
+            <div className="mb-4">
+              <EditorWithToolbar />
+            </div>
+            
             <div className="text-sm text-[#6a6a6a] mb-4">
-              Type your thoughts, use @ to mention files
+              Type your thoughts, use @ to mention files, / to use agent
             </div>
           </div>
-        </div>
-        
-        {/* Text Editor with Toolbar */}
-        <div className="flex-1">
-          <EditorWithToolbar />
         </div>
       </div>
     </div>
