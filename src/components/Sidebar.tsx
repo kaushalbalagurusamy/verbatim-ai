@@ -1,3 +1,4 @@
+
 import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code, AudioWaveform } from 'lucide-react';
 import { useState } from 'react';
 import { FileTree } from './FileTree';
@@ -20,7 +21,7 @@ export function Sidebar({
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeView, setActiveView] = useState<'document' | 'pen' | 'source' | 'recordings' | null>(null);
+  const [activeView, setActiveView] = useState<'document' | 'pen' | 'source' | 'recordings' | null>('document');
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -105,37 +106,8 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* File Tree or Original Navigation */}
-      {activeView ? (
-        <FileTree mode={activeView} />
-      ) : (
-        <div className="flex-1 overflow-y-auto">
-          {/* LOGOS-AI Section */}
-          <div className="border-b border-[#3c3c3c]">
-            
-          </div>
-
-          {/* NOTEPADS Section */}
-          <div className="border-b border-[#3c3c3c]">
-            
-            {expandedSections.notepads && (
-              <div className="ml-4">
-                
-              </div>
-            )}
-          </div>
-
-          {/* OUTLINE Section */}
-          <div className="border-b border-[#3c3c3c]">
-            
-          </div>
-
-          {/* TIMELINE Section */}
-          <div>
-            
-          </div>
-        </div>
-      )}
+      {/* File Tree */}
+      <FileTree mode={activeView || 'document'} />
     </div>
   );
 }
