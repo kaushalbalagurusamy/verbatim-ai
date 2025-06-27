@@ -7,6 +7,7 @@ import { ChatPanel } from '@/components/ChatPanel';
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatCollapsed, setChatCollapsed] = useState(false);
+  const [activeView, setActiveView] = useState<'document' | 'pen' | 'source' | 'recordings' | null>('document');
 
   return (
     <div className="min-h-screen bg-[#1e1e1e] text-[#cccccc] flex">
@@ -14,17 +15,20 @@ const Index = () => {
       <Sidebar 
         collapsed={sidebarCollapsed} 
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        activeView={activeView}
+        onViewChange={setActiveView}
       />
       
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <MainEditor />
+        <MainEditor activeView={activeView} />
       </div>
       
       {/* Chat Panel */}
       <ChatPanel 
         collapsed={chatCollapsed}
         onToggle={() => setChatCollapsed(!chatCollapsed)}
+        activeView={activeView}
       />
     </div>
   );
