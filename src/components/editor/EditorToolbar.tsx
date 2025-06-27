@@ -76,7 +76,7 @@ export function EditorToolbar({
 
   return (
     <div className="flex items-center gap-1 p-2 bg-[#2d2d30] border-b border-[#3c3c3c]">
-      {/* Emphasis Button with Underlined Bold Icon */}
+      {/* Emphasis Button with Bold Icon */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -87,7 +87,7 @@ export function EditorToolbar({
               isEmphasisActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
             }`}
           >
-            <Bold className="w-4 h-4 underline" />
+            <Bold className="w-4 h-4" style={{ textDecoration: 'underline' }} />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
@@ -143,9 +143,6 @@ export function EditorToolbar({
         </DropdownMenu>
       </div>
 
-      {/* Separator */}
-      <div className="w-px h-6 bg-[#3c3c3c] mx-1" />
-
       {/* Minimize Button */}
       <Tooltip>
         <TooltipTrigger asChild>
@@ -179,9 +176,6 @@ export function EditorToolbar({
           <p>Clear Formatting (Ctrl+Shift+C)</p>
         </TooltipContent>
       </Tooltip>
-
-      {/* Separator */}
-      <div className="w-px h-6 bg-[#3c3c3c] mx-1" />
 
       {/* Heading Button */}
       <Tooltip>
