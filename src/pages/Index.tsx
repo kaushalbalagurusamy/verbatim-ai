@@ -15,8 +15,6 @@ const Index = () => {
       <Sidebar 
         collapsed={sidebarCollapsed} 
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        activeView={activeView}
-        onViewChange={setActiveView}
       />
       
       {/* Main Content */}
