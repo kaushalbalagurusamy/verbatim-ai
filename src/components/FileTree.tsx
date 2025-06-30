@@ -3,7 +3,7 @@ import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
 import { useState } from 'react';
 
 interface FileTreeProps {
-  mode: 'document' | 'pen' | 'source' | 'recordings';
+  mode: 'document' | 'research' | 'pen' | 'source' | 'recordings';
 }
 
 interface FileNode {
@@ -68,6 +68,8 @@ export function FileTree({ mode }: FileTreeProps) {
     switch (mode) {
       case 'document':
         return 'Documents';
+      case 'research':
+        return 'Research';
       case 'pen':
         return 'Notepads';
       case 'source':
