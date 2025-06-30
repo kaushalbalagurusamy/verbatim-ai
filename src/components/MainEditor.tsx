@@ -1,3 +1,4 @@
+
 import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
@@ -9,7 +10,7 @@ interface MainEditorProps {
 export function MainEditor({ activeView }: MainEditorProps) {
   const [tabs, setTabs] = useState([{
     id: 1,
-    title: 'New Notepad',
+    title: 'New Document',
     active: true,
     modified: false
   }]);
@@ -37,11 +38,11 @@ export function MainEditor({ activeView }: MainEditorProps) {
       case 'pen':
         return 'New Analytic';
       case 'source':
-        return 'New Argument';
+        return 'New Source';
       case 'recordings':
         return 'New Recording';
       default:
-        return 'New Notepad';
+        return 'New Document';
     }
   };
 
