@@ -1,10 +1,9 @@
-
 import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
 
 interface MainEditorProps {
-  activeView: 'document' | 'pen' | 'source' | 'recordings' | null;
+  activeView: 'document' | 'research' | 'pen' | 'source' | 'recordings' | null;
 }
 
 export function MainEditor({ activeView }: MainEditorProps) {
@@ -35,6 +34,8 @@ export function MainEditor({ activeView }: MainEditorProps) {
     switch (activeView) {
       case 'document':
         return 'New Document';
+      case 'research':
+        return 'New Deep Research';
       case 'pen':
         return 'New Analytic';
       case 'source':

@@ -7,7 +7,7 @@ import { ChatPanel } from '@/components/ChatPanel';
 const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatCollapsed, setChatCollapsed] = useState(false);
-  const [activeView, setActiveView] = useState<'document' | 'pen' | 'source' | 'recordings' | null>('document');
+  const [activeView, setActiveView] = useState<'document' | 'research' | 'pen' | 'source' | 'recordings' | null>('document');
 
   return (
     <div className="min-h-screen bg-[#1e1e1e] text-[#cccccc] flex">
