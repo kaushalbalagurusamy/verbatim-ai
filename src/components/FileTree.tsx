@@ -81,6 +81,23 @@ export function FileTree({ mode }: FileTreeProps) {
     }
   };
 
+  const getEmptyMessage = () => {
+    switch (mode) {
+      case 'document':
+        return 'No documents found';
+      case 'research':
+        return 'No research found';
+      case 'pen':
+        return 'No notepads found';
+      case 'source':
+        return 'No source files found';
+      case 'recordings':
+        return 'No recordings found';
+      default:
+        return 'No files found';
+    }
+  };
+
   // Empty tree structure - backend will populate this
   const emptyTree: FileNode[] = [];
 
@@ -93,7 +110,7 @@ export function FileTree({ mode }: FileTreeProps) {
         <div className="space-y-1">
           {emptyTree.length === 0 ? (
             <div className="text-xs text-[#6a6a6a] italic px-2 py-1">
-              No files found
+              {getEmptyMessage()}
             </div>
           ) : (
             emptyTree.map(node => renderNode(node))
