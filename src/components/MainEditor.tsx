@@ -58,7 +58,7 @@ export function MainEditor({ activeView }: MainEditorProps) {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div data-testid="main-editor" className="flex flex-col h-screen">
       {/* Tab Bar */}
       <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center">
         {tabs.map(tab => (
@@ -97,19 +97,17 @@ export function MainEditor({ activeView }: MainEditorProps) {
 
       {/* Editor Content */}
       <div className="flex-1 bg-[#1e1e1e] flex flex-col">
-        <div className="p-6 pb-0">
+        <div className="p-6 pb-4">
           <div className="max-w-4xl">
-            <h1 className="text-2xl font-light text-[#cccccc] mb-6">New Doc</h1>
-            
-            {/* Formatting Toolbar */}
-            <div className="mb-4">
-              <EditorWithToolbar />
-            </div>
-            
-            <div className="text-sm text-[#6a6a6a] mb-4">
-              Type anything, use @ to mention files, use / to spawn agent
-            </div>
+            <h1 className="text-2xl font-light text-[#cccccc] mb-6">
+              {tabs.find(tab => tab.active)?.title || 'New Document'}
+            </h1>
           </div>
+        </div>
+        
+        {/* Full Editor with Toolbar */}
+        <div className="flex-1 flex flex-col">
+          <EditorWithToolbar />
         </div>
       </div>
     </div>

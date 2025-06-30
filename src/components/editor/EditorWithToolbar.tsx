@@ -6,6 +6,11 @@
  */
 import React, { useState } from 'react';
 import { EditorToolbar } from './EditorToolbar';
+import { Editor } from '../Editor';
+import { useEditor } from '@/hooks/useEditor';
+import { useCreateDocument } from '@/hooks/useDocuments';
+import { createNewDocument } from '@/utils/document.utils';
+import type { HighlightColor } from '@/types/document.types';
 
 interface EditorState {
   isEmphasisActive: boolean;
@@ -13,7 +18,34 @@ interface EditorState {
   currentHeadingLevel: number;
 }
 
-export function EditorWithToolbar() {
+interface EditorWithToolbarProps {
+  documentId?: string;
+  initialTitle?: string;
+}
+
+export function EditorWithToolbar({ documentId, initialTitle = 'New Document' }: EditorWithToolbarProps) {
+  // Create a document (either new or loaded)
+  const [document, setDocument] = useState(() => createNewDocument(initialTitle));
+  const createDocument = useCreateDocument();
+  
+  const {
+    content,
+    isModified,
+    isSaving,
+    onContentChange,
+    onSelectionChange,
+    hasSelection,
+    applyBold,
+    applyHighlight,
+    applyMinimize,
+    clearFormatting,
+    setHeading
+  } = useEditor({
+    document,
+    onDocumentChange: setDocument,
+    autoSave: true
+  });
+
   const [editorState, setEditorState] = useState<EditorState>({
     isEmphasisActive: false,
     isHighlightActive: false,
@@ -25,7 +57,7 @@ export function EditorWithToolbar() {
       ...prev,
       isEmphasisActive: !prev.isEmphasisActive
     }));
-    console.log('Emphasis toggled');
+    applyBold();
   };
 
   const handleHighlight = (color: string) => {
@@ -33,11 +65,11 @@ export function EditorWithToolbar() {
       ...prev,
       isHighlightActive: !prev.isHighlightActive
     }));
-    console.log('Highlight applied with color:', color);
+    applyHighlight(color as HighlightColor);
   };
 
   const handleMinimize = () => {
-    console.log('Minimize formatting');
+    applyMinimize();
   };
 
   const handleClear = () => {
@@ -46,7 +78,7 @@ export function EditorWithToolbar() {
       isEmphasisActive: false,
       isHighlightActive: false
     }));
-    console.log('Clear all formatting');
+    clearFormatting();
   };
 
   const handleHeading = (level: number) => {
@@ -54,19 +86,38 @@ export function EditorWithToolbar() {
       ...prev,
       currentHeadingLevel: level
     }));
-    console.log('Heading level changed to:', level);
+    setHeading(level as 1 | 2 | 3 | 4 | 5 | 6);
   };
 
   return (
-    <EditorToolbar 
-      onEmphasis={handleEmphasis} 
-      onHighlight={handleHighlight} 
-      onMinimize={handleMinimize} 
-      onClear={handleClear} 
-      onHeading={handleHeading} 
-      isEmphasisActive={editorState.isEmphasisActive} 
-      isHighlightActive={editorState.isHighlightActive} 
-      currentHeadingLevel={editorState.currentHeadingLevel} 
-    />
+    <div className="flex flex-col h-full">
+      <EditorToolbar 
+        onEmphasis={handleEmphasis} 
+        onHighlight={handleHighlight} 
+        onMinimize={handleMinimize} 
+        onClear={handleClear} 
+        onHeading={handleHeading} 
+        isEmphasisActive={editorState.isEmphasisActive} 
+        isHighlightActive={editorState.isHighlightActive} 
+        currentHeadingLevel={editorState.currentHeadingLevel}
+      />
+      
+      <Editor
+        content={content}
+        onChange={onContentChange}
+        onSelectionChange={onSelectionChange}
+        autoFocus={true}
+      />
+      
+      {(isModified || isSaving) && (
+        <div className="absolute top-2 right-2 text-xs">
+          {isSaving ? (
+            <span className="text-[#4fc3f7]">Saving...</span>
+          ) : isModified ? (
+            <span className="text-[#ffa726]">Modified</span>
+          ) : null}
+        </div>
+      )}
+    </div>
   );
 }

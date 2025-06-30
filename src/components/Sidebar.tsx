@@ -47,7 +47,7 @@ export function Sidebar({
   }
 
   return (
-    <div className="w-64 bg-[#252526] border-r border-[#3c3c3c] flex flex-col">
+    <div data-testid="sidebar" className="w-64 bg-[#252526] border-r border-[#3c3c3c] flex flex-col">
       {/* Header */}
       <div className="p-3 border-b border-[#3c3c3c]">
         <div className="flex items-center gap-2">

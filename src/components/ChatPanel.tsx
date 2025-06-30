@@ -72,7 +72,7 @@ export function ChatPanel({
 
   const activeTab = tabs.find(tab => tab.active);
 
-  return <div className="w-80 bg-[#252526] border-l border-[#3c3c3c] flex flex-col">
+  return <div data-testid="chat-panel" className="w-80 bg-[#252526] border-l border-[#3c3c3c] flex flex-col">
       {/* Chat Header */}
       <div className="h-12 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
