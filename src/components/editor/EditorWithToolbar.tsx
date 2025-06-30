@@ -4,7 +4,7 @@
  * Integrates EditorToolbar with a text editing area
  * Handles all formatting state and actions
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { EditorToolbar } from './EditorToolbar';
 import { Editor } from '../Editor';
 import { useEditor } from '@/hooks/useEditor';
@@ -21,13 +21,33 @@ interface EditorState {
 interface EditorWithToolbarProps {
   documentId?: string;
   initialTitle?: string;
+  onTitleChange?: (title: string) => void;
+  onTitleChangeHandlerReady?: (handler: (title: string) => void) => void;
 }
 
-export function EditorWithToolbar({ documentId, initialTitle = 'New Document' }: EditorWithToolbarProps) {
+export function EditorWithToolbar({ documentId, initialTitle = 'New Document', onTitleChange, onTitleChangeHandlerReady }: EditorWithToolbarProps) {
   // Create a document (either new or loaded)
   const [document, setDocument] = useState(() => createNewDocument(initialTitle));
   const createDocument = useCreateDocument();
   
+  // Handle document title changes
+  const handleDocumentTitleChange = useCallback((newTitle: string) => {
+    const updatedDocument = {
+      ...document,
+      title: newTitle,
+      updatedAt: new Date().toISOString(),
+      isModified: true,
+      version: document.version + 1
+    };
+    setDocument(updatedDocument);
+    onTitleChange?.(newTitle);
+  }, [document, onTitleChange]);
+
+  // Provide the title change handler to parent
+  useEffect(() => {
+    onTitleChangeHandlerReady?.(handleDocumentTitleChange);
+  }, [onTitleChangeHandlerReady, handleDocumentTitleChange]);
+
   const {
     content,
     isModified,

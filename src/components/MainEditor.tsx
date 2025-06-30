@@ -4,15 +4,19 @@ import { EditorWithToolbar } from './editor/EditorWithToolbar';
 
 interface MainEditorProps {
   activeView: 'document' | 'research' | 'pen' | 'source' | 'recordings' | null;
+  onDocumentTitleChange?: (title: string) => void;
 }
 
-export function MainEditor({ activeView }: MainEditorProps) {
+export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProps) {
   const [tabs, setTabs] = useState([{
     id: 1,
     title: 'New Document',
     active: true,
     modified: false
   }]);
+
+  // Reference to the EditorWithToolbar's title change function
+  const [editorTitleChangeHandler, setEditorTitleChangeHandler] = useState<((title: string) => void) | null>(null);
 
   const closeTab = (tabId: number) => {
     setTabs(tabs.filter(tab => tab.id !== tabId));
@@ -99,15 +103,35 @@ export function MainEditor({ activeView }: MainEditorProps) {
       <div className="flex-1 bg-[#1e1e1e] flex flex-col">
         <div className="p-6 pb-4">
           <div className="max-w-4xl">
-            <h1 className="text-2xl font-light text-[#cccccc] mb-6">
-              {tabs.find(tab => tab.active)?.title || 'New Document'}
-            </h1>
+            <input
+              type="text"
+              value={tabs.find(tab => tab.active)?.title || 'New Document'}
+              onChange={(e) => {
+                const activeTab = tabs.find(tab => tab.active);
+                if (activeTab) {
+                  updateTabTitle(activeTab.id, e.target.value);
+                  // Also update the document title via the editor
+                  editorTitleChangeHandler?.(e.target.value);
+                }
+              }}
+              className="text-2xl font-light text-[#cccccc] mb-6 bg-transparent border-none outline-none w-full"
+              placeholder="New Document"
+            />
           </div>
         </div>
         
         {/* Full Editor with Toolbar */}
         <div className="flex-1 flex flex-col">
-          <EditorWithToolbar />
+          <EditorWithToolbar 
+            initialTitle={tabs.find(tab => tab.active)?.title || 'New Document'}
+            onTitleChange={(newTitle) => {
+              const activeTab = tabs.find(tab => tab.active);
+              if (activeTab) {
+                updateTabTitle(activeTab.id, newTitle);
+              }
+            }}
+            onTitleChangeHandlerReady={setEditorTitleChangeHandler}
+          />
         </div>
       </div>
     </div>
