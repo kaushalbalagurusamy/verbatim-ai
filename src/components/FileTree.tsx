@@ -71,7 +71,7 @@ export function FileTree({ mode }: FileTreeProps) {
       case 'research':
         return 'Research';
       case 'pen':
-        return 'Notepads';
+        return 'Analytics';
       case 'source':
         return 'Source Files';
       case 'recordings':
@@ -88,7 +88,7 @@ export function FileTree({ mode }: FileTreeProps) {
       case 'research':
         return 'No research found';
       case 'pen':
-        return 'No notepads found';
+        return 'No analytics found';
       case 'source':
         return 'No source files found';
       case 'recordings':
