@@ -1,4 +1,3 @@
-
 import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code, AudioWaveform, Telescope } from 'lucide-react';
 import { useState } from 'react';
 import { FileTree } from './FileTree';
@@ -59,7 +58,10 @@ export function Sidebar({
       {/* Icon Bar */}
       <div className="h-10 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-center gap-3">
         <button 
-          className="p-2 rounded transition-colors hover:bg-[#383838] text-[#cccccc]"
+          onClick={() => handleIconClick('document')}
+          className={`p-2 rounded transition-colors ${
+            activeView === 'document' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
+          }`}
         >
           <Telescope className="w-4 h-4" />
         </button>
