@@ -127,36 +127,34 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
 
   return (
     <div data-testid="main-editor" className="flex flex-col h-full overflow-hidden">
-      {/* Tab Bar - restored original styling */}
-      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center flex-shrink-0">
-        <div className="flex items-center overflow-x-auto flex-1 min-w-0">
-          {tabs.map(tab => (
-            <div 
-              key={tab.id} 
-              className={`flex items-center gap-2 px-3 h-full border-r border-[#3c3c3c] min-w-0 max-w-xs cursor-pointer flex-shrink-0 ${
-                tab.active ? 'bg-[#1e1e1e] text-[#ffffff]' : 'bg-[#2d2d30] text-[#cccccc] hover:bg-[#383838]'
-              }`}
-              onClick={() => setActiveTab(tab.id)}
+      {/* Tab Bar - Updated to match chat panel styling */}
+      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0">
+        {tabs.map(tab => (
+          <div 
+            key={tab.id} 
+            className={`flex items-center gap-2 px-3 h-full border-r border-[#3c3c3c] min-w-0 max-w-xs cursor-pointer flex-shrink-0 ${
+              tab.active ? 'bg-[#252526] text-[#ffffff]' : 'bg-[#2d2d30] text-[#cccccc] hover:bg-[#383838]'
+            }`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            <input
+              type="text"
+              value={tab.title}
+              onChange={(e) => updateTabTitle(tab.id, e.target.value)}
+              className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
+              onKeyDown={(e) => e.stopPropagation()}
+            />
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                closeTab(tab.id);
+              }} 
+              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
             >
-              <input
-                type="text"
-                value={tab.title}
-                onChange={(e) => updateTabTitle(tab.id, e.target.value)}
-                className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
-                onKeyDown={(e) => e.stopPropagation()}
-              />
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeTab(tab.id);
-                }} 
-                className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-        </div>
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
         <button 
           onClick={addNewTab}
           className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors flex-shrink-0"
