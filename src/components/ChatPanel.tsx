@@ -1,3 +1,4 @@
+
 import { MessageSquare, Settings, Minimize2, Plus, Send, Paperclip, Mic, MoreHorizontal, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -87,8 +88,8 @@ export function ChatPanel({
 
   return <div data-testid="chat-panel" className="bg-[#252526] border-l border-[#3c3c3c] flex flex-col h-full min-w-0">
       {/* Tab Bar */}
-      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0 justify-between px-3">
-        <div className="flex items-center overflow-x-auto">
+      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0">
+        <div className="flex items-center flex-1 overflow-x-auto">
           {tabs.map(tab => (
             <div 
               key={tab.id} 
@@ -118,7 +119,7 @@ export function ChatPanel({
         </div>
         <button 
           onClick={addNewTab}
-          className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors flex-shrink-0 ml-2"
+          className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors flex-shrink-0"
         >
           <Plus className="w-4 h-4" />
         </button>
