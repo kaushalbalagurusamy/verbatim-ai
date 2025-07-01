@@ -28,9 +28,9 @@ export function Sidebar({
   const iconBarRef = useRef<HTMLDivElement>(null);
 
   const icons = [
-    { key: 'research', component: Telescope, view: 'research' as const },
-    { key: 'document', component: File, view: 'document' as const },
     { key: 'flow', component: Table, view: 'flow' as const },
+    { key: 'document', component: File, view: 'document' as const },
+    { key: 'research', component: Telescope, view: 'research' as const },
     { key: 'pen', component: Pen, view: 'pen' as const },
     { key: 'source', component: Code, view: 'source' as const },
     { key: 'recordings', component: AudioWaveform, view: 'recordings' as const },
@@ -92,7 +92,7 @@ export function Sidebar({
   }
 
   return (
-    <div data-testid="sidebar" className="bg-[#252526] border-r border-[#3c3c3c] flex flex-col h-full">
+    <div data-testid="sidebar" className="bg-[#252526] border-r border-[#3c3c3c] flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="p-3 border-b border-[#3c3c3c] flex-shrink-0">
         <div className="flex items-center gap-2">

@@ -72,14 +72,14 @@ export function ChatPanel({
 
   const activeTab = tabs.find(tab => tab.active);
 
-  return <div data-testid="chat-panel" className="w-80 bg-[#252526] border-l border-[#3c3c3c] flex flex-col">
+  return <div data-testid="chat-panel" className="bg-[#252526] border-l border-[#3c3c3c] flex flex-col h-full min-w-0">
       {/* Chat Header */}
-      <div className="h-12 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-between px-4">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-[#4fc3f7]" />
-          <span className="text-sm font-medium text-[#cccccc]">Chat</span>
+      <div className="h-12 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-between px-4 flex-shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <MessageSquare className="w-4 h-4 text-[#4fc3f7] flex-shrink-0" />
+          <span className="text-sm font-medium text-[#cccccc] truncate">Chat</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           <button onClick={addNewTab} className="p-1 hover:bg-[#4c4c4c] rounded">
             <Plus className="w-4 h-4 text-[#cccccc]" />
           </button>
@@ -93,11 +93,11 @@ export function ChatPanel({
       </div>
 
       {/* Tab Bar */}
-      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto">
+      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0">
         {tabs.map(tab => (
           <div 
             key={tab.id} 
-            className={`flex items-center gap-2 px-3 h-full border-r border-[#3c3c3c] min-w-0 max-w-xs cursor-pointer ${
+            className={`flex items-center gap-2 px-3 h-full border-r border-[#3c3c3c] min-w-0 max-w-xs cursor-pointer flex-shrink-0 ${
               tab.active ? 'bg-[#252526] text-[#ffffff]' : 'bg-[#2d2d30] text-[#cccccc] hover:bg-[#383838]'
             }`}
             onClick={() => setActiveTab(tab.id)}
@@ -114,7 +114,7 @@ export function ChatPanel({
                 e.stopPropagation();
                 closeTab(tab.id);
               }} 
-              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity"
+              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
             >
               <X className="w-3 h-3" />
             </button>
@@ -122,20 +122,22 @@ export function ChatPanel({
         ))}
       </div>
 
-      {/* Chat Content */}
-      <div className="flex-1 p-4">
-        {activeTab && (
-          <div className="text-sm text-[#6a6a6a] mb-4">
-            {activeTab.title}
-          </div>
-        )}
+      {/* Chat Content - Scrollable */}
+      <div className="flex-1 overflow-auto min-h-0">
+        <div className="p-4">
+          {activeTab && (
+            <div className="text-sm text-[#6a6a6a] mb-4">
+              {activeTab.title}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Chat Input */}
-      <div className="p-4 border-t border-[#3c3c3c]">
+      {/* Chat Input - Fixed at bottom */}
+      <div className="p-4 border-t border-[#3c3c3c] flex-shrink-0">
         <div className="relative">
           <div className="flex items-center gap-2 bg-[#3c3c3c] rounded-lg p-2">
-            <button className="p-1 hover:bg-[#4c4c4c] rounded">
+            <button className="p-1 hover:bg-[#4c4c4c] rounded flex-shrink-0">
               <Paperclip className="w-4 h-4 text-[#cccccc]" />
             </button>
             <input 
@@ -143,18 +145,18 @@ export function ChatPanel({
               value={message} 
               onChange={e => setMessage(e.target.value)} 
               placeholder="Type a message..." 
-              className="flex-1 bg-transparent text-[#cccccc] text-sm outline-none placeholder-[#6a6a6a]" 
+              className="flex-1 bg-transparent text-[#cccccc] text-sm outline-none placeholder-[#6a6a6a] min-w-0" 
             />
-            <button className="p-1 hover:bg-[#4c4c4c] rounded">
+            <button className="p-1 hover:bg-[#4c4c4c] rounded flex-shrink-0">
               <Mic className="w-4 h-4 text-[#cccccc]" />
             </button>
-            <button className="p-1 hover:bg-[#4c4c4c] rounded">
+            <button className="p-1 hover:bg-[#4c4c4c] rounded flex-shrink-0">
               <Send className="w-4 h-4 text-[#cccccc]" />
             </button>
           </div>
         </div>
         
-        {/* Agent Info - moved below input */}
+        {/* Agent Info */}
         <div className="flex items-center gap-2 mt-3">
           <span className="text-xs text-[#6a6a6a]">∞ Agent</span>
         </div>
