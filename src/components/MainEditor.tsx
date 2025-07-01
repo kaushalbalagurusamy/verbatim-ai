@@ -21,20 +21,12 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
   const [editorTitleChangeHandler, setEditorTitleChangeHandler] = useState<((title: string) => void) | null>(null);
 
   const closeTab = (tabId: number) => {
+    const tabIndex = tabs.findIndex(tab => tab.id === tabId);
+    const isActive = tabs[tabIndex]?.active;
     const newTabs = tabs.filter(tab => tab.id !== tabId);
     
-    if (newTabs.length === 0) {
-      // If no tabs left, clear the tabs array completely
-      setTabs([]);
-      return;
-    }
-    
-    const closedTab = tabs.find(tab => tab.id === tabId);
-    const isActive = closedTab?.active;
-    
-    // If we closed the active tab, make another tab active
-    if (isActive) {
-      const tabIndex = tabs.findIndex(tab => tab.id === tabId);
+    // If we closed the active tab and there are still tabs, make another tab active
+    if (isActive && newTabs.length > 0) {
       const newActiveIndex = Math.min(tabIndex, newTabs.length - 1);
       newTabs[newActiveIndex].active = true;
     }

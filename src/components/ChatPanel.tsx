@@ -1,3 +1,4 @@
+
 import { MessageSquare, Settings, Minimize2, Plus, Send, Paperclip, Mic, MoreHorizontal, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -86,6 +87,25 @@ export function ChatPanel({
   const activeTab = tabs.find(tab => tab.active);
 
   return <div data-testid="chat-panel" className="bg-[#252526] border-l border-[#3c3c3c] flex flex-col h-full min-w-0">
+      {/* Chat Header */}
+      <div className="h-12 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-between px-4 flex-shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <MessageSquare className="w-4 h-4 text-[#4fc3f7] flex-shrink-0" />
+          <span className="text-sm font-medium text-[#cccccc] truncate">Chat</span>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button onClick={addNewTab} className="p-1 hover:bg-[#4c4c4c] rounded">
+            <Plus className="w-4 h-4 text-[#cccccc]" />
+          </button>
+          <button className="p-1 hover:bg-[#4c4c4c] rounded">
+            <Settings className="w-4 h-4 text-[#cccccc]" />
+          </button>
+          <button className="p-1 hover:bg-[#4c4c4c] rounded">
+            <MoreHorizontal className="w-4 h-4 text-[#cccccc]" />
+          </button>
+        </div>
+      </div>
+
       {/* Tab Bar */}
       <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0">
         {tabs.map(tab => (
@@ -114,12 +134,6 @@ export function ChatPanel({
             </button>
           </div>
         ))}
-        <button 
-          onClick={addNewTab}
-          className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors flex-shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
       </div>
 
       {/* Chat Content - Scrollable */}

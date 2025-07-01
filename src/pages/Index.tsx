@@ -3,63 +3,41 @@ import { useState } from 'react';
 import { Sidebar } from '@/components/Sidebar';
 import { MainEditor } from '@/components/MainEditor';
 import { ChatPanel } from '@/components/ChatPanel';
-import { TopBar } from '@/components/TopBar';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null>('document');
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [chatVisible, setChatVisible] = useState(true);
 
   return (
-    <div className="h-screen bg-[#1e1e1e] text-[#cccccc] overflow-hidden flex flex-col">
-      {/* Unified Top Bar */}
-      <TopBar 
-        onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
-        onToggleChat={() => setChatVisible(!chatVisible)}
-        sidebarVisible={sidebarVisible}
-        chatVisible={chatVisible}
-      />
-      
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Sidebar Panel */}
-          {sidebarVisible && (
-            <>
-              <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
-                <Sidebar 
-                  collapsed={false} 
-                  onToggle={() => {}}
-                  onActiveViewChange={setActiveView}
-                />
-              </ResizablePanel>
-              
-              <ResizableHandle />
-            </>
-          )}
-          
-          {/* Main Editor Panel */}
-          <ResizablePanel defaultSize={chatVisible ? 60 : 80} minSize={40}>
-            <MainEditor activeView={activeView} />
-          </ResizablePanel>
-          
-          {/* Chat Panel */}
-          {chatVisible && (
-            <>
-              <ResizableHandle />
-              
-              <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
-                <ChatPanel 
-                  collapsed={false}
-                  onToggle={() => {}}
-                  activeView={activeView}
-                />
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
-      </div>
+    <div className="h-screen bg-[#1e1e1e] text-[#cccccc] overflow-hidden">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Sidebar Panel */}
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+          <Sidebar 
+            collapsed={false} 
+            onToggle={() => {}}
+            onActiveViewChange={setActiveView}
+          />
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        {/* Main Editor Panel */}
+        <ResizablePanel defaultSize={60} minSize={40}>
+          <MainEditor activeView={activeView} />
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        {/* Chat Panel */}
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+          <ChatPanel 
+            collapsed={false}
+            onToggle={() => {}}
+            activeView={activeView}
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 };
