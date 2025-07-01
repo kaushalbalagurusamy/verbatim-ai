@@ -87,9 +87,9 @@ export function ChatPanel({
   const activeTab = tabs.find(tab => tab.active);
 
   return <div data-testid="chat-panel" className="bg-[#252526] border-l border-[#3c3c3c] flex flex-col h-full min-w-0">
-      {/* Tab Bar */}
-      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0">
-        <div className="flex items-center flex-1 overflow-x-auto">
+      {/* Tab Bar - Fixed to be flush */}
+      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-stretch overflow-x-auto flex-shrink-0">
+        <div className="flex items-stretch flex-1 overflow-x-auto">
           {tabs.map(tab => (
             <div 
               key={tab.id} 
@@ -119,7 +119,7 @@ export function ChatPanel({
         </div>
         <button 
           onClick={addNewTab}
-          className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors flex-shrink-0"
+          className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors flex-shrink-0 border-r-0"
         >
           <Plus className="w-4 h-4" />
         </button>
