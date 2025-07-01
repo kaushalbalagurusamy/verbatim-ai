@@ -1,3 +1,4 @@
+
 import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
@@ -20,13 +21,11 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
   const [editorTitleChangeHandler, setEditorTitleChangeHandler] = useState<((title: string) => void) | null>(null);
 
   const closeTab = (tabId: number) => {
-    if (tabs.length === 1) return; // Don't close the last tab
-    
     const tabIndex = tabs.findIndex(tab => tab.id === tabId);
     const isActive = tabs[tabIndex]?.active;
     const newTabs = tabs.filter(tab => tab.id !== tabId);
     
-    // If we closed the active tab, make another tab active
+    // If we closed the active tab and there are still tabs, make another tab active
     if (isActive && newTabs.length > 0) {
       const newActiveIndex = Math.min(tabIndex, newTabs.length - 1);
       newTabs[newActiveIndex].active = true;
@@ -36,7 +35,7 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
   };
 
   const addNewTab = () => {
-    const newId = Math.max(...tabs.map(t => t.id)) + 1;
+    const newId = tabs.length > 0 ? Math.max(...tabs.map(t => t.id)) + 1 : 1;
     const newTabTitle = getNewTabTitle();
     const newTab = {
       id: newId,
@@ -77,6 +76,18 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
   };
 
   const renderEditorContent = () => {
+    // Show "Nothing Open" message when no tabs
+    if (tabs.length === 0) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-[#6a6a6a] text-lg mb-2">Nothing Open</div>
+            <div className="text-[#4a4a4a] text-sm">Create a new tab to get started</div>
+          </div>
+        </div>
+      );
+    }
+
     const activeTab = tabs.find(tab => tab.active);
     const tabTitle = activeTab?.title || 'New Document';
 
@@ -138,7 +149,7 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
 
   return (
     <div data-testid="main-editor" className="flex flex-col h-full overflow-hidden">
-      {/* Tab Bar - Updated to match chat panel styling */}
+      {/* Tab Bar */}
       <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0">
         {tabs.map(tab => (
           <div 
@@ -155,17 +166,15 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
               className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
               onKeyDown={(e) => e.stopPropagation()}
             />
-            {tabs.length > 1 && (
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeTab(tab.id);
-                }} 
-                className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                closeTab(tab.id);
+              }} 
+              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
+            >
+              <X className="w-3 h-3" />
+            </button>
           </div>
         ))}
         <button 

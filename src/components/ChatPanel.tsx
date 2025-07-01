@@ -1,3 +1,4 @@
+
 import { MessageSquare, Settings, Minimize2, Plus, Send, Paperclip, Mic, MoreHorizontal, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -21,13 +22,11 @@ export function ChatPanel({
   }]);
 
   const closeTab = (tabId: number) => {
-    if (tabs.length === 1) return; // Don't close the last tab
-    
     const tabIndex = tabs.findIndex(tab => tab.id === tabId);
     const isActive = tabs[tabIndex]?.active;
     const newTabs = tabs.filter(tab => tab.id !== tabId);
     
-    // If we closed the active tab, make another tab active
+    // If we closed the active tab and there are still tabs, make another tab active
     if (isActive && newTabs.length > 0) {
       const newActiveIndex = Math.min(tabIndex, newTabs.length - 1);
       newTabs[newActiveIndex].active = true;
@@ -37,7 +36,7 @@ export function ChatPanel({
   };
 
   const addNewTab = () => {
-    const newId = Math.max(...tabs.map(t => t.id)) + 1;
+    const newId = tabs.length > 0 ? Math.max(...tabs.map(t => t.id)) + 1 : 1;
     const newTabTitle = getNewTabTitle();
     const newTab = {
       id: newId,
@@ -124,30 +123,37 @@ export function ChatPanel({
               className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
               onKeyDown={(e) => e.stopPropagation()}
             />
-            {tabs.length > 1 && (
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeTab(tab.id);
-                }} 
-                className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                closeTab(tab.id);
+              }} 
+              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
+            >
+              <X className="w-3 h-3" />
+            </button>
           </div>
         ))}
       </div>
 
       {/* Chat Content - Scrollable */}
       <div className="flex-1 overflow-auto min-h-0">
-        <div className="p-4">
-          {activeTab && (
-            <div className="text-sm text-[#6a6a6a] mb-4">
-              {activeTab.title}
+        {tabs.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="text-[#6a6a6a] text-lg mb-2">Nothing Open</div>
+              <div className="text-[#4a4a4a] text-sm">Create a new chat to get started</div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="p-4">
+            {activeTab && (
+              <div className="text-sm text-[#6a6a6a] mb-4">
+                {activeTab.title}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Chat Input - Fixed at bottom */}

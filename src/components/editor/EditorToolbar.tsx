@@ -75,132 +75,134 @@ export function EditorToolbar({
   };
 
   return (
-    <div className="flex items-center gap-1 p-2 bg-[#2d2d30] border-b border-[#3c3c3c]">
-      {/* Emphasis Button with Bold Icon */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onEmphasis}
-            className={`h-8 px-3 text-[#cccccc] border border-[#3c3c3c] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] ${
-              isEmphasisActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
-            }`}
-          >
-            <Bold className="w-4 h-4" style={{ textDecoration: 'underline' }} />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Emphasis (Ctrl+B)</p>
-        </TooltipContent>
-      </Tooltip>
-
-      {/* Highlight Button with Color-Changing Icon */}
-      <div className="flex">
+    <div className="flex items-center justify-center p-2 bg-[#2d2d30] border-b border-[#3c3c3c]">
+      <div className="flex items-center gap-1">
+        {/* Emphasis Button with Bold Icon */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleHighlight}
-              className={`h-8 px-3 border border-[#3c3c3c] border-r-0 rounded-r-none hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] ${
-                isHighlightActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
+              onClick={onEmphasis}
+              className={`h-8 px-3 text-[#cccccc] border border-[#3c3c3c] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] ${
+                isEmphasisActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
               }`}
             >
-              <Highlighter 
-                className="w-4 h-4" 
-                style={{ color: selectedHighlightColor.iconColor }}
-              />
+              <Bold className="w-4 h-4" style={{ textDecoration: 'underline' }} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Highlight Evidence (Ctrl+H)</p>
+            <p>Emphasis (Ctrl+B)</p>
           </TooltipContent>
         </Tooltip>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        {/* Highlight Button with Color-Changing Icon */}
+        <div className="flex">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleHighlight}
+                className={`h-8 px-3 border border-[#3c3c3c] border-r-0 rounded-r-none hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] ${
+                  isHighlightActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
+                }`}
+              >
+                <Highlighter 
+                  className="w-4 h-4" 
+                  style={{ color: selectedHighlightColor.iconColor }}
+                />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Highlight Evidence (Ctrl+H)</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-6 px-1 text-[#cccccc] border border-[#3c3c3c] border-l-0 rounded-l-none bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
+              >
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-[#252526] border border-[#3c3c3c]">
+              {highlightColors.map((color) => (
+                <DropdownMenuItem
+                  key={color.name}
+                  onClick={() => handleColorSelect(color)}
+                  className="flex items-center gap-2 text-[#cccccc] hover:bg-[#383838] focus:bg-[#383838]"
+                >
+                  <div className={`w-4 h-4 rounded-full ${color.class} border border-[#3c3c3c]`} />
+                  <span className="text-sm">{color.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Minimize Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-6 px-1 text-[#cccccc] border border-[#3c3c3c] border-l-0 rounded-l-none bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
+              onClick={onMinimize}
+              className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
             >
-              <ChevronDown className="w-3 h-3" />
+              <Minimize2 className="w-4 h-4" />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="bg-[#252526] border border-[#3c3c3c]">
-            {highlightColors.map((color) => (
-              <DropdownMenuItem
-                key={color.name}
-                onClick={() => handleColorSelect(color)}
-                className="flex items-center gap-2 text-[#cccccc] hover:bg-[#383838] focus:bg-[#383838]"
-              >
-                <div className={`w-4 h-4 rounded-full ${color.class} border border-[#3c3c3c]`} />
-                <span className="text-sm">{color.name}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Minimize Formatting (Ctrl+M)</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Clear Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClear}
+              className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
+            >
+              <Eraser className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Clear Formatting (Ctrl+Shift+C)</p>
+          </TooltipContent>
+        </Tooltip>
+
+        {/* Heading Button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleHeadingClick}
+              className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] relative"
+            >
+              <div className="flex items-center gap-1">
+                <Heading className="w-4 h-4" />
+                <Badge 
+                  variant="secondary"
+                  className="bg-[#4fc3f7] text-[#1e1e1e] text-xs px-1 h-4"
+                >
+                  {currentHeadingLevel}
+                </Badge>
+              </div>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Heading Level (Ctrl+{currentHeadingLevel})</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
-
-      {/* Minimize Button */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onMinimize}
-            className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
-          >
-            <Minimize2 className="w-4 h-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Minimize Formatting (Ctrl+M)</p>
-        </TooltipContent>
-      </Tooltip>
-
-      {/* Clear Button */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClear}
-            className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
-          >
-            <Eraser className="w-4 h-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Clear Formatting (Ctrl+Shift+C)</p>
-        </TooltipContent>
-      </Tooltip>
-
-      {/* Heading Button */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleHeadingClick}
-            className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] relative"
-          >
-            <div className="flex items-center gap-1">
-              <Heading className="w-4 h-4" />
-              <Badge 
-                variant="secondary"
-                className="bg-[#4fc3f7] text-[#1e1e1e] text-xs px-1 h-4"
-              >
-                {currentHeadingLevel}
-              </Badge>
-            </div>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Heading Level (Ctrl+{currentHeadingLevel})</p>
-        </TooltipContent>
-      </Tooltip>
     </div>
   );
 }
