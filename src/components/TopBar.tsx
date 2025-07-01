@@ -28,31 +28,17 @@ export function TopBar({
       
       {/* Right side - Panel toggle buttons and settings */}
       <div className="flex items-center gap-1">
-        {/* File tree (sidebar) toggle */}
+        {/* Folder toggle */}
         <button 
           onClick={onToggleSidebar}
           className="p-1.5 hover:bg-[#4c4c4c] rounded transition-colors"
           title="Toggle Sidebar"
         >
           <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-            {/* Taxonomy tree structure */}
-            <circle cx="3" cy="3" r="1.5" fill="#4fc3f7"/>
-            <circle cx="7" cy="6" r="1.5" fill="#4fc3f7"/>
-            <circle cx="11" cy="6" r="1.5" fill="#4fc3f7"/>
-            <circle cx="7" cy="10" r="1.5" fill="#4fc3f7"/>
-            <circle cx="11" cy="10" r="1.5" fill="#4fc3f7"/>
-            <circle cx="13" cy="13" r="1.5" fill="#4fc3f7"/>
-            {/* Connecting lines */}
-            <line x1="3" y1="4.5" x2="3" y2="8" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="3" y1="8" x2="7" y2="8" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="7" y1="8" x2="7" y2="8.5" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="3" y1="8" x2="11" y2="8" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="11" y1="8" x2="11" y2="8.5" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="11" y1="11.5" x2="11" y2="12" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="11" y1="12" x2="13" y2="12" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="13" y1="12" x2="13" y2="11.5" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="3" y1="4.5" x2="6" y2="6" stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="3" y1="4.5" x2="10" y2="6" stroke="#4fc3f7" strokeWidth="1"/>
+            <path d="M2 3h4l2 2h6v8H2V3z" 
+                  fill={sidebarVisible ? "#4fc3f7" : "none"} 
+                  stroke="#4fc3f7" 
+                  strokeWidth="1"/>
           </svg>
         </button>
         
@@ -89,7 +75,7 @@ export function TopBar({
           className="p-1.5 hover:bg-[#4c4c4c] rounded transition-colors ml-2"
           title="Settings"
         >
-          <Settings className="w-4 h-4 text-[#6a6a6a]" />
+          <Settings className="w-4 h-4 text-[#cccccc]" />
         </button>
       </div>
     </div>
