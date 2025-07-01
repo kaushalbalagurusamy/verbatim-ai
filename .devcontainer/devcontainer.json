@@ -1,0 +1,45 @@
+{
+  // Extend the base devcontainer template
+  "extends": "/home/kaushhal/Documents/devcontainer-templates/base/.devcontainer.json",
+
+  // Project-specific name
+  "name": "Verbatim AI Dev Container",
+
+  // Override Node.js version to 20 (LTS)
+  "build": {
+    "args": {
+      "VARIANT": "20"
+    }
+  },
+
+  // VS Code extensions (Cursor users can use their own extensions)
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-playwright.playwright",
+        "vitest.explorer",
+        "usernamehw.errorlens",
+        "christian-kohler.path-intellisense"
+      ]
+    }
+  },
+
+  // Install dependencies using pnpm
+  "postCreateCommand": "pnpm install",
+
+  // Forward ports for development
+  "forwardPorts": [8080, 3000],
+
+  // Features to add to the container
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  // Environment variables
+  "remoteEnv": {
+    "NODE_ENV": "development"
+  }
+}
