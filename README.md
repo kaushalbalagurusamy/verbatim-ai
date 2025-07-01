@@ -36,6 +36,42 @@ npm i
 npm run dev
 ```
 
+## Development with Dev Containers
+
+This project includes a Dev Container configuration that provides a consistent, secure development environment with all necessary tools pre-installed.
+
+### Features
+
+- **Secure Environment**: Network isolation with firewall rules limiting external access
+- **Pre-configured Tools**: Node.js 20, pnpm, Git, and development utilities
+- **VS Code Extensions**: ESLint, Prettier, Tailwind CSS IntelliSense, and more
+- **Persistent History**: Command history preserved across container sessions
+- **Port Forwarding**: Automatic forwarding for development server (port 8080)
+
+### Using the Dev Container
+
+1. **With VS Code**:
+   - Install the "Dev Containers" extension
+   - Open the project folder
+   - Click "Reopen in Container" when prompted
+   - Wait for the container to build and initialize
+
+2. **With GitHub Codespaces**:
+   - The dev container configuration will be automatically used
+
+3. **With Docker CLI**:
+   ```bash
+   # Build and run the dev container
+   docker build -t verbatim-ai-dev .devcontainer/
+   docker run -it -v $(pwd):/workspace verbatim-ai-dev
+   ```
+
+### Troubleshooting
+
+- **Container build fails**: Ensure Docker is running and you have sufficient disk space
+- **Network issues**: The firewall restricts access to allowed domains only (GitHub, npm, Anthropic)
+- **Permission errors**: The container runs as the `node` user for security
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).

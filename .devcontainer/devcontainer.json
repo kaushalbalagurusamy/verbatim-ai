@@ -1,45 +1,68 @@
 {
-  // Extend the base devcontainer template
-  "extends": "/home/kaushhal/Documents/devcontainer-templates/base/.devcontainer.json",
-
-  // Project-specific name
-  "name": "Verbatim AI Dev Container",
-
-  // Override Node.js version to 20 (LTS)
+  "name": "Verbatim AI Sandbox",
   "build": {
+    "dockerfile": "Dockerfile",
     "args": {
-      "VARIANT": "20"
+      "TZ": "${localEnv:TZ:America/Los_Angeles}"
     }
   },
-
-  // VS Code extensions (Cursor users can use their own extensions)
+  "runArgs": [
+    "--cap-add=NET_ADMIN",
+    "--cap-add=NET_RAW"
+  ],
   "customizations": {
     "vscode": {
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
         "bradlc.vscode-tailwindcss",
-        "ms-playwright.playwright",
+        "eamodio.gitlens",
         "vitest.explorer",
         "usernamehw.errorlens",
         "christian-kohler.path-intellisense"
-      ]
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "bash",
+            "icon": "terminal-bash"
+          },
+          "zsh": {
+            "path": "zsh"
+          }
+        }
+      }
     }
   },
-
-  // Install dependencies using pnpm
-  "postCreateCommand": "pnpm install",
-
-  // Forward ports for development
-  "forwardPorts": [8080, 3000],
-
-  // Features to add to the container
-  "features": {
-    "ghcr.io/devcontainers/features/git:1": {}
-  },
-
-  // Environment variables
+  "remoteUser": "node",
+  "mounts": [
+    "source=verbatim-ai-bashhistory,target=/commandhistory,type=volume",
+    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind"
+  ],
   "remoteEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "CLAUDE_CONFIG_DIR": "/home/node/.claude",
+    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
     "NODE_ENV": "development"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "sudo /usr/local/bin/init-firewall.sh && pnpm install",
+  "forwardPorts": [8080, 3000],
+  "portsAttributes": {
+    "8080": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    },
+    "3000": {
+      "label": "Alternative Port",
+      "onAutoForward": "notify"
+    }
   }
 }
