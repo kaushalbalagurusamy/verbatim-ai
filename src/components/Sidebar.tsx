@@ -75,6 +75,14 @@ export function Sidebar({
           <File className="w-4 h-4" />
         </button>
         <button 
+          onClick={() => handleIconClick('flow')}
+          className={`p-2 rounded transition-colors ${
+            activeView === 'flow' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
+          }`}
+        >
+          <Table className="w-4 h-4" />
+        </button>
+        <button 
           onClick={() => handleIconClick('pen')}
           className={`p-2 rounded transition-colors ${
             activeView === 'pen' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
@@ -97,14 +105,6 @@ export function Sidebar({
           }`}
         >
           <AudioWaveform className="w-4 h-4" />
-        </button>
-        <button 
-          onClick={() => handleIconClick('flow')}
-          className={`p-2 rounded transition-colors ${
-            activeView === 'flow' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
-          }`}
-        >
-          <Table className="w-4 h-4" />
         </button>
       </div>
 
