@@ -1,9 +1,10 @@
+
 import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
 
 interface MainEditorProps {
-  activeView: 'document' | 'research' | 'pen' | 'source' | 'recordings' | null;
+  activeView: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null;
   onDocumentTitleChange?: (title: string) => void;
 }
 
@@ -46,6 +47,8 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
         return 'New Source';
       case 'recordings':
         return 'New Recording';
+      case 'flow':
+        return 'New Flow';
       default:
         return 'New Document';
     }

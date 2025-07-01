@@ -1,5 +1,5 @@
 
-import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code, AudioWaveform, Telescope, FileSpreadsheet } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code, AudioWaveform, Telescope, Table } from 'lucide-react';
 import { useState } from 'react';
 import { FileTree } from './FileTree';
 
@@ -104,7 +104,7 @@ export function Sidebar({
             activeView === 'flow' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
           }`}
         >
-          <FileSpreadsheet className="w-4 h-4" />
+          <Table className="w-4 h-4" />
         </button>
       </div>
 
