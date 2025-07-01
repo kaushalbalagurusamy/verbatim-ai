@@ -3,7 +3,7 @@ import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
 import { useState } from 'react';
 
 interface FileTreeProps {
-  mode: 'document' | 'research' | 'pen' | 'source' | 'recordings';
+  mode: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow';
 }
 
 interface FileNode {
@@ -76,6 +76,8 @@ export function FileTree({ mode }: FileTreeProps) {
         return 'Source Files';
       case 'recordings':
         return 'Recordings';
+      case 'flow':
+        return 'Flow';
       default:
         return 'Files';
     }
@@ -93,6 +95,8 @@ export function FileTree({ mode }: FileTreeProps) {
         return 'No source files found';
       case 'recordings':
         return 'No recordings found';
+      case 'flow':
+        return 'No flow found';
       default:
         return 'No files found';
     }

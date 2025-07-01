@@ -1,12 +1,12 @@
 
-import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code, AudioWaveform, Telescope } from 'lucide-react';
+import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code, AudioWaveform, Telescope, FileSpreadsheet } from 'lucide-react';
 import { useState } from 'react';
 import { FileTree } from './FileTree';
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
-  onActiveViewChange?: (view: 'document' | 'research' | 'pen' | 'source' | 'recordings' | null) => void;
+  onActiveViewChange?: (view: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null) => void;
 }
 
 export function Sidebar({
@@ -21,7 +21,7 @@ export function Sidebar({
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeView, setActiveView] = useState<'document' | 'research' | 'pen' | 'source' | 'recordings' | null>('document');
+  const [activeView, setActiveView] = useState<'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null>('document');
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -30,7 +30,7 @@ export function Sidebar({
     }));
   };
 
-  const handleIconClick = (view: 'document' | 'research' | 'pen' | 'source' | 'recordings') => {
+  const handleIconClick = (view: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow') => {
     const newView = activeView === view ? null : view;
     setActiveView(newView);
     onActiveViewChange?.(newView);
@@ -97,6 +97,14 @@ export function Sidebar({
           }`}
         >
           <AudioWaveform className="w-4 h-4" />
+        </button>
+        <button 
+          onClick={() => handleIconClick('flow')}
+          className={`p-2 rounded transition-colors ${
+            activeView === 'flow' ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'hover:bg-[#383838] text-[#cccccc]'
+          }`}
+        >
+          <FileSpreadsheet className="w-4 h-4" />
         </button>
       </div>
 
