@@ -2,6 +2,7 @@
 import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
+import { FlowEditor } from './FlowEditor';
 
 interface MainEditorProps {
   activeView: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null;
@@ -64,6 +65,62 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
     ));
   };
 
+  const renderEditorContent = () => {
+    const activeTab = tabs.find(tab => tab.active);
+    const tabTitle = activeTab?.title || 'New Document';
+
+    if (activeView === 'flow') {
+      return (
+        <FlowEditor 
+          initialTitle={tabTitle}
+          onTitleChange={(newTitle) => {
+            if (activeTab) {
+              updateTabTitle(activeTab.id, newTitle);
+            }
+          }}
+        />
+      );
+    }
+
+    // Default document editor
+    return (
+      <>
+        <div className="p-6 pb-4">
+          <div className="max-w-4xl">
+            <input
+              type="text"
+              value={tabTitle}
+              onChange={(e) => {
+                const activeTab = tabs.find(tab => tab.active);
+                if (activeTab) {
+                  updateTabTitle(activeTab.id, e.target.value);
+                  // Also update the document title via the editor
+                  editorTitleChangeHandler?.(e.target.value);
+                }
+              }}
+              className="text-2xl font-light text-[#cccccc] mb-6 bg-transparent border-none outline-none w-full"
+              placeholder="New Document"
+            />
+          </div>
+        </div>
+        
+        {/* Full Editor with Toolbar */}
+        <div className="flex-1 flex flex-col">
+          <EditorWithToolbar 
+            initialTitle={tabTitle}
+            onTitleChange={(newTitle) => {
+              const activeTab = tabs.find(tab => tab.active);
+              if (activeTab) {
+                updateTabTitle(activeTab.id, newTitle);
+              }
+            }}
+            onTitleChangeHandlerReady={setEditorTitleChangeHandler}
+          />
+        </div>
+      </>
+    );
+  };
+
   return (
     <div data-testid="main-editor" className="flex flex-col h-screen">
       {/* Tab Bar */}
@@ -104,38 +161,7 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
 
       {/* Editor Content */}
       <div className="flex-1 bg-[#1e1e1e] flex flex-col">
-        <div className="p-6 pb-4">
-          <div className="max-w-4xl">
-            <input
-              type="text"
-              value={tabs.find(tab => tab.active)?.title || 'New Document'}
-              onChange={(e) => {
-                const activeTab = tabs.find(tab => tab.active);
-                if (activeTab) {
-                  updateTabTitle(activeTab.id, e.target.value);
-                  // Also update the document title via the editor
-                  editorTitleChangeHandler?.(e.target.value);
-                }
-              }}
-              className="text-2xl font-light text-[#cccccc] mb-6 bg-transparent border-none outline-none w-full"
-              placeholder="New Document"
-            />
-          </div>
-        </div>
-        
-        {/* Full Editor with Toolbar */}
-        <div className="flex-1 flex flex-col">
-          <EditorWithToolbar 
-            initialTitle={tabs.find(tab => tab.active)?.title || 'New Document'}
-            onTitleChange={(newTitle) => {
-              const activeTab = tabs.find(tab => tab.active);
-              if (activeTab) {
-                updateTabTitle(activeTab.id, newTitle);
-              }
-            }}
-            onTitleChangeHandlerReady={setEditorTitleChangeHandler}
-          />
-        </div>
+        {renderEditorContent()}
       </div>
     </div>
   );
