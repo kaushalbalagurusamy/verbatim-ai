@@ -1,4 +1,3 @@
-
 import { ChevronRight, ChevronDown, FileText, List, Clock, Brain, Search, File, Pen, Code, AudioWaveform, Telescope, Table, MoreHorizontal } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { FileTree } from './FileTree';
@@ -93,14 +92,6 @@ export function Sidebar({
 
   return (
     <div data-testid="sidebar" className="bg-[#252526] border-r border-[#3c3c3c] flex flex-col h-full overflow-hidden">
-      {/* Header */}
-      <div className="p-3 border-b border-[#3c3c3c] flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <Brain className="w-5 h-5 text-[#4fc3f7]" />
-          <span className="text-sm font-medium text-[#cccccc]">LOGOS-AI</span>
-        </div>
-      </div>
-
       {/* Icon Bar */}
       <div ref={iconBarRef} className="h-10 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-center gap-3 px-3 flex-shrink-0 relative">
         {visibleIcons.map(iconKey => {
