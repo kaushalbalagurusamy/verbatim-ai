@@ -177,8 +177,8 @@ export function Editor({
       
       const range = selection.getRangeAt(0);
       const blockElement = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
-        ? range.commonAncestorContainer.parentElement?.closest('[data-block-id]')
-        : range.commonAncestorContainer.closest?.('[data-block-id]');
+        ? (range.commonAncestorContainer.parentElement as Element)?.closest('[data-block-id]')
+        : (range.commonAncestorContainer as Element)?.closest?.('[data-block-id]');
       
       if (blockElement) {
         const blockIndex = parseInt(blockElement.getAttribute('data-block-index') || '0');
@@ -226,7 +226,7 @@ export function Editor({
       
       const range = selection.getRangeAt(0);
       if (range.startOffset === 0 && range.endOffset === 0) {
-        const blockElement = range.commonAncestorContainer.closest?.('[data-block-id]');
+        const blockElement = (range.commonAncestorContainer as Element)?.closest?.('[data-block-id]');
         if (blockElement) {
           const blockIndex = parseInt(blockElement.getAttribute('data-block-index') || '0');
           if (blockIndex > 0 && content.length > 1) {
@@ -281,7 +281,7 @@ export function Editor({
     if (!selection || !selection.rangeCount || selection.isCollapsed) return;
     
     const range = selection.getRangeAt(0);
-    const blockElement = range.commonAncestorContainer.closest?.('[data-block-id]');
+    const blockElement = (range.commonAncestorContainer as Element)?.closest?.('[data-block-id]');
     
     if (blockElement) {
       const blockIndex = parseInt(blockElement.getAttribute('data-block-index') || '0');
