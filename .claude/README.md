@@ -4,7 +4,7 @@ This directory contains custom slash commands for Claude Code to help with proje
 
 ## Available Commands
 
-### Configuration & Discovery Commands
+### Configuration & Discovery Commands (Read-Only)
 
 #### `/show-hidden`
 Shows all hidden files and their contents in the project. Automatically discovers new hidden files as they're added.
@@ -40,6 +40,43 @@ Specialized command for Cursor IDE rule management.
 - Rule categories and precedence
 - Active coding standards
 - IDE configuration details
+
+### File Modification Commands (Requires Edit Mode)
+
+#### `/edit-mode`
+Master toggle for enabling/disabling file modification capabilities.
+
+**Commands:**
+- `/edit-mode on` - Enable configuration file editing
+- `/edit-mode off` - Disable all modifications (safety mode)
+- `/edit-mode status` - Show current editing permissions
+
+#### `/edit-config`
+Enable modification of specific configuration files with safety checks.
+
+**Features:**
+- Explicit permission before changes
+- Shows diffs before applying
+- Focused on specific file patterns
+- Maintains backup references
+
+#### `/add-cursor-rule`
+Create new Cursor rule files with proper numbering and structure.
+
+**Capabilities:**
+- Auto-numbering within categories
+- Standard .mdc template generation
+- Proper precedence ordering
+- Interactive rule creation process
+
+#### `/update-config`
+Safely update existing configuration files with validation.
+
+**Safety features:**
+- JSON syntax validation
+- Dependency compatibility checks
+- Preview mode before applying
+- Version control integration
 
 ## Command Design Principles
 
