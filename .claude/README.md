@@ -78,6 +78,15 @@ Safely update existing configuration files with validation.
 - Preview mode before applying
 - Version control integration
 
+#### `/sync-rules`
+Synchronize development standards between Cursor rules and CLAUDE.md.
+
+**Capabilities:**
+- Compare .cursor/rules/*.mdc with CLAUDE.md content
+- Identify inconsistencies between rule systems
+- Suggest updates for alignment
+- Ensure consistent AI tool guidance
+
 ## Command Design Principles
 
 ### Modular Architecture
