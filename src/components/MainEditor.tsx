@@ -72,14 +72,16 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
     if (activeView === 'flow') {
       return (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <FlowEditor 
-            initialTitle={tabTitle}
-            onTitleChange={(newTitle) => {
-              if (activeTab) {
-                updateTabTitle(activeTab.id, newTitle);
-              }
-            }}
-          />
+          <div className="flex-1 overflow-x-auto overflow-y-hidden">
+            <FlowEditor 
+              initialTitle={tabTitle}
+              onTitleChange={(newTitle) => {
+                if (activeTab) {
+                  updateTabTitle(activeTab.id, newTitle);
+                }
+              }}
+            />
+          </div>
         </div>
       );
     }
@@ -125,7 +127,7 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
 
   return (
     <div data-testid="main-editor" className="flex flex-col h-full overflow-hidden">
-      {/* Tab Bar */}
+      {/* Tab Bar - restored original styling */}
       <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center flex-shrink-0">
         <div className="flex items-center overflow-x-auto flex-1 min-w-0">
           {tabs.map(tab => (

@@ -57,7 +57,7 @@ export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEdi
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e] overflow-hidden">
+    <div className="flex flex-col h-full bg-[#1e1e1e] overflow-hidden min-w-fit">
       {/* Title Section */}
       <div className="p-6 pb-4 flex-shrink-0">
         <div className="max-w-4xl">
@@ -71,9 +71,9 @@ export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEdi
         </div>
       </div>
 
-      {/* Table Container */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full relative">
+      {/* Table Container with horizontal scroll */}
+      <div className="flex-1 overflow-auto">
+        <div className="min-w-fit min-h-full">
           {/* Sticky Header */}
           <div className="sticky top-0 z-10 bg-[#2d2d30] border-b border-[#3c3c3c]">
             <div className="flex min-w-fit">
@@ -83,7 +83,7 @@ export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEdi
               </div>
               {/* Column headers */}
               {flowData.columns.map((column, colIndex) => (
-                <div key={colIndex} className="min-w-32 flex-1 border-r border-[#3c3c3c] last:border-r-0">
+                <div key={colIndex} className="min-w-32 w-32 border-r border-[#3c3c3c] last:border-r-0 flex-shrink-0">
                   <input
                     type="text"
                     value={column}
@@ -97,30 +97,28 @@ export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEdi
           </div>
 
           {/* Scrollable Content */}
-          <ScrollArea className="h-[calc(100%-2.5rem)]">
-            <div className="min-h-full min-w-fit">
-              {flowData.rows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex border-b border-[#3c3c3c] hover:bg-[#252526] transition-colors min-w-fit">
-                  {/* Row number */}
-                  <div className="w-16 h-10 bg-[#252526] border-r border-[#3c3c3c] flex items-center justify-center sticky left-0 z-5 flex-shrink-0">
-                    <span className="text-xs text-[#6a6a6a] font-medium">{rowIndex + 1}</span>
-                  </div>
-                  {/* Row cells */}
-                  {row.map((cell, colIndex) => (
-                    <div key={cell.id} className="min-w-32 flex-1 border-r border-[#3c3c3c] last:border-r-0">
-                      <input
-                        type="text"
-                        value={cell.value}
-                        onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
-                        className="w-full h-10 px-3 bg-transparent text-sm text-[#cccccc] outline-none border-none focus:bg-[#383838] transition-colors"
-                        placeholder=""
-                      />
-                    </div>
-                  ))}
+          <div className="min-h-full min-w-fit">
+            {flowData.rows.map((row, rowIndex) => (
+              <div key={rowIndex} className="flex border-b border-[#3c3c3c] hover:bg-[#252526] transition-colors min-w-fit">
+                {/* Row number */}
+                <div className="w-16 h-10 bg-[#252526] border-r border-[#3c3c3c] flex items-center justify-center sticky left-0 z-5 flex-shrink-0">
+                  <span className="text-xs text-[#6a6a6a] font-medium">{rowIndex + 1}</span>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+                {/* Row cells */}
+                {row.map((cell, colIndex) => (
+                  <div key={cell.id} className="min-w-32 w-32 border-r border-[#3c3c3c] last:border-r-0 flex-shrink-0">
+                    <input
+                      type="text"
+                      value={cell.value}
+                      onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
+                      className="w-full h-10 px-3 bg-transparent text-sm text-[#cccccc] outline-none border-none focus:bg-[#383838] transition-colors"
+                      placeholder=""
+                    />
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
