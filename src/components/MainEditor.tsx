@@ -1,4 +1,3 @@
-
 import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
@@ -21,7 +20,19 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
   const [editorTitleChangeHandler, setEditorTitleChangeHandler] = useState<((title: string) => void) | null>(null);
 
   const closeTab = (tabId: number) => {
-    setTabs(tabs.filter(tab => tab.id !== tabId));
+    if (tabs.length === 1) return; // Don't close the last tab
+    
+    const tabIndex = tabs.findIndex(tab => tab.id === tabId);
+    const isActive = tabs[tabIndex]?.active;
+    const newTabs = tabs.filter(tab => tab.id !== tabId);
+    
+    // If we closed the active tab, make another tab active
+    if (isActive && newTabs.length > 0) {
+      const newActiveIndex = Math.min(tabIndex, newTabs.length - 1);
+      newTabs[newActiveIndex].active = true;
+    }
+    
+    setTabs(newTabs);
   };
 
   const addNewTab = () => {
@@ -144,15 +155,17 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
               className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
               onKeyDown={(e) => e.stopPropagation()}
             />
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                closeTab(tab.id);
-              }} 
-              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
-            >
-              <X className="w-3 h-3" />
-            </button>
+            {tabs.length > 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeTab(tab.id);
+                }} 
+                className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
         ))}
         <button 

@@ -1,11 +1,10 @@
-
 import { MessageSquare, Settings, Minimize2, Plus, Send, Paperclip, Mic, MoreHorizontal, X } from 'lucide-react';
 import { useState } from 'react';
 
 interface ChatPanelProps {
   collapsed: boolean;
   onToggle: () => void;
-  activeView: 'document' | 'pen' | 'source' | 'recordings' | null;
+  activeView: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null;
 }
 
 export function ChatPanel({
@@ -22,7 +21,19 @@ export function ChatPanel({
   }]);
 
   const closeTab = (tabId: number) => {
-    setTabs(tabs.filter(tab => tab.id !== tabId));
+    if (tabs.length === 1) return; // Don't close the last tab
+    
+    const tabIndex = tabs.findIndex(tab => tab.id === tabId);
+    const isActive = tabs[tabIndex]?.active;
+    const newTabs = tabs.filter(tab => tab.id !== tabId);
+    
+    // If we closed the active tab, make another tab active
+    if (isActive && newTabs.length > 0) {
+      const newActiveIndex = Math.min(tabIndex, newTabs.length - 1);
+      newTabs[newActiveIndex].active = true;
+    }
+    
+    setTabs(newTabs);
   };
 
   const addNewTab = () => {
@@ -41,12 +52,16 @@ export function ChatPanel({
     switch (activeView) {
       case 'document':
         return 'New Document Chat';
+      case 'research':
+        return 'New Research Chat';
       case 'pen':
         return 'New Analytic Chat';
       case 'source':
         return 'New Argument Chat';
       case 'recordings':
         return 'New Recording Chat';
+      case 'flow':
+        return 'New Flow Chat';
       default:
         return 'New Chat';
     }
@@ -109,15 +124,17 @@ export function ChatPanel({
               className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
               onKeyDown={(e) => e.stopPropagation()}
             />
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                closeTab(tab.id);
-              }} 
-              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
-            >
-              <X className="w-3 h-3" />
-            </button>
+            {tabs.length > 1 && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeTab(tab.id);
+                }} 
+                className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
         ))}
       </div>
