@@ -20,10 +20,10 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <div className="h-12 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-between px-4 flex-shrink-0">
-      {/* Left side - LOGOS-AI branding */}
+      {/* Left side - VERBATIM-AI branding */}
       <div className="flex items-center gap-2">
         <Brain className="w-5 h-5 text-[#4fc3f7]" />
-        <span className="text-sm font-medium text-[#cccccc]">LOGOS-AI</span>
+        <span className="text-sm font-medium text-[#cccccc]">VERBATIM-AI</span>
       </div>
       
       {/* Right side - Panel toggle buttons and settings */}
@@ -35,19 +35,24 @@ export function TopBar({
           title="Toggle Sidebar"
         >
           <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-            {/* File tree icon structure */}
-            <path d="M2 2v12h12V2H2z" stroke="#4fc3f7" strokeWidth="1" fill="none"/>
-            <path d="M2 2h3v12H2z" fill={sidebarVisible ? "#4fc3f7" : "none"} stroke="#4fc3f7" strokeWidth="1"/>
-            <line x1="5" y1="2" x2="5" y2="14" stroke="#4fc3f7" strokeWidth="1"/>
-            {/* Tree structure lines */}
-            <line x1="2.5" y1="4" x2="4" y2="4" stroke="#4fc3f7" strokeWidth="0.8"/>
-            <line x1="2.5" y1="6" x2="3.5" y2="6" stroke="#4fc3f7" strokeWidth="0.8"/>
-            <line x1="3" y1="8" x2="4" y2="8" stroke="#4fc3f7" strokeWidth="0.8"/>
-            <line x1="2.5" y1="10" x2="3.5" y2="10" stroke="#4fc3f7" strokeWidth="0.8"/>
-            <line x1="3" y1="12" x2="4" y2="12" stroke="#4fc3f7" strokeWidth="0.8"/>
-            {/* Small folder icons */}
-            <rect x="2.2" y="3.7" width="0.6" height="0.6" fill="#4fc3f7"/>
-            <rect x="2.7" y="7.7" width="0.6" height="0.6" fill="#4fc3f7"/>
+            {/* Taxonomy tree structure */}
+            <circle cx="3" cy="3" r="1.5" fill="#4fc3f7"/>
+            <circle cx="7" cy="6" r="1.5" fill="#4fc3f7"/>
+            <circle cx="11" cy="6" r="1.5" fill="#4fc3f7"/>
+            <circle cx="7" cy="10" r="1.5" fill="#4fc3f7"/>
+            <circle cx="11" cy="10" r="1.5" fill="#4fc3f7"/>
+            <circle cx="13" cy="13" r="1.5" fill="#4fc3f7"/>
+            {/* Connecting lines */}
+            <line x1="3" y1="4.5" x2="3" y2="8" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="3" y1="8" x2="7" y2="8" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="7" y1="8" x2="7" y2="8.5" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="3" y1="8" x2="11" y2="8" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="11" y1="8" x2="11" y2="8.5" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="11" y1="11.5" x2="11" y2="12" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="11" y1="12" x2="13" y2="12" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="13" y1="12" x2="13" y2="11.5" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="3" y1="4.5" x2="6" y2="6" stroke="#4fc3f7" strokeWidth="1"/>
+            <line x1="3" y1="4.5" x2="10" y2="6" stroke="#4fc3f7" strokeWidth="1"/>
           </svg>
         </button>
         
@@ -90,4 +95,3 @@ export function TopBar({
     </div>
   );
 }
-
