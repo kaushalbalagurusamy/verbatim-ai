@@ -10,6 +10,7 @@ const Index = () => {
   const [activeView, setActiveView] = useState<'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null>('document');
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [chatVisible, setChatVisible] = useState(true);
+  const [mainEditorVisible, setMainEditorVisible] = useState(true);
 
   return (
     <div className="h-screen bg-[#1e1e1e] text-[#cccccc] overflow-hidden flex flex-col">
@@ -17,8 +18,10 @@ const Index = () => {
       <TopBar 
         sidebarVisible={sidebarVisible}
         chatVisible={chatVisible}
+        mainEditorVisible={mainEditorVisible}
         onToggleSidebar={() => setSidebarVisible(!sidebarVisible)}
         onToggleChat={() => setChatVisible(!chatVisible)}
+        onToggleMainEditor={() => setMainEditorVisible(!mainEditorVisible)}
       />
       
       {/* Main content area */}
@@ -39,14 +42,19 @@ const Index = () => {
           )}
           
           {/* Main Editor Panel */}
-          <ResizablePanel defaultSize={sidebarVisible && chatVisible ? 60 : 80} minSize={40}>
-            <MainEditor activeView={activeView} />
-          </ResizablePanel>
+          {mainEditorVisible && (
+            <>
+              <ResizablePanel defaultSize={sidebarVisible && chatVisible ? 60 : 80} minSize={40}>
+                <MainEditor activeView={activeView} />
+              </ResizablePanel>
+              {chatVisible && <ResizableHandle />}
+            </>
+          )}
           
           {/* Chat Panel */}
           {chatVisible && (
             <>
-              <ResizableHandle />
+              {!mainEditorVisible && sidebarVisible && <ResizableHandle />}
               <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
                 <ChatPanel 
                   collapsed={false}
