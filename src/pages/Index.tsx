@@ -20,14 +20,14 @@ const Index = () => {
           />
         </ResizablePanel>
         
-        <ResizableHandle withHandle />
+        <ResizableHandle />
         
         {/* Main Editor Panel */}
         <ResizablePanel defaultSize={60} minSize={40}>
           <MainEditor activeView={activeView} />
         </ResizablePanel>
         
-        <ResizableHandle withHandle />
+        <ResizableHandle />
         
         {/* Chat Panel */}
         <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
