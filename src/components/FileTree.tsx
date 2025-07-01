@@ -1,6 +1,7 @@
 
 import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
 import { useState } from 'react';
+import { ScrollArea } from './ui/scroll-area';
 
 interface FileTreeProps {
   mode: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow';
@@ -106,21 +107,23 @@ export function FileTree({ mode }: FileTreeProps) {
   const emptyTree: FileNode[] = [];
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="p-3">
-        <h3 className="text-xs font-medium text-[#6a6a6a] uppercase mb-2">
-          {getTitle()}
-        </h3>
-        <div className="space-y-1">
-          {emptyTree.length === 0 ? (
-            <div className="text-xs text-[#6a6a6a] italic px-2 py-1">
-              {getEmptyMessage()}
-            </div>
-          ) : (
-            emptyTree.map(node => renderNode(node))
-          )}
+    <div className="h-full flex flex-col overflow-hidden">
+      <ScrollArea className="flex-1">
+        <div className="p-3">
+          <h3 className="text-xs font-medium text-[#6a6a6a] uppercase mb-2">
+            {getTitle()}
+          </h3>
+          <div className="space-y-1">
+            {emptyTree.length === 0 ? (
+              <div className="text-xs text-[#6a6a6a] italic px-2 py-1">
+                {getEmptyMessage()}
+              </div>
+            ) : (
+              emptyTree.map(node => renderNode(node))
+            )}
+          </div>
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 }

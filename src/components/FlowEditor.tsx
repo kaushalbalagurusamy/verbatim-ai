@@ -57,9 +57,9 @@ export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEdi
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e1e]">
+    <div className="flex flex-col h-full bg-[#1e1e1e] overflow-hidden">
       {/* Title Section */}
-      <div className="p-6 pb-4">
+      <div className="p-6 pb-4 flex-shrink-0">
         <div className="max-w-4xl">
           <input
             type="text"
@@ -76,9 +76,9 @@ export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEdi
         <div className="h-full relative">
           {/* Sticky Header */}
           <div className="sticky top-0 z-10 bg-[#2d2d30] border-b border-[#3c3c3c]">
-            <div className="flex">
+            <div className="flex min-w-fit">
               {/* Row number header */}
-              <div className="w-16 h-10 bg-[#252526] border-r border-[#3c3c3c] flex items-center justify-center">
+              <div className="w-16 h-10 bg-[#252526] border-r border-[#3c3c3c] flex items-center justify-center flex-shrink-0">
                 <span className="text-xs text-[#6a6a6a] font-medium">#</span>
               </div>
               {/* Column headers */}
@@ -98,11 +98,11 @@ export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEdi
 
           {/* Scrollable Content */}
           <ScrollArea className="h-[calc(100%-2.5rem)]">
-            <div className="min-h-full">
+            <div className="min-h-full min-w-fit">
               {flowData.rows.map((row, rowIndex) => (
-                <div key={rowIndex} className="flex border-b border-[#3c3c3c] hover:bg-[#252526] transition-colors">
+                <div key={rowIndex} className="flex border-b border-[#3c3c3c] hover:bg-[#252526] transition-colors min-w-fit">
                   {/* Row number */}
-                  <div className="w-16 h-10 bg-[#252526] border-r border-[#3c3c3c] flex items-center justify-center sticky left-0 z-5">
+                  <div className="w-16 h-10 bg-[#252526] border-r border-[#3c3c3c] flex items-center justify-center sticky left-0 z-5 flex-shrink-0">
                     <span className="text-xs text-[#6a6a6a] font-medium">{rowIndex + 1}</span>
                   </div>
                   {/* Row cells */}

@@ -71,21 +71,23 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
 
     if (activeView === 'flow') {
       return (
-        <FlowEditor 
-          initialTitle={tabTitle}
-          onTitleChange={(newTitle) => {
-            if (activeTab) {
-              updateTabTitle(activeTab.id, newTitle);
-            }
-          }}
-        />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <FlowEditor 
+            initialTitle={tabTitle}
+            onTitleChange={(newTitle) => {
+              if (activeTab) {
+                updateTabTitle(activeTab.id, newTitle);
+              }
+            }}
+          />
+        </div>
       );
     }
 
     // Default document editor
     return (
-      <>
-        <div className="p-6 pb-4">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="p-6 pb-4 flex-shrink-0">
           <div className="max-w-4xl">
             <input
               type="text"
@@ -105,7 +107,7 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
         </div>
         
         {/* Full Editor with Toolbar */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <EditorWithToolbar 
             initialTitle={tabTitle}
             onTitleChange={(newTitle) => {
@@ -117,50 +119,52 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
             onTitleChangeHandlerReady={setEditorTitleChangeHandler}
           />
         </div>
-      </>
+      </div>
     );
   };
 
   return (
-    <div data-testid="main-editor" className="flex flex-col h-screen">
+    <div data-testid="main-editor" className="flex flex-col h-full overflow-hidden">
       {/* Tab Bar */}
-      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center">
-        {tabs.map(tab => (
-          <div 
-            key={tab.id} 
-            className={`flex items-center gap-2 px-3 h-full border-r border-[#3c3c3c] min-w-0 max-w-xs cursor-pointer ${
-              tab.active ? 'bg-[#1e1e1e] text-[#ffffff]' : 'bg-[#2d2d30] text-[#cccccc] hover:bg-[#383838]'
-            }`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <input
-              type="text"
-              value={tab.title}
-              onChange={(e) => updateTabTitle(tab.id, e.target.value)}
-              className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
-              onKeyDown={(e) => e.stopPropagation()}
-            />
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                closeTab(tab.id);
-              }} 
-              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity"
+      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center flex-shrink-0">
+        <div className="flex items-center overflow-x-auto flex-1 min-w-0">
+          {tabs.map(tab => (
+            <div 
+              key={tab.id} 
+              className={`flex items-center gap-2 px-3 h-full border-r border-[#3c3c3c] min-w-0 max-w-xs cursor-pointer flex-shrink-0 ${
+                tab.active ? 'bg-[#1e1e1e] text-[#ffffff]' : 'bg-[#2d2d30] text-[#cccccc] hover:bg-[#383838]'
+              }`}
+              onClick={() => setActiveTab(tab.id)}
             >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
+              <input
+                type="text"
+                value={tab.title}
+                onChange={(e) => updateTabTitle(tab.id, e.target.value)}
+                className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeTab(tab.id);
+                }} 
+                className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+        </div>
         <button 
           onClick={addNewTab}
-          className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors"
+          className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors flex-shrink-0"
         >
           <Plus className="w-4 h-4" />
         </button>
       </div>
 
       {/* Editor Content */}
-      <div className="flex-1 bg-[#1e1e1e] flex flex-col">
+      <div className="flex-1 bg-[#1e1e1e] flex flex-col overflow-hidden">
         {renderEditorContent()}
       </div>
     </div>
