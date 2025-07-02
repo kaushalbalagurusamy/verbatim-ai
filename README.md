@@ -48,29 +48,64 @@ This project includes a Dev Container configuration that provides a consistent, 
 - **Persistent History**: Command history preserved across container sessions
 - **Port Forwarding**: Automatic forwarding for development server (port 8080)
 
-### Using the Dev Container
+### Quick Start
 
-1. **With VS Code**:
-   - Install the "Dev Containers" extension
+1. **Open in Container**:
+   - Install the "Dev Containers" extension in VS Code
    - Open the project folder
    - Click "Reopen in Container" when prompted
-   - Wait for the container to build and initialize
+   - Wait for the container to build (this should complete successfully now!)
 
-2. **With GitHub Codespaces**:
-   - The dev container configuration will be automatically used
-
-3. **With Docker CLI**:
+2. **After Container is Ready**:
    ```bash
-   # Build and run the dev container
-   docker build -t verbatim-ai-dev .devcontainer/
-   docker run -it -v $(pwd):/workspace verbatim-ai-dev
+   # The container will automatically run: pnpm install
+   # Then you can start development immediately:
+   pnpm dev
+   
+   # Optional: Enable secure firewall (for Claude Code safety):
+   sudo /usr/local/bin/init-firewall.sh
    ```
+
+### Authentication Setup
+
+**You WILL need to re-authenticate in the container:**
+
+#### GitHub CLI Authentication
+```bash
+# Login to GitHub CLI inside the container
+gh auth login
+# Follow the prompts to authenticate
+```
+
+#### Claude Code Authentication
+```bash
+# Set up Claude Code with your API key
+claude-code auth login
+# Or set environment variable:
+export CLAUDE_API_KEY="your-api-key-here"
+```
+
+### Fixed Issues
+
+- **Container Setup**: Now separates dependency installation from firewall setup
+- **Network Access**: Firewall setup is optional and runs after container is ready
+- **Error Handling**: Improved firewall script with timeout and fallback mechanisms
+- **Authentication**: Clear guidance on required re-authentication
 
 ### Troubleshooting
 
 - **Container build fails**: Ensure Docker is running and you have sufficient disk space
-- **Network issues**: The firewall restricts access to allowed domains only (GitHub, npm, Anthropic)
+- **"Setting up" hangs**: The fix separates firewall from initial setup - this should resolve the issue
+- **Network issues after firewall**: The firewall restricts access to allowed domains only (GitHub, npm, Anthropic)
 - **Permission errors**: The container runs as the `node` user for security
+- **Authentication required**: You'll need to re-login to GitHub and Claude Code inside the container
+
+### Firewall Details
+
+The optional firewall setup creates a secure environment by:
+- ✅ Allowing: GitHub, npm registry, Anthropic API, localhost
+- ❌ Blocking: All other external network access
+- 🛡️ Perfect for Claude Code "yolo mode" with network restrictions
 
 **Edit a file directly in GitHub**
 
