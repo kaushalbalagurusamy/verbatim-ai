@@ -54,33 +54,50 @@ export function getLineMarginBottom(type: string): string {
 }
 
 export function applyFormatting(text: string, formatting: TextFormatting[]): string {
-  if (!formatting.length || !text) return text;
+  try {
+    // Handle empty or invalid inputs
+    if (!text || typeof text !== 'string') return '<br>';
+    if (!Array.isArray(formatting) || formatting.length === 0) return escapeHtml(text) || '<br>';
 
-  // Build a map of formatting at each character position
-  interface CharFormat {
-    bold: boolean;
-    highlight: { color: HighlightColor } | null;
-    minimize: boolean;
-  }
-  
-  const charFormats: CharFormat[] = Array(text.length).fill(null).map(() => ({
-    bold: false,
-    highlight: null,
-    minimize: false
-  }));
-  
-  // Apply formatting to character map
-  formatting.forEach(fmt => {
-    for (let i = fmt.start; i < Math.min(fmt.end, text.length); i++) {
-      if (fmt.type === 'bold') {
-        charFormats[i].bold = true;
-      } else if (fmt.type === 'highlight' && fmt.color) {
-        charFormats[i].highlight = { color: fmt.color };
-      } else if (fmt.type === 'minimize') {
-        charFormats[i].minimize = true;
-      }
+    // Build a map of formatting at each character position
+    interface CharFormat {
+      bold: boolean;
+      highlight: { color: HighlightColor } | null;
+      minimize: boolean;
     }
-  });
+    
+    const charFormats: CharFormat[] = Array(text.length).fill(null).map(() => ({
+      bold: false,
+      highlight: null,
+      minimize: false
+    }));
+    
+    // Apply formatting to character map with bounds checking
+    formatting.forEach(fmt => {
+      // Validate formatting object
+      if (!fmt || typeof fmt !== 'object') return;
+      if (typeof fmt.start !== 'number' || typeof fmt.end !== 'number') return;
+      
+      // Ensure bounds are valid
+      const start = Math.max(0, fmt.start);
+      const end = Math.min(fmt.end, text.length);
+      
+      if (start >= end) return;
+      
+      for (let i = start; i < end; i++) {
+        if (fmt.type === 'bold') {
+          charFormats[i].bold = true;
+        } else if (fmt.type === 'highlight' && fmt.color) {
+          charFormats[i].highlight = { color: fmt.color };
+        } else if (fmt.type === 'minimize') {
+          charFormats[i].minimize = true;
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error applying formatting:', error);
+    return escapeHtml(text) || '<br>';
+  }
   
   // Build HTML with proper nesting
   let result = '';
@@ -118,8 +135,8 @@ export function applyFormatting(text: string, formatting: TextFormatting[]): str
       }
     }
     
-    // Add the character
-    result += char;
+    // Add the character (escaped)
+    result += escapeHtml(char);
     prevFormat = format;
   }
   
@@ -139,4 +156,19 @@ export function getHighlightColorClass(color: HighlightColor): string {
     case 'pink': return 'bg-pink-200 text-pink-900';
     default: return 'bg-yellow-200 text-yellow-900';
   }
+}
+
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  };
+  
+  return text.replace(/[&<>"']/g, (char) => map[char] || char);
 }

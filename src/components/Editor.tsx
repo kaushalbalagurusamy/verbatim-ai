@@ -79,11 +79,32 @@ export function Editor({
   const initializeEditor = () => {
     if (!editorRef.current) return;
     const editor = editorRef.current;
-    editor.innerHTML = '';
-    content.forEach((block, index) => {
-      const blockElement = createBlockElement(block, index);
-      editor.appendChild(blockElement);
-    });
+    
+    try {
+      editor.innerHTML = '';
+      
+      // Ensure content is valid array
+      if (!Array.isArray(content) || content.length === 0) {
+        // Create default block if no content
+        const defaultBlock = document.createElement('div');
+        defaultBlock.dataset.blockId = 'default-block';
+        defaultBlock.dataset.blockIndex = '0';
+        defaultBlock.className = getBlockClassName('paragraph');
+        defaultBlock.contentEditable = 'true';
+        defaultBlock.innerHTML = '<br>';
+        editor.appendChild(defaultBlock);
+        return;
+      }
+      
+      content.forEach((block, index) => {
+        if (block && typeof block === 'object') {
+          const blockElement = createBlockElement(block, index);
+          editor.appendChild(blockElement);
+        }
+      });
+    } catch (error) {
+      console.error('Error initializing editor:', error);
+    }
   };
 
   const createBlockElement = (block: ContentBlock, index: number): HTMLElement => {
@@ -98,77 +119,111 @@ export function Editor({
   };
 
   const updateBlockContent = (element: HTMLElement, block: ContentBlock) => {
-    element.dataset.blockType = block.type;
-    element.className = getBlockClassName(block.type);
-    const currentText = element.textContent || '';
-    if (currentText !== block.content) {
-      const formattedHTML = applyFormatting(block.content, block.formatting || []);
-      element.innerHTML = formattedHTML || '<br>';
+    try {
+      element.dataset.blockType = block.type || 'paragraph';
+      element.className = getBlockClassName(block.type || 'paragraph');
+      const currentText = element.textContent || '';
+      const blockContent = block.content || '';
+      
+      if (currentText !== blockContent) {
+        const formattedHTML = applyFormatting(blockContent, block.formatting || []);
+        element.innerHTML = formattedHTML || '<br>';
+      }
+    } catch (error) {
+      console.error('Error updating block content:', error);
+      element.innerHTML = '<br>';
     }
   };
 
   const updateBlocks = useCallback(() => {
     if (!editorRef.current) return;
-    const editor = editorRef.current;
-    const blocks = Array.from(editor.children) as HTMLElement[];
-    const cursorPos = getCursorPosition();
+    
+    try {
+      const editor = editorRef.current;
+      const blocks = Array.from(editor.children) as HTMLElement[];
+      const cursorPos = getCursorPosition();
 
-    // Update only changed blocks
-    content.forEach((block, index) => {
-      const existingBlock = blocks[index];
-      if (!existingBlock || existingBlock.dataset.blockId !== block.id) {
-        const newBlock = createBlockElement(block, index);
-        if (existingBlock) {
-          editor.replaceChild(newBlock, existingBlock);
+      // Validate content
+      if (!Array.isArray(content)) {
+        console.error('Invalid content: expected array');
+        return;
+      }
+
+      // Update only changed blocks
+      content.forEach((block, index) => {
+        if (!block || typeof block !== 'object') return;
+        
+        const existingBlock = blocks[index];
+        if (!existingBlock || existingBlock.dataset.blockId !== block.id) {
+          const newBlock = createBlockElement(block, index);
+          if (existingBlock) {
+            editor.replaceChild(newBlock, existingBlock);
+          } else {
+            editor.appendChild(newBlock);
+          }
         } else {
-          editor.appendChild(newBlock);
+          const currentText = existingBlock.textContent || '';
+          const blockContent = block.content || '';
+          if (currentText !== blockContent || existingBlock.dataset.blockType !== block.type) {
+            updateBlockContent(existingBlock, block);
+          }
         }
-      } else {
-        const currentText = existingBlock.textContent || '';
-        if (currentText !== block.content || existingBlock.dataset.blockType !== block.type) {
-          updateBlockContent(existingBlock, block);
+      });
+
+      // Remove extra blocks
+      while (editor.children.length > content.length) {
+        const lastChild = editor.lastChild;
+        if (lastChild) {
+          editor.removeChild(lastChild);
         }
       }
-    });
 
-    // Remove extra blocks
-    while (editor.children.length > content.length) {
-      editor.removeChild(editor.lastChild!);
-    }
-
-    // Restore cursor position
-    if (cursorPos) {
-      restoreCursorPosition(cursorPos);
+      // Restore cursor position
+      if (cursorPos) {
+        restoreCursorPosition(cursorPos);
+      }
+    } catch (error) {
+      console.error('Error updating blocks:', error);
     }
   }, [content]);
 
   const handleInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    const blockElement = target.closest('[data-block-id]') as HTMLElement;
-    if (!blockElement) return;
+    try {
+      const target = e.target as HTMLElement;
+      const blockElement = target.closest('[data-block-id]') as HTMLElement;
+      if (!blockElement) return;
 
-    const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
-    const blockId = blockElement.dataset.blockId || '';
-    const textContent = blockElement.textContent || '';
-    
-    // Detect block type based on content
-    let blockType = contentRef.current[blockIndex]?.type || 'paragraph';
-    if (textContent.startsWith('@')) {
-      blockType = 'mention';
-    } else if (textContent.startsWith('/')) {
-      blockType = 'command';
+      const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
+      const blockId = blockElement.dataset.blockId || '';
+      const textContent = blockElement.textContent || '';
+      
+      // Validate block index
+      if (blockIndex < 0 || blockIndex >= contentRef.current.length) {
+        console.error('Invalid block index:', blockIndex);
+        return;
+      }
+      
+      // Detect block type based on content
+      let blockType = contentRef.current[blockIndex]?.type || 'paragraph';
+      if (textContent.startsWith('@')) {
+        blockType = 'mention';
+      } else if (textContent.startsWith('/')) {
+        blockType = 'command';
+      }
+      
+      // Update only the changed block
+      const newContent = [...contentRef.current];
+      newContent[blockIndex] = {
+        id: blockId,
+        type: blockType,
+        content: textContent,
+        formatting: contentRef.current[blockIndex]?.formatting || []
+      };
+      
+      onChange(newContent);
+    } catch (error) {
+      console.error('Error handling input:', error);
     }
-    
-    // Update only the changed block
-    const newContent = [...contentRef.current];
-    newContent[blockIndex] = {
-      id: blockId,
-      type: blockType,
-      content: textContent,
-      formatting: contentRef.current[blockIndex]?.formatting || []
-    };
-    
-    onChange(newContent);
   }, [onChange]);
 
   const handleSelectionChange = useCallback(() => {

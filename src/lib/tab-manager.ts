@@ -4,6 +4,7 @@
  */
 
 import { documentStore, DocumentContent } from './document-store';
+import { validateDocumentContent } from '@/utils/content-validation';
 
 export type ViewType = 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow';
 
@@ -88,12 +89,19 @@ class TabManager {
       documentId
     };
 
-    // Create associated document
+    // Create associated document with validated content
+    let content = options.content || this.getDefaultContent(options.type);
+    
+    // Validate document content (not flow content)
+    if (options.type !== 'flow') {
+      content = validateDocumentContent(content);
+    }
+    
     const docContent: DocumentContent = {
       id: documentId,
       type: options.type === 'flow' ? 'flow' : 'document',
       title: options.title,
-      content: options.content || this.getDefaultContent(options.type),
+      content,
       metadata: {
         createdAt: new Date(),
         modifiedAt: new Date(),

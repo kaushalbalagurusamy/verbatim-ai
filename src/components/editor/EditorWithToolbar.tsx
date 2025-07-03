@@ -10,6 +10,7 @@ import { Editor } from '../Editor';
 import { useEditor } from '@/hooks/useEditor';
 import { useCreateDocument } from '@/hooks/useDocuments';
 import { createNewDocument } from '@/utils/document.utils';
+import { validateDocumentContent } from '@/utils/content-validation';
 import type { HighlightColor, Document as DocumentType, ContentBlock } from '@/types/document.types';
 
 interface EditorState {
@@ -30,26 +31,20 @@ interface EditorWithToolbarProps {
 export function EditorWithToolbar({ documentId, initialTitle = 'New Document', initialContent, onTitleChange, onContentChange, onTitleChangeHandlerReady }: EditorWithToolbarProps) {
   // Initialize document with provided content or create new
   const [document, setDocument] = useState<DocumentType | null>(() => {
-    const doc = createNewDocument(initialTitle);
-    // If initialContent is provided, use it properly
-    if (initialContent) {
-      if (initialContent.blocks) {
-        // Content already has proper block structure
-        doc.content = initialContent;
-      } else if (initialContent.text !== undefined) {
-        // Legacy text format - convert to blocks
-        doc.content = {
-          blocks: [{
-            id: `block-${Date.now()}`,
-            type: 'paragraph',
-            content: initialContent.text || '',
-            formatting: []
-          }],
-          version: '1.0.0'
-        };
+    try {
+      const doc = createNewDocument(initialTitle);
+      
+      // Validate and sanitize initial content
+      if (initialContent) {
+        doc.content = validateDocumentContent(initialContent);
       }
+      
+      return doc;
+    } catch (error) {
+      console.error('Error initializing document:', error);
+      // Return a safe default document
+      return createNewDocument(initialTitle);
     }
-    return doc;
   });
   const createDocument = useCreateDocument();
   
@@ -107,7 +102,16 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
   
   // Wrap content change to notify parent - simplified to avoid double updates
   const handleContentChange = useCallback((newContent: ContentBlock[]) => {
-    editorContentChange(newContent);
+    try {
+      // Validate content blocks before passing them on
+      if (!Array.isArray(newContent)) {
+        console.error('Invalid content: expected array of blocks');
+        return;
+      }
+      editorContentChange(newContent);
+    } catch (error) {
+      console.error('Error handling content change:', error);
+    }
   }, [editorContentChange]);
 
   const [editorState, setEditorState] = useState<EditorState>({

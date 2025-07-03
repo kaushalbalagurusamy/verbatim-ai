@@ -5,6 +5,7 @@ import { MainEditor } from '@/components/MainEditor';
 import { ChatPanel } from '@/components/ChatPanel';
 import { TopBar } from '@/components/TopBar';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null>('document');
@@ -31,11 +32,13 @@ const Index = () => {
           {sidebarVisible && (
             <>
               <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
-                <Sidebar 
-                  collapsed={false} 
-                  onToggle={() => {}}
-                  onActiveViewChange={setActiveView}
-                />
+                <ErrorBoundary fallbackTitle="Sidebar Error">
+                  <Sidebar 
+                    collapsed={false} 
+                    onToggle={() => {}}
+                    onActiveViewChange={setActiveView}
+                  />
+                </ErrorBoundary>
               </ResizablePanel>
               <ResizableHandle />
             </>
@@ -45,13 +48,15 @@ const Index = () => {
           {mainEditorVisible && (
             <>
               <ResizablePanel defaultSize={sidebarVisible && chatVisible ? 60 : 80} minSize={40}>
-                <MainEditor 
-                  activeView={activeView}
-                  onFileSelect={(fileName, fileType) => {
-                    // Switch to the appropriate view when a file is selected
-                    setActiveView(fileType);
-                  }}
-                />
+                <ErrorBoundary fallbackTitle="Editor Error">
+                  <MainEditor 
+                    activeView={activeView}
+                    onFileSelect={(fileName, fileType) => {
+                      // Switch to the appropriate view when a file is selected
+                      setActiveView(fileType);
+                    }}
+                  />
+                </ErrorBoundary>
               </ResizablePanel>
               {chatVisible && <ResizableHandle />}
             </>
@@ -62,11 +67,13 @@ const Index = () => {
             <>
               {!mainEditorVisible && sidebarVisible && <ResizableHandle />}
               <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
-                <ChatPanel 
-                  collapsed={false}
-                  onToggle={() => {}}
-                  activeView={activeView}
-                />
+                <ErrorBoundary fallbackTitle="Chat Panel Error">
+                  <ChatPanel 
+                    collapsed={false}
+                    onToggle={() => {}}
+                    activeView={activeView}
+                  />
+                </ErrorBoundary>
               </ResizablePanel>
             </>
           )}
