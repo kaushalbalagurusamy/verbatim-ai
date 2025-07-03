@@ -32,7 +32,7 @@ export function getCursorPosition(): CursorPosition | null {
  * Restore cursor position after DOM update
  */
 export function restoreCursorPosition(position: CursorPosition): void {
-  const blockElement = document.querySelector(`[data-block-id="${position.blockId}"]`);
+  const blockElement = document.querySelector(`[data-block-id="${position.blockId}"]`) as HTMLElement;
   if (!blockElement) return;
 
   try {
