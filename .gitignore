@@ -8,6 +8,12 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.pnpm-store
+.pnpm-store/
+.pnpm/
+*.pnpm-debug.log
+.modules.yaml
+.pnpm-workspace-state.json
 dist
 dist-ssr
 *.local
