@@ -13,7 +13,7 @@ export function useEditor({
   document,
   onDocumentChange,
   autoSave = true,
-  autoSaveDelay = 1000
+  autoSaveDelay = 2000 // Increased to 2 seconds for better performance
 }: UseEditorOptions = {}) {
   const [isModified, setIsModified] = useState(false);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -28,6 +28,10 @@ export function useEditor({
 
   const handleContentChange = useCallback((newContent: ContentBlock[]) => {
     if (!document) return;
+
+    // Check if content actually changed to avoid unnecessary updates
+    const contentChanged = JSON.stringify(newContent) !== JSON.stringify(document.content.blocks);
+    if (!contentChanged) return;
 
     const updatedDocument: Document = {
       ...document,

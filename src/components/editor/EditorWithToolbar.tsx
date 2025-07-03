@@ -90,16 +90,10 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
     autoSave: true
   });
   
-  // Wrap content change to notify parent
+  // Wrap content change to notify parent - simplified to avoid double updates
   const handleContentChange = useCallback((newContent: ContentBlock[]) => {
     editorContentChange(newContent);
-    if (document) {
-      setDocument(prev => prev ? { 
-        ...prev, 
-        content: { ...prev.content, blocks: newContent } 
-      } : null);
-    }
-  }, [editorContentChange, document]);
+  }, [editorContentChange]);
 
   const [editorState, setEditorState] = useState<EditorState>({
     isEmphasisActive: false,
@@ -175,15 +169,19 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
         autoFocus={true}
       />
       
-      {(isModified || isSaving) && (
-        <div className="absolute top-2 right-2 text-xs">
-          {isSaving ? (
-            <span className="text-[#4fc3f7]">Saving...</span>
-          ) : isModified ? (
-            <span className="text-[#ffa726]">Modified</span>
-          ) : null}
-        </div>
-      )}
+      {/* Save Status Indicator */}
+      <div className="absolute top-2 right-2 text-xs transition-all duration-200">
+        {isSaving ? (
+          <span className="text-[#4fc3f7] flex items-center gap-1">
+            <span className="inline-block w-2 h-2 bg-[#4fc3f7] rounded-full animate-pulse" />
+            Saving...
+          </span>
+        ) : isModified ? (
+          <span className="text-[#ffa726]">Unsaved changes</span>
+        ) : document?.id ? (
+          <span className="text-[#4caf50]">Saved</span>
+        ) : null}
+      </div>
     </div>
   );
 }
