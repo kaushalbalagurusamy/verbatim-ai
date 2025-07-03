@@ -1,4 +1,6 @@
 {
+  // DevContainer configuration for Verbatim AI with Git synchronization fixes
+  // This configuration resolves Git pull/push issues by properly mounting host credentials
   "name": "Verbatim AI Sandbox",
   "build": {
     "dockerfile": "Dockerfile",
@@ -43,13 +45,24 @@
   "remoteUser": "node",
   "mounts": [
     "source=verbatim-ai-bashhistory,target=/commandhistory,type=volume",
-    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind"
+    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind",
+    // Mount Git configuration from host to enable proper authentication
+    "source=${localEnv:HOME}/.gitconfig,target=/home/node/.gitconfig,type=bind,readonly",
+    // Mount SSH keys for Git operations (if using SSH remotes)
+    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,readonly"
   ],
   "remoteEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",
     "CLAUDE_CONFIG_DIR": "/home/node/.claude",
-    "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
-    "NODE_ENV": "development"
+    // Commented out as this can interfere with Git operations in the container
+    // "POWERLEVEL9K_DISABLE_GITSTATUS": "true",
+    "NODE_ENV": "development",
+    // Pass through Git credential helpers from host environment
+    "GIT_ASKPASS": "${localEnv:GIT_ASKPASS}",
+    "GIT_CREDENTIAL_HELPER": "${localEnv:GIT_CREDENTIAL_HELPER}",
+    // Additional Git environment variables for authentication
+    "GIT_TERMINAL_PROMPT": "${localEnv:GIT_TERMINAL_PROMPT}",
+    "GIT_SSH_COMMAND": "${localEnv:GIT_SSH_COMMAND}"
   },
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/workspace",
