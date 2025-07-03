@@ -88,6 +88,44 @@ export function Editor({
     }
   };
 
+  const getLineHeight = (type: string): string => {
+    switch (type) {
+      case 'heading1':
+        return '2rem'; // text-2xl
+      case 'heading2':
+        return '1.75rem'; // text-xl  
+      case 'heading3':
+        return '1.5rem'; // text-lg
+      case 'heading4':
+        return '1.25rem'; // text-base
+      case 'heading5':
+        return '1rem'; // text-sm
+      case 'heading6':
+        return '0.875rem'; // text-xs
+      default:
+        return '1.5rem'; // min-h-[1.5rem]
+    }
+  };
+
+  const getLineMarginBottom = (type: string): string => {
+    switch (type) {
+      case 'heading1':
+        return '1rem'; // mb-4
+      case 'heading2':
+        return '0.75rem'; // mb-3
+      case 'heading3':
+        return '0.5rem'; // mb-2
+      case 'heading4':
+        return '0.5rem'; // mb-2
+      case 'heading5':
+        return '0.25rem'; // mb-1
+      case 'heading6':
+        return '0.25rem'; // mb-1
+      default:
+        return '0.5rem'; // mb-2
+    }
+  };
+
   const applyFormatting = (text: string, formatting: TextFormatting[]): string => {
     if (!formatting.length) return text;
 
@@ -314,23 +352,52 @@ export function Editor({
 
   return (
     <div className="flex-1 overflow-auto">
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-        onMouseUp={handleSelectionChange}
-        onKeyUp={handleSelectionChange}
-        className="h-full p-6 bg-[#1e1e1e] text-[#cccccc] focus:outline-none"
-        style={{ 
-          minHeight: '100%',
-          fontFamily: '"Segoe UI", "Roboto", sans-serif',
-          fontSize: '14px',
-          lineHeight: '1.6'
-        }}
-        data-placeholder={placeholder}
-      />
+      <div className="flex h-full">
+        {/* Line Numbers */}
+        <div className="w-12 bg-[#2d2d30] border-r border-[#3c3c3c] flex-shrink-0 py-6 px-2">
+          {content.map((block, index) => {
+            const isHeader = block.type.startsWith('heading');
+            const headerLevel = isHeader ? block.type.replace('heading', '') : null;
+            
+            return (
+              <div 
+                key={`line-${block.id}`}
+                className="flex items-center justify-end h-[1.5rem] leading-relaxed text-[#6a6a6a] text-xs font-mono"
+                style={{
+                  // Match the height and spacing of content blocks
+                  minHeight: getLineHeight(block.type),
+                  marginBottom: getLineMarginBottom(block.type)
+                }}
+              >
+                {isHeader ? (
+                  <span className="text-[#4fc3f7] font-medium">H{headerLevel}</span>
+                ) : (
+                  <span>{index + 1}</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* Editor Content */}
+        <div
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={handleInput}
+          onKeyDown={handleKeyDown}
+          onMouseUp={handleSelectionChange}
+          onKeyUp={handleSelectionChange}
+          className="flex-1 p-6 bg-[#1e1e1e] text-[#cccccc] focus:outline-none"
+          style={{ 
+            minHeight: '100%',
+            fontFamily: '"Segoe UI", "Roboto", sans-serif',
+            fontSize: '14px',
+            lineHeight: '1.6'
+          }}
+          data-placeholder={placeholder}
+        />
+      </div>
     </div>
   );
 }
