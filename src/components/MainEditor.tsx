@@ -7,7 +7,7 @@ import { FlowEditor } from './FlowEditor';
 // Extend window interface for file selection callback
 declare global {
   interface Window {
-    fileSelectCallback?: (fileName: string, fileType: ViewType) => void;
+    fileSelectCallback?: (fileName: string, fileType: ViewType, filePath?: string) => void;
   }
 }
 
@@ -19,6 +19,7 @@ interface Tab {
   type: ViewType;
   active: boolean;
   modified: boolean;
+  filePath?: string; // Optional path to track opened files
 }
 
 interface MainEditorProps {
@@ -127,27 +128,49 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
   useEffect(() => {
     if (onFileSelect) {
       // Register a callback that FileTree can use
-      window.fileSelectCallback = (fileName: string, fileType: ViewType) => {
+      window.fileSelectCallback = (fileName: string, fileType: ViewType, filePath?: string) => {
         // Switch to the appropriate view if needed
         if (activeView !== fileType) {
           onFileSelect(fileName, fileType);
-        } else {
+        }
+        
+        // Always use functional update to get latest state
+        setTabsByView(prev => {
+          const currentViewTabs = prev[fileType];
+          
+          // Check if file is already open
+          if (filePath) {
+            const existingTab = currentViewTabs.find(tab => tab.filePath === filePath);
+            if (existingTab) {
+              // Just activate the existing tab
+              return {
+                ...prev,
+                [fileType]: currentViewTabs.map(tab => ({
+                  ...tab,
+                  active: tab.id === existingTab.id
+                }))
+              };
+            }
+          }
+          
           // Create a new tab for the file
-          const allTabs = Object.values(tabsByView).flat();
+          const allTabs = Object.values(prev).flat();
           const newId = allTabs.length > 0 ? Math.max(...allTabs.map(t => t.id)) + 1 : 1;
           const newTab: Tab = {
             id: newId,
             title: fileName,
             type: fileType,
             active: true,
-            modified: false
+            modified: false,
+            filePath: filePath
           };
           
-          setTabsByView(prev => ({
+          // Add new tab and deactivate others
+          return {
             ...prev,
-            [fileType]: prev[fileType].map(tab => ({ ...tab, active: false })).concat(newTab)
-          }));
-        }
+            [fileType]: currentViewTabs.map(tab => ({ ...tab, active: false })).concat(newTab)
+          };
+        });
       };
     }
     
@@ -156,7 +179,7 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
         delete window.fileSelectCallback;
       }
     };
-  }, [activeView, onFileSelect, tabsByView]);
+  }, [activeView, onFileSelect]); // Removed tabsByView from dependencies
 
   const renderEditorContent = () => {
     const activeTab = tabs.find(tab => tab.active);

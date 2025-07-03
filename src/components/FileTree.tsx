@@ -63,7 +63,7 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
           onFileSelect?.(node.name);
           // Also call the global callback if it exists
           if (window.fileSelectCallback) {
-            window.fileSelectCallback(node.name, mode);
+            window.fileSelectCallback(node.name, mode, currentPath);
           }
         }}
         className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors ml-4"
