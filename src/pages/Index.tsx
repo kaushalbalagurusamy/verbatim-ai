@@ -55,7 +55,11 @@ const Index = () => {
           {chatVisible && (
             <>
               {!mainEditorVisible && sidebarVisible && <ResizableHandle />}
-              <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+              <ResizablePanel 
+                defaultSize={chatVisible && !mainEditorVisible && !sidebarVisible ? 100 : 20} 
+                minSize={15} 
+                maxSize={chatVisible && !mainEditorVisible && !sidebarVisible ? 100 : 40}
+              >
                 <ChatPanel 
                   collapsed={false}
                   onToggle={() => {}}
