@@ -169,18 +169,28 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
         autoFocus={true}
       />
       
-      {/* Save Status Indicator */}
-      <div className="absolute top-2 right-2 text-xs transition-all duration-200">
-        {isSaving ? (
-          <span className="text-[#4fc3f7] flex items-center gap-1">
-            <span className="inline-block w-2 h-2 bg-[#4fc3f7] rounded-full animate-pulse" />
-            Saving...
-          </span>
-        ) : isModified ? (
-          <span className="text-[#ffa726]">Unsaved changes</span>
-        ) : document?.id ? (
-          <span className="text-[#4caf50]">Saved</span>
-        ) : null}
+      {/* Save Status Indicator - Bottom Right */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-2">
+        <div 
+          className={`w-2 h-2 rounded-full transition-all duration-300 ${
+            isSaving 
+              ? 'bg-[#4fc3f7] animate-pulse' 
+              : isModified 
+                ? 'bg-transparent border border-[#4caf50]' 
+                : document?.id 
+                  ? 'bg-[#4caf50]' 
+                  : ''
+          }`}
+          title={
+            isSaving 
+              ? 'Saving...' 
+              : isModified 
+                ? 'Changes pending save' 
+                : document?.id 
+                  ? 'All changes saved' 
+                  : ''
+          }
+        />
       </div>
     </div>
   );
