@@ -10,7 +10,7 @@ import { Editor } from '../Editor';
 import { useEditor } from '@/hooks/useEditor';
 import { useCreateDocument } from '@/hooks/useDocuments';
 import { createNewDocument } from '@/utils/document.utils';
-import type { HighlightColor, Document as DocumentType } from '@/types/document.types';
+import type { HighlightColor, Document as DocumentType, ContentBlock } from '@/types/document.types';
 
 interface EditorState {
   isEmphasisActive: boolean;
@@ -91,10 +91,13 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
   });
   
   // Wrap content change to notify parent
-  const handleContentChange = useCallback((newContent: string) => {
+  const handleContentChange = useCallback((newContent: ContentBlock[]) => {
     editorContentChange(newContent);
     if (document) {
-      setDocument(prev => prev ? { ...prev, content: newContent } : null);
+      setDocument(prev => prev ? { 
+        ...prev, 
+        content: { ...prev.content, blocks: newContent } 
+      } : null);
     }
   }, [editorContentChange, document]);
 

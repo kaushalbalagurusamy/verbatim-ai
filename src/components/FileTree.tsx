@@ -1,5 +1,5 @@
 
-import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
+import { ChevronRight, ChevronDown, File, Folder, Table, Telescope, Pen, Code, AudioWaveform } from 'lucide-react';
 import { useState } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -25,6 +25,27 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
       newExpanded.add(path);
     }
     setExpandedFolders(newExpanded);
+  };
+
+  const getFileIcon = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    
+    switch (extension) {
+      case 'flow':
+        return <Table className="w-4 h-4 text-[#4fc3f7]" />;
+      case 'doc':
+        return <File className="w-4 h-4 text-[#4fc3f7]" />;
+      case 'research':
+        return <Telescope className="w-4 h-4 text-[#4fc3f7]" />;
+      case 'pen':
+        return <Pen className="w-4 h-4 text-[#4fc3f7]" />;
+      case 'pdf':
+        return <Code className="w-4 h-4 text-[#4fc3f7]" />;
+      case 'rec':
+        return <AudioWaveform className="w-4 h-4 text-[#4fc3f7]" />;
+      default:
+        return <File className="w-4 h-4 text-[#4fc3f7]" />;
+    }
   };
 
   const renderNode = (node: FileNode, path: string = '') => {
@@ -68,7 +89,7 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
         }}
         className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors ml-4"
       >
-        <File className="w-4 h-4 text-[#4fc3f7]" />
+        {getFileIcon(node.name)}
         <span>{node.name}</span>
       </button>
     );
