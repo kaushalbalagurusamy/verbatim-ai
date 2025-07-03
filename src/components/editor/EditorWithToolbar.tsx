@@ -31,8 +31,23 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
   // Initialize document with provided content or create new
   const [document, setDocument] = useState<DocumentType | null>(() => {
     const doc = createNewDocument(initialTitle);
-    if (initialContent && initialContent.text !== undefined) {
-      doc.content = initialContent.text || '';
+    // If initialContent is provided, use it properly
+    if (initialContent) {
+      if (initialContent.blocks) {
+        // Content already has proper block structure
+        doc.content = initialContent;
+      } else if (initialContent.text !== undefined) {
+        // Legacy text format - convert to blocks
+        doc.content = {
+          blocks: [{
+            id: `block-${Date.now()}`,
+            type: 'paragraph',
+            content: initialContent.text || '',
+            formatting: []
+          }],
+          version: '1.0.0'
+        };
+      }
     }
     return doc;
   });
@@ -41,7 +56,7 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
   // Update content when it changes
   useEffect(() => {
     if (onContentChange && document) {
-      onContentChange({ text: document.content });
+      onContentChange(document.content);
     }
   }, [document?.content, onContentChange]);
   

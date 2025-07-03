@@ -120,7 +120,15 @@ class TabManager {
         };
       case 'document':
       default:
-        return { text: '' };
+        return {
+          blocks: [{
+            id: `block-${Date.now()}`,
+            type: 'paragraph',
+            content: '',
+            formatting: []
+          }],
+          version: '1.0.0'
+        };
     }
   }
 
