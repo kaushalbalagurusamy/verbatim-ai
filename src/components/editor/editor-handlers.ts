@@ -2,7 +2,7 @@
  * Editor Event Handlers - Keyboard and selection handling logic
  * Extracted to keep main Editor component under 200 lines
  */
-import type { ContentBlock } from '@/types/document.types';
+import type { ContentBlock, FormattingType, HighlightColor } from '@/types/document.types';
 import { getCursorPosition, isCursorAtBlockStart } from '@/utils/cursor-manager';
 
 export function handleEnterKey(
@@ -107,8 +107,35 @@ export function handleKeyDown(
   e: React.KeyboardEvent<HTMLDivElement>,
   contentRef: React.MutableRefObject<ContentBlock[]>,
   onChange: (content: ContentBlock[]) => void,
-  editorRef: React.RefObject<HTMLDivElement>
+  editorRef: React.RefObject<HTMLDivElement>,
+  applyFormat?: (type: FormattingType, color?: HighlightColor) => void
 ) {
+  // Handle formatting shortcuts
+  if ((e.metaKey || e.ctrlKey) && applyFormat) {
+    switch (e.key.toLowerCase()) {
+      case 'b':
+        e.preventDefault();
+        applyFormat('bold');
+        return;
+      case 'h':
+        e.preventDefault();
+        applyFormat('highlight');
+        return;
+      case 'm':
+        e.preventDefault();
+        applyFormat('minimize');
+        return;
+      case 'c':
+        if (e.shiftKey) {
+          e.preventDefault();
+          // Clear formatting is handled differently - need to pass a special flag
+          // For now, we'll handle this in the Editor component
+        }
+        return;
+    }
+  }
+  
+  // Handle regular editing shortcuts
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
     handleEnterKey(e, contentRef, onChange, editorRef);

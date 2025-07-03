@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useAutoSaveDocument } from './useDocuments';
 import type { Document, ContentBlock, FormattingType, HighlightColor } from '@/types/document.types';
+import { FormattingEngine } from '@/utils/formatting-engine';
+import { selectionManager, SelectionManager } from '@/utils/selection-manager';
 
 interface UseEditorOptions {
   document?: Document;
@@ -78,26 +80,140 @@ export function useEditor({
 
   // Formatting functions that can be called by toolbar
   const applyBold = useCallback(() => {
-    applyFormatRef.current?.('bold');
+    if (!applyFormatRef.current) {
+      console.warn('Format ref not set');
+      return;
+    }
+    applyFormatRef.current('bold');
   }, []);
 
   const applyHighlight = useCallback((color: HighlightColor = 'yellow') => {
-    applyFormatRef.current?.('highlight', color);
-  }, []);
+    if (!applyFormatRef.current) {
+      console.warn('Format ref not set');
+      return;
+    }
+    
+    // Get current selections to check for existing highlights
+    const selections = selectionManager.getSelections();
+    if (selections.length === 0 && selection && !selection.isCollapsed) {
+      const textSelection = SelectionManager.fromDOMSelection(selection);
+      if (textSelection) selections.push(textSelection);
+    }
+    
+    // Check if any selection has existing highlight for color cycling
+    let colorToApply = color;
+    if (selections.length > 0 && document) {
+      const firstSelection = selections[0];
+      const block = document.content.blocks.find(b => b.id === firstSelection.blockId);
+      if (block?.formatting) {
+        const existingHighlight = block.formatting.find(fmt => 
+          fmt.type === 'highlight' &&
+          fmt.start >= firstSelection.start &&
+          fmt.end <= firstSelection.end
+        );
+        if (existingHighlight) {
+          colorToApply = FormattingEngine.getNextHighlightColor(existingHighlight.color);
+        }
+      }
+    }
+    
+    applyFormatRef.current('highlight', colorToApply);
+  }, [selection, document]);
 
   const applyMinimize = useCallback(() => {
-    applyFormatRef.current?.('minimize');
-  }, []);
+    if (!applyFormatRef.current) {
+      console.warn('Format ref not set');
+      return;
+    }
+    
+    // Check if selection has emphasis before applying minimize
+    const selections = selectionManager.getSelections();
+    if (selections.length === 0 && selection && !selection.isCollapsed) {
+      const textSelection = SelectionManager.fromDOMSelection(selection);
+      if (textSelection) selections.push(textSelection);
+    }
+    
+    // Only apply minimize if no emphasis in selection
+    if (selections.length > 0 && document) {
+      const canMinimize = selections.every(sel => {
+        const block = document.content.blocks.find(b => b.id === sel.blockId);
+        if (!block?.formatting) return true;
+        return !FormattingEngine.hasEmphasis(block.formatting, sel.start, sel.end);
+      });
+      
+      if (canMinimize) {
+        applyFormatRef.current('minimize');
+      }
+    }
+  }, [selection, document]);
 
   const clearFormatting = useCallback(() => {
-    // TODO: Implement clear formatting
-    console.log('Clear formatting not yet implemented');
-  }, []);
+    if (!document || !applyFormatRef.current) return;
+    
+    // Get current selections
+    const selections = selectionManager.getSelections();
+    if (selections.length === 0 && selection && !selection.isCollapsed) {
+      const textSelection = SelectionManager.fromDOMSelection(selection);
+      if (textSelection) selections.push(textSelection);
+    }
+    
+    if (selections.length === 0) return;
+    
+    // Clear formatting using the formatting engine
+    const updatedBlocks = FormattingEngine.clearFormatting(
+      document.content.blocks,
+      selections
+    );
+    
+    const updatedDocument: Document = {
+      ...document,
+      content: {
+        ...document.content,
+        blocks: updatedBlocks
+      },
+      updatedAt: new Date().toISOString(),
+      isModified: true,
+      version: document.version + 1
+    };
+    
+    onDocumentChange?.(updatedDocument);
+    
+    // Clear selections
+    selectionManager.clearSelections();
+  }, [document, selection, onDocumentChange]);
 
   const setHeading = useCallback((level: 1 | 2 | 3 | 4 | 5 | 6) => {
-    // TODO: Implement heading conversion
-    console.log(`Set heading ${level} not yet implemented`);
-  }, []);
+    if (!document || !selection) return;
+    
+    // Get the block containing the selection
+    const range = selection.getRangeAt(0);
+    const blockElement = range.commonAncestorContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
+    if (!blockElement) return;
+    
+    const blockId = blockElement.dataset.blockId;
+    const blockIndex = document.content.blocks.findIndex(b => b.id === blockId);
+    if (blockIndex === -1) return;
+    
+    // Update block type
+    const updatedBlocks = [...document.content.blocks];
+    updatedBlocks[blockIndex] = {
+      ...updatedBlocks[blockIndex],
+      type: `heading${level}` as any
+    };
+    
+    const updatedDocument: Document = {
+      ...document,
+      content: {
+        ...document.content,
+        blocks: updatedBlocks
+      },
+      updatedAt: new Date().toISOString(),
+      isModified: true,
+      version: document.version + 1
+    };
+    
+    onDocumentChange?.(updatedDocument);
+  }, [document, selection, onDocumentChange]);
 
   const insertMention = useCallback((fileId: string, fileName: string) => {
     // TODO: Implement mention insertion

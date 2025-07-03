@@ -54,39 +54,81 @@ export function getLineMarginBottom(type: string): string {
 }
 
 export function applyFormatting(text: string, formatting: TextFormatting[]): string {
-  if (!formatting.length) return text;
+  if (!formatting.length || !text) return text;
 
-  // Sort formatting by start position (descending)
-  const sortedFormatting = [...formatting].sort((a, b) => b.start - a.start);
+  // Build a map of formatting at each character position
+  interface CharFormat {
+    bold: boolean;
+    highlight: { color: HighlightColor } | null;
+    minimize: boolean;
+  }
   
-  let result = text;
+  const charFormats: CharFormat[] = Array(text.length).fill(null).map(() => ({
+    bold: false,
+    highlight: null,
+    minimize: false
+  }));
   
-  sortedFormatting.forEach(format => {
-    const before = result.slice(0, format.start);
-    const formatted = result.slice(format.start, format.end);
-    const after = result.slice(format.end);
-    
-    let wrapper = '';
-    
-    switch (format.type) {
-      case 'bold':
-        wrapper = `<strong class="font-bold underline">${formatted}</strong>`;
-        break;
-      case 'highlight':
-        const colorClass = getHighlightColorClass(format.color || 'yellow');
-        wrapper = `<mark class="${colorClass}">${formatted}</mark>`;
-        break;
-      case 'minimize':
-        wrapper = `<small class="text-xs opacity-60">${formatted}</small>`;
-        break;
-      default:
-        wrapper = formatted;
+  // Apply formatting to character map
+  formatting.forEach(fmt => {
+    for (let i = fmt.start; i < Math.min(fmt.end, text.length); i++) {
+      if (fmt.type === 'bold') {
+        charFormats[i].bold = true;
+      } else if (fmt.type === 'highlight' && fmt.color) {
+        charFormats[i].highlight = { color: fmt.color };
+      } else if (fmt.type === 'minimize') {
+        charFormats[i].minimize = true;
+      }
     }
-    
-    result = before + wrapper + after;
   });
   
-  return result;
+  // Build HTML with proper nesting
+  let result = '';
+  let openTags: string[] = [];
+  let prevFormat: CharFormat | null = null;
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const format = charFormats[i];
+    
+    // Check if formatting changed
+    if (!prevFormat || 
+        format.bold !== prevFormat.bold ||
+        format.highlight?.color !== prevFormat.highlight?.color ||
+        format.minimize !== prevFormat.minimize) {
+      
+      // Close previous tags in reverse order
+      while (openTags.length > 0) {
+        result += openTags.pop();
+      }
+      
+      // Open new tags in correct order: minimize -> highlight -> bold
+      if (format.minimize) {
+        result += '<small class="text-xs opacity-60">';
+        openTags.push('</small>');
+      }
+      if (format.highlight) {
+        const colorClass = getHighlightColorClass(format.highlight.color);
+        result += `<mark class="${colorClass}">`;
+        openTags.push('</mark>');
+      }
+      if (format.bold) {
+        result += '<strong class="font-bold underline">';
+        openTags.push('</strong>');
+      }
+    }
+    
+    // Add the character
+    result += char;
+    prevFormat = format;
+  }
+  
+  // Close remaining tags
+  while (openTags.length > 0) {
+    result += openTags.pop();
+  }
+  
+  return result || '<br>';
 }
 
 export function getHighlightColorClass(color: HighlightColor): string {

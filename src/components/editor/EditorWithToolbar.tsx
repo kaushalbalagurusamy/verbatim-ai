@@ -181,6 +181,7 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
         content={content}
         onChange={handleContentChange}
         onSelectionChange={onSelectionChange}
+        onApplyFormatRef={setApplyFormatRef}
         autoFocus={true}
       />
       
