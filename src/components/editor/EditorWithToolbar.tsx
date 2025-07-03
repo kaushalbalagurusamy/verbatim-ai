@@ -10,7 +10,7 @@ import { Editor } from '../Editor';
 import { useEditor } from '@/hooks/useEditor';
 import { useCreateDocument } from '@/hooks/useDocuments';
 import { createNewDocument } from '@/utils/document.utils';
-import type { HighlightColor } from '@/types/document.types';
+import type { HighlightColor, Document as DocumentType } from '@/types/document.types';
 
 interface EditorState {
   isEmphasisActive: boolean;
@@ -26,12 +26,21 @@ interface EditorWithToolbarProps {
 }
 
 export function EditorWithToolbar({ documentId, initialTitle = 'New Document', onTitleChange, onTitleChangeHandlerReady }: EditorWithToolbarProps) {
-  // Create a document (either new or loaded)
-  const [document, setDocument] = useState(() => createNewDocument(initialTitle));
+  // Only create a document if one doesn't exist, don't auto-create on every render
+  const [document, setDocument] = useState<DocumentType | null>(null);
   const createDocument = useCreateDocument();
+  
+  // Initialize document only once when component mounts
+  useEffect(() => {
+    if (!document) {
+      setDocument(createNewDocument(initialTitle));
+    }
+  }, [initialTitle, document]);
   
   // Handle document title changes
   const handleDocumentTitleChange = useCallback((newTitle: string) => {
+    if (!document) return;
+    
     const updatedDocument = {
       ...document,
       title: newTitle,
@@ -108,6 +117,17 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', o
     }));
     setHeading(level as 1 | 2 | 3 | 4 | 5 | 6);
   };
+
+  // Don't render anything until document is initialized
+  if (!document) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-[#6a6a6a]">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
