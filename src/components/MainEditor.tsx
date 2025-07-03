@@ -133,6 +133,7 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
         {/* Full Editor with Toolbar */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <EditorWithToolbar 
+            key={activeTab?.id} // Force re-render when tab changes
             initialTitle={tabTitle}
             onTitleChange={(newTitle) => {
               const activeTab = tabs.find(tab => tab.active);
