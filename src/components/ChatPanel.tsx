@@ -148,25 +148,23 @@ export function ChatPanel({
       {/* Chat Input - Fixed at bottom */}
       <div className="p-4 border-t border-[#3c3c3c] flex-shrink-0">
         <div className="relative">
-          <div className="flex items-center gap-1 bg-[#3c3c3c] rounded-lg p-2">
+          <div className="flex items-center gap-2 bg-[#3c3c3c] rounded-lg p-2">
+            <button className="p-1 hover:bg-[#4c4c4c] rounded flex-shrink-0">
+              <Paperclip className="w-4 h-4 text-[#cccccc]" />
+            </button>
             <input 
               type="text" 
               value={message} 
               onChange={e => setMessage(e.target.value)} 
               placeholder="Type a message..." 
-              className="flex-1 bg-transparent text-[#cccccc] text-sm outline-none placeholder-[#6a6a6a] min-w-0 mr-2" 
+              className="flex-1 bg-transparent text-[#cccccc] text-sm outline-none placeholder-[#6a6a6a] min-w-0" 
             />
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <button className="p-1 hover:bg-[#4c4c4c] rounded">
-                <Paperclip className="w-4 h-4 text-[#cccccc]" />
-              </button>
-              <button className="p-1 hover:bg-[#4c4c4c] rounded">
-                <Mic className="w-4 h-4 text-[#cccccc]" />
-              </button>
-              <button className="p-1 hover:bg-[#4c4c4c] rounded">
-                <Send className="w-4 h-4 text-[#cccccc]" />
-              </button>
-            </div>
+            <button className="p-1 hover:bg-[#4c4c4c] rounded flex-shrink-0">
+              <Mic className="w-4 h-4 text-[#cccccc]" />
+            </button>
+            <button className="p-1 hover:bg-[#4c4c4c] rounded flex-shrink-0">
+              <Send className="w-4 h-4 text-[#cccccc]" />
+            </button>
           </div>
         </div>
         
