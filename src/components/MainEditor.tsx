@@ -76,14 +76,8 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
   };
 
   const renderEditorContent = () => {
-    // Debug logging
-    console.log('Tabs state:', tabs);
-    console.log('Tabs length:', tabs.length);
-    console.log('Active tab:', tabs.find(tab => tab.active));
-    
     // Show "Nothing Open" message when no tabs
     if (tabs.length === 0) {
-      console.log('Rendering empty state');
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -96,9 +90,18 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
 
     const activeTab = tabs.find(tab => tab.active);
     const tabTitle = activeTab?.title || 'New Document';
-    
-    console.log('Active tab found:', activeTab);
-    console.log('Tab title:', tabTitle);
+
+    // Don't render editor content if no active tab exists
+    if (!activeTab) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-[#6a6a6a] text-lg mb-2">Nothing Open</div>
+            <div className="text-[#4a4a4a] text-sm">Create a new tab to get started</div>
+          </div>
+        </div>
+      );
+    }
 
     if (activeView === 'flow') {
       return (
@@ -117,7 +120,7 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
       );
     }
 
-    // Default document editor
+    // Default document editor - only render if we have an active tab
     return (
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="p-6 pb-4 flex-shrink-0">
@@ -142,7 +145,7 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
         {/* Full Editor with Toolbar */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <EditorWithToolbar 
-            key={activeTab?.id} // Force re-render when tab changes
+            key={activeTab.id} // Force re-render when tab changes
             initialTitle={tabTitle}
             onTitleChange={(newTitle) => {
               const activeTab = tabs.find(tab => tab.active);
