@@ -43,7 +43,7 @@ export function Editor({
 
   // Initialize editor only once
   useEffect(() => {
-    if (editorRef.current && content.length > 0) {
+    if (editorRef.current) {
       initializeEditor();
     }
   }, []); // Empty deps - only run once
