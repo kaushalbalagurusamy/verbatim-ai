@@ -76,8 +76,14 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
   };
 
   const renderEditorContent = () => {
+    // Debug logging
+    console.log('Tabs state:', tabs);
+    console.log('Tabs length:', tabs.length);
+    console.log('Active tab:', tabs.find(tab => tab.active));
+    
     // Show "Nothing Open" message when no tabs
     if (tabs.length === 0) {
+      console.log('Rendering empty state');
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
