@@ -9,14 +9,20 @@ import { getCursorPosition, restoreCursorPosition } from '@/utils/cursor-manager
 import { LineNumber } from './editor/LineNumber';
 import { getBlockClassName, applyFormatting } from './editor/editor-helpers';
 import { handleKeyDown } from './editor/editor-handlers';
-import { selectionManager, SelectionManager, TextSelection } from '@/utils/selection-manager';
-import { FormattingEngine } from '@/utils/formatting-engine';
+import { selectionManager } from '@/utils/selection-manager';
+import type { TextSelection } from '@/utils/selection-manager';
+import { 
+  applyBoldFormatting,
+  applyHighlightFormatting,
+  applyMinimizeFormatting,
+  clearFormatting
+} from '@/utils/formatting-engine';
 
 interface EditorProps {
   content: ContentBlock[];
   onChange: (content: ContentBlock[]) => void;
   onSelectionChange?: (selection: Selection | null) => void;
-  onApplyFormatRef?: (fn: (type: FormattingType, color?: HighlightColor) => void) => void;
+  setApplyFormatRef?: (fn: (type: FormattingType, color?: HighlightColor) => void) => void;
   placeholder?: string;
   autoFocus?: boolean;
 }
@@ -31,7 +37,7 @@ export function Editor({
   content, 
   onChange, 
   onSelectionChange,
-  onApplyFormatRef,
+  setApplyFormatRef,
   placeholder = "Type anything, use @ to mention files, use / to spawn agent",
   autoFocus = false 
 }: EditorProps) {
@@ -165,7 +171,7 @@ export function Editor({
     onChange(newContent);
   }, [onChange]);
 
-  const handleSelectionChange = useCallback((e?: MouseEvent) => {
+  const handleSelectionChange = useCallback(() => {
     const selection = window.getSelection();
     onSelectionChange?.(selection);
     
@@ -178,103 +184,69 @@ export function Editor({
         setEditorState(prev => ({ ...prev, activeLineIndex: blockIndex }));
       }
       
-      // Handle multi-selection with Cmd/Ctrl + click
-      const isMultiSelect = e && (e.metaKey || e.ctrlKey);
+      // Update selection manager with current selection
       if (!selection.isCollapsed) {
-        const textSelection = SelectionManager.fromDOMSelection(selection);
-        if (textSelection) {
-          selectionManager.addSelection(textSelection, isMultiSelect);
-          const selections = selectionManager.getSelections();
-          setEditorState(prev => ({ ...prev, multiSelections: selections }));
-          updateMultiSelectionVisuals();
-        }
-      } else if (!isMultiSelect) {
-        // Clear selections on normal click
-        selectionManager.clearSelections();
-        setEditorState(prev => ({ ...prev, multiSelections: [] }));
-        clearMultiSelectionVisuals();
+        selectionManager.setFromDOMSelection(contentRef.current);
+        const selections = selectionManager.getSelections();
+        setEditorState(prev => ({ ...prev, multiSelections: selections }));
       }
     }
   }, [onSelectionChange]);
-  
-  // Update visual indicators for multiple selections
-  const updateMultiSelectionVisuals = useCallback(() => {
-    if (!editorRef.current) return;
-    
-    // Clear existing visual indicators
-    clearMultiSelectionVisuals();
-    
-    const selections = selectionManager.getSelections();
-    if (selections.length <= 1) return;
-    
-    // Add visual indicators for additional selections
-    selections.slice(1).forEach((sel, index) => {
-      const blockElement = editorRef.current!.querySelector(
-        `[data-block-id="${sel.blockId}"]`
-      ) as HTMLElement;
-      if (!blockElement) return;
+
+  // Handle mouse down for multi-selection
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey) {
+      e.preventDefault();
       
-      // Create highlight span
-      const span = document.createElement('span');
-      span.className = 'multi-selection-highlight';
-      span.dataset.selectionIndex = index.toString();
-      
-      // Apply highlight style
-      const text = blockElement.textContent || '';
-      const before = text.substring(0, sel.start);
-      const selected = text.substring(sel.start, sel.end);
-      const after = text.substring(sel.end);
-      
-      // This is a simplified approach - in production, we'd need to handle formatted text
-      span.style.backgroundColor = 'rgba(79, 195, 247, 0.2)';
-      span.style.borderRadius = '2px';
-    });
+      // Get current selection before it changes
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        
+        // Add to existing selections
+        if (!selection.isCollapsed) {
+          selectionManager.addFromDOMRange(range, contentRef.current);
+          const selections = selectionManager.getSelections();
+          setEditorState(prev => ({ ...prev, multiSelections: selections }));
+        }
+      }
+    } else {
+      // Clear multi-selections on normal click
+      selectionManager.clear();
+      setEditorState(prev => ({ ...prev, multiSelections: [] }));
+    }
   }, []);
-  
-  // Clear visual indicators for multiple selections
-  const clearMultiSelectionVisuals = useCallback(() => {
-    if (!editorRef.current) return;
     
-    const highlights = editorRef.current.querySelectorAll('.multi-selection-highlight');
-    highlights.forEach(highlight => highlight.remove());
-  }, []);
   
   // Apply formatting function that can be called from toolbar
   const applyFormat = useCallback((type: FormattingType, color?: HighlightColor) => {
     const selections = selectionManager.getSelections();
-    if (selections.length === 0) {
-      // Try to get current selection
-      const selection = window.getSelection();
-      if (selection && !selection.isCollapsed) {
-        const textSelection = SelectionManager.fromDOMSelection(selection);
-        if (textSelection) {
-          selections.push(textSelection);
-        }
-      }
+    let newContent: ContentBlock[];
+    
+    switch (type) {
+      case 'bold':
+        newContent = applyBoldFormatting(contentRef.current, selections, editorState.activeLineIndex);
+        break;
+      case 'highlight':
+        newContent = applyHighlightFormatting(contentRef.current, selections, color, editorState.activeLineIndex);
+        break;
+      case 'minimize':
+        newContent = applyMinimizeFormatting(contentRef.current, selections, editorState.activeLineIndex);
+        break;
+      case 'clear':
+        newContent = clearFormatting(contentRef.current, selections, editorState.activeLineIndex);
+        break;
+      default:
+        return;
     }
     
-    if (selections.length === 0) return;
-    
-    // Apply formatting using the formatting engine
-    const updatedContent = FormattingEngine.applyFormatting(
-      contentRef.current,
-      selections,
-      type,
-      color
-    );
-    
-    onChange(updatedContent);
-    
-    // Clear selections after formatting
-    selectionManager.clearSelections();
-    setEditorState(prev => ({ ...prev, multiSelections: [] }));
-    clearMultiSelectionVisuals();
-  }, [onChange]);
-  
+    onChange(newContent);
+  }, [onChange, editorState.activeLineIndex]);
+
   // Provide the formatting function to parent
   useEffect(() => {
-    onApplyFormatRef?.(applyFormat);
-  }, [onApplyFormatRef, applyFormat]);
+    setApplyFormatRef?.(applyFormat);
+  }, [setApplyFormatRef, applyFormat]);
 
   return (
     <div className="flex-1 overflow-auto">
@@ -295,36 +267,30 @@ export function Editor({
         <div
           ref={editorRef}
           onInput={handleInput}
+          onMouseDown={handleMouseDown}
           onKeyDown={(e) => {
-            // Handle clear formatting shortcut
-            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
-              e.preventDefault();
-              const selections = selectionManager.getSelections();
-              if (selections.length === 0) {
-                const selection = window.getSelection();
-                if (selection && !selection.isCollapsed) {
-                  const textSelection = SelectionManager.fromDOMSelection(selection);
-                  if (textSelection) selections.push(textSelection);
-                }
+            // Handle formatting shortcuts
+            if (e.metaKey || e.ctrlKey) {
+              if (e.key === 'b') {
+                e.preventDefault();
+                applyFormat('bold');
+              } else if (e.key === 'h') {
+                e.preventDefault();
+                applyFormat('highlight');
+              } else if (e.key === 'm') {
+                e.preventDefault();
+                applyFormat('minimize');
+              } else if (e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+                applyFormat('clear');
               }
-              
-              if (selections.length > 0) {
-                const updatedContent = FormattingEngine.clearFormatting(
-                  contentRef.current,
-                  selections
-                );
-                onChange(updatedContent);
-                selectionManager.clearSelections();
-                setEditorState(prev => ({ ...prev, multiSelections: [] }));
-                clearMultiSelectionVisuals();
-              }
-              return;
             }
             
-            handleKeyDown(e, contentRef, onChange, editorRef, applyFormat);
+            // Handle other key events
+            handleKeyDown(e, contentRef, onChange, editorRef);
           }}
-          onMouseUp={(e) => handleSelectionChange(e.nativeEvent)}
-          onKeyUp={() => handleSelectionChange()}
+          onMouseUp={handleSelectionChange}
+          onKeyUp={handleSelectionChange}
           onCompositionStart={() => setEditorState(prev => ({ ...prev, isComposing: true }))}
           onCompositionEnd={() => setEditorState(prev => ({ ...prev, isComposing: false }))}
           className="flex-1 p-6 bg-[#1e1e1e] text-[#cccccc] focus:outline-none"

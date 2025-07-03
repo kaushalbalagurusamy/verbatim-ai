@@ -84,7 +84,7 @@ export function applyFormatting(text: string, formatting: TextFormatting[]): str
   
   // Build HTML with proper nesting
   let result = '';
-  let openTags: string[] = [];
+  const openTags: string[] = [];
   let prevFormat: CharFormat | null = null;
   
   for (let i = 0; i < text.length; i++) {
@@ -104,7 +104,7 @@ export function applyFormatting(text: string, formatting: TextFormatting[]): str
       
       // Open new tags in correct order: minimize -> highlight -> bold
       if (format.minimize) {
-        result += '<small class="text-xs opacity-60">';
+        result += '<small style="font-size: 6px; opacity: 0.6;">';
         openTags.push('</small>');
       }
       if (format.highlight) {
