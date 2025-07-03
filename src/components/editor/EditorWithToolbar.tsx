@@ -93,7 +93,8 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
     applyHighlight,
     applyMinimize,
     clearFormatting,
-    setHeading
+    setHeading,
+    setApplyFormatRef
   } = useEditor({
     document,
     onDocumentChange: setDocument,
@@ -185,7 +186,7 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
         content={content}
         onChange={handleContentChange}
         onSelectionChange={onSelectionChange}
-        onApplyFormatRef={setApplyFormatRef}
+        setApplyFormatRef={setApplyFormatRef}
         autoFocus={true}
       />
       
