@@ -361,7 +361,7 @@ export function Editor({
     <div className="flex-1 overflow-auto">
       <div className="flex h-full">
         {/* Line Numbers */}
-        <div className="w-8 bg-[#2d2d30] border-r border-[#3c3c3c] flex-shrink-0 py-6 px-1">
+        <div className="w-8 bg-[#1e1e1e] flex-shrink-0 py-6 px-1">
           {content.map((block, index) => {
             const isHeader = block.type.startsWith('heading');
             const headerLevel = isHeader ? block.type.replace('heading', '') : null;
