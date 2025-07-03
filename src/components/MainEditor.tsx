@@ -10,12 +10,12 @@ interface MainEditorProps {
 }
 
 export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProps) {
-  const [tabs, setTabs] = useState([{
-    id: 1,
-    title: 'New Document',
-    active: true,
-    modified: false
-  }]);
+  const [tabs, setTabs] = useState<Array<{
+    id: number;
+    title: string;
+    active: boolean;
+    modified: boolean;
+  }>>([]);
 
   // Reference to the EditorWithToolbar's title change function
   const [editorTitleChangeHandler, setEditorTitleChangeHandler] = useState<((title: string) => void) | null>(null);
