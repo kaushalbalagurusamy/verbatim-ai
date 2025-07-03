@@ -48,9 +48,10 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
     }
   };
 
-  const renderNode = (node: FileNode, path: string = '') => {
+  const renderNode = (node: FileNode, path: string = '', level: number = 0) => {
     const currentPath = path ? `${path}/${node.name}` : node.name;
     const isExpanded = expandedFolders.has(currentPath);
+    const indent = level * 16; // 16px per level
 
     if (node.type === 'folder') {
       return (
@@ -58,18 +59,19 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
           <button
             onClick={() => toggleFolder(currentPath)}
             className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors"
+            style={{ paddingLeft: `${8 + indent}px` }}
           >
             {isExpanded ? (
-              <ChevronDown className="w-3 h-3" />
+              <ChevronDown className="w-3 h-3 flex-shrink-0" />
             ) : (
-              <ChevronRight className="w-3 h-3" />
+              <ChevronRight className="w-3 h-3 flex-shrink-0" />
             )}
-            <Folder className="w-4 h-4 text-[#dcb67a]" />
-            <span>{node.name}</span>
+            <Folder className="w-4 h-4 text-[#dcb67a] flex-shrink-0" />
+            <span className="truncate">{node.name}</span>
           </button>
           {isExpanded && node.children && (
-            <div className="ml-4">
-              {node.children.map(child => renderNode(child, currentPath))}
+            <div>
+              {node.children.map(child => renderNode(child, currentPath, level + 1))}
             </div>
           )}
         </div>
@@ -87,10 +89,11 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
             window.fileSelectCallback(node.name, mode, currentPath);
           }
         }}
-        className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors ml-4"
+        className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors"
+        style={{ paddingLeft: `${8 + indent}px` }}
       >
         {getFileIcon(node.name)}
-        <span>{node.name}</span>
+        <span className="truncate">{node.name}</span>
       </button>
     );
   };
