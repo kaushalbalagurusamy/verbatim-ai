@@ -28,6 +28,7 @@ export function Editor({
     selectionEnd: 0,
     currentBlock: 0
   });
+  const [activeLineIndex, setActiveLineIndex] = useState<number>(0);
 
   // Initialize editor with content
   useEffect(() => {
@@ -305,11 +306,17 @@ export function Editor({
     
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
-      setEditorState({
-        selectionStart: range.startOffset,
-        selectionEnd: range.endOffset,
-        currentBlock: 0 // TODO: Calculate actual block index
-      });
+      const blockElement = (range.commonAncestorContainer as Element)?.closest?.('[data-block-id]');
+      
+      if (blockElement) {
+        const blockIndex = parseInt(blockElement.getAttribute('data-block-index') || '0');
+        setActiveLineIndex(blockIndex);
+        setEditorState({
+          selectionStart: range.startOffset,
+          selectionEnd: range.endOffset,
+          currentBlock: blockIndex
+        });
+      }
     }
   }, [onSelectionChange]);
 
@@ -354,23 +361,25 @@ export function Editor({
     <div className="flex-1 overflow-auto">
       <div className="flex h-full">
         {/* Line Numbers */}
-        <div className="w-12 bg-[#2d2d30] border-r border-[#3c3c3c] flex-shrink-0 py-6 px-2">
+        <div className="w-8 bg-[#2d2d30] border-r border-[#3c3c3c] flex-shrink-0 py-6 px-1">
           {content.map((block, index) => {
             const isHeader = block.type.startsWith('heading');
             const headerLevel = isHeader ? block.type.replace('heading', '') : null;
+            const isActive = index === activeLineIndex;
             
             return (
               <div 
                 key={`line-${block.id}`}
-                className="flex items-center justify-end h-[1.5rem] leading-relaxed text-[#6a6a6a] text-xs font-mono"
+                className="flex items-center justify-center text-xs font-mono"
                 style={{
                   // Match the height and spacing of content blocks
                   minHeight: getLineHeight(block.type),
-                  marginBottom: getLineMarginBottom(block.type)
+                  marginBottom: getLineMarginBottom(block.type),
+                  color: isActive ? '#ffffff' : '#6a6a6a'
                 }}
               >
                 {isHeader ? (
-                  <span className="text-[#4fc3f7] font-medium">H{headerLevel}</span>
+                  <span className={`font-medium ${isActive ? 'text-[#4fc3f7]' : 'text-[#4fc3f7]'}`}>H{headerLevel}</span>
                 ) : (
                   <span>{index + 1}</span>
                 )}
