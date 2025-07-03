@@ -187,7 +187,8 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
   return (
     <div data-testid="main-editor" className="flex flex-col h-full overflow-hidden">
       {/* Tab Bar - Shows ALL tabs regardless of activeView */}
-      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0">
+      <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0 tab-scrollbar"
+      >
         {tabs.map(tab => {
           const IconComponent = getTabIcon(tab.type);
           return (
