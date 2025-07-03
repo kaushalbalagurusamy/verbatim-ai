@@ -92,6 +92,8 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
         className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors"
         style={{ paddingLeft: `${8 + indent}px` }}
       >
+        {/* Spacer to align with folder icons (chevron width + gap) */}
+        <div className="w-3 flex-shrink-0"></div>
         {getFileIcon(node.name)}
         <span className="truncate">{node.name}</span>
       </button>
