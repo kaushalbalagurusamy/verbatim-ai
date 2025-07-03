@@ -5,6 +5,7 @@ import { ScrollArea } from './ui/scroll-area';
 
 interface FileTreeProps {
   mode: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow';
+  onFileSelect?: (fileName: string) => void;
 }
 
 interface FileNode {
@@ -13,7 +14,7 @@ interface FileNode {
   children?: FileNode[];
 }
 
-export function FileTree({ mode }: FileTreeProps) {
+export function FileTree({ mode, onFileSelect }: FileTreeProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
 
   const toggleFolder = (path: string) => {
@@ -57,6 +58,14 @@ export function FileTree({ mode }: FileTreeProps) {
     return (
       <button
         key={currentPath}
+        onClick={() => {
+          // Call the file selection handler
+          onFileSelect?.(node.name);
+          // Also call the global callback if it exists
+          if (window.fileSelectCallback) {
+            window.fileSelectCallback(node.name, mode);
+          }
+        }}
         className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors ml-4"
       >
         <File className="w-4 h-4 text-[#4fc3f7]" />
@@ -103,8 +112,66 @@ export function FileTree({ mode }: FileTreeProps) {
     }
   };
 
-  // Empty tree structure - backend will populate this
-  const emptyTree: FileNode[] = [];
+  // Demo tree structure for testing - backend will populate this in production
+  const getDemoTree = (): FileNode[] => {
+    switch (mode) {
+      case 'document':
+        return [
+          {
+            name: 'Project Notes',
+            type: 'folder',
+            children: [
+              { name: 'Meeting Notes.doc', type: 'file' },
+              { name: 'Product Spec.doc', type: 'file' },
+              { name: 'Roadmap.doc', type: 'file' }
+            ]
+          },
+          { name: 'Quick Notes.doc', type: 'file' }
+        ];
+      case 'flow':
+        return [
+          {
+            name: 'Data Analysis',
+            type: 'folder',
+            children: [
+              { name: 'Sales Data.flow', type: 'file' },
+              { name: 'Customer Analytics.flow', type: 'file' }
+            ]
+          },
+          { name: 'Budget Planning.flow', type: 'file' }
+        ];
+      case 'research':
+        return [
+          { name: 'Market Research.research', type: 'file' },
+          { name: 'Competitor Analysis.research', type: 'file' }
+        ];
+      case 'pen':
+        return [
+          { name: 'Q4 Analytics.pen', type: 'file' },
+          { name: 'User Behavior.pen', type: 'file' }
+        ];
+      case 'source':
+        return [
+          {
+            name: 'References',
+            type: 'folder',
+            children: [
+              { name: 'Research Paper 1.pdf', type: 'file' },
+              { name: 'Case Study.pdf', type: 'file' }
+            ]
+          }
+        ];
+      case 'recordings':
+        return [
+          { name: 'Interview 1.rec', type: 'file' },
+          { name: 'User Testing Session.rec', type: 'file' }
+        ];
+      default:
+        return [];
+    }
+  };
+  
+  const treeData = getDemoTree();
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -114,12 +181,12 @@ export function FileTree({ mode }: FileTreeProps) {
             {getTitle()}
           </h3>
           <div className="space-y-1">
-            {emptyTree.length === 0 ? (
+            {treeData.length === 0 ? (
               <div className="text-xs text-[#6a6a6a] italic px-2 py-1">
                 {getEmptyMessage()}
               </div>
             ) : (
-              emptyTree.map(node => renderNode(node))
+              treeData.map(node => renderNode(node))
             )}
           </div>
         </div>

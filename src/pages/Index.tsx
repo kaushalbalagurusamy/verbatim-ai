@@ -45,7 +45,13 @@ const Index = () => {
           {mainEditorVisible && (
             <>
               <ResizablePanel defaultSize={sidebarVisible && chatVisible ? 60 : 80} minSize={40}>
-                <MainEditor activeView={activeView} />
+                <MainEditor 
+                  activeView={activeView}
+                  onFileSelect={(fileName, fileType) => {
+                    // Switch to the appropriate view when a file is selected
+                    setActiveView(fileType);
+                  }}
+                />
               </ResizablePanel>
               {chatVisible && <ResizableHandle />}
             </>
