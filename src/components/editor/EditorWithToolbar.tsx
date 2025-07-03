@@ -162,37 +162,35 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
         currentHeadingLevel={editorState.currentHeadingLevel}
       />
       
-      <div className="relative flex-1">
-        <Editor
-          content={content}
-          onChange={handleContentChange}
-          onSelectionChange={onSelectionChange}
-          autoFocus={true}
+      <Editor
+        content={content}
+        onChange={handleContentChange}
+        onSelectionChange={onSelectionChange}
+        autoFocus={true}
+      />
+      
+      {/* Save Status Indicator - Bottom Right */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-2">
+        <div 
+          className={`w-2 h-2 rounded-full transition-all duration-300 ${
+            isSaving 
+              ? 'bg-[#4fc3f7] animate-pulse' 
+              : isModified 
+                ? 'bg-transparent border border-[#4caf50]' 
+                : document?.id 
+                  ? 'bg-[#4caf50]' 
+                  : ''
+          }`}
+          title={
+            isSaving 
+              ? 'Saving...' 
+              : isModified 
+                ? 'Changes pending save' 
+                : document?.id 
+                  ? 'All changes saved' 
+                  : ''
+          }
         />
-        
-        {/* Save Status Indicator - Bottom Right */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-2">
-          <div 
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              isSaving 
-                ? 'bg-[#4fc3f7] animate-pulse' 
-                : isModified 
-                  ? 'bg-transparent border border-[#4caf50]' 
-                  : document?.id 
-                    ? 'bg-[#4caf50]' 
-                    : ''
-            }`}
-            title={
-              isSaving 
-                ? 'Saving...' 
-                : isModified 
-                  ? 'Changes pending save' 
-                  : document?.id 
-                    ? 'All changes saved' 
-                    : ''
-            }
-          />
-        </div>
       </div>
     </div>
   );
