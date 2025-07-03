@@ -96,6 +96,9 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
 
     const activeTab = tabs.find(tab => tab.active);
     const tabTitle = activeTab?.title || 'New Document';
+    
+    console.log('Active tab found:', activeTab);
+    console.log('Tab title:', tabTitle);
 
     if (activeView === 'flow') {
       return (
