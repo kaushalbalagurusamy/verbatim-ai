@@ -21,7 +21,17 @@ export function MainEditor({ activeView, onDocumentTitleChange }: MainEditorProp
   const [editorTitleChangeHandler, setEditorTitleChangeHandler] = useState<((title: string) => void) | null>(null);
 
   const closeTab = (tabId: number) => {
-    setTabs(tabs.filter(tab => tab.id !== tabId));
+    const tabIndex = tabs.findIndex(tab => tab.id === tabId);
+    const isActive = tabs[tabIndex]?.active;
+    const newTabs = tabs.filter(tab => tab.id !== tabId);
+    
+    // If we closed the active tab and there are still tabs, make another tab active
+    if (isActive && newTabs.length > 0) {
+      const newActiveIndex = Math.min(tabIndex, newTabs.length - 1);
+      newTabs[newActiveIndex].active = true;
+    }
+    
+    setTabs(newTabs);
   };
 
   const addNewTab = () => {
