@@ -21,21 +21,36 @@ interface EditorState {
 interface EditorWithToolbarProps {
   documentId?: string;
   initialTitle?: string;
+  initialContent?: any;
   onTitleChange?: (title: string) => void;
+  onContentChange?: (content: any) => void;
   onTitleChangeHandlerReady?: (handler: (title: string) => void) => void;
 }
 
-export function EditorWithToolbar({ documentId, initialTitle = 'New Document', onTitleChange, onTitleChangeHandlerReady }: EditorWithToolbarProps) {
-  // Only create a document if one doesn't exist, don't auto-create on every render
-  const [document, setDocument] = useState<DocumentType | null>(null);
+export function EditorWithToolbar({ documentId, initialTitle = 'New Document', initialContent, onTitleChange, onContentChange, onTitleChangeHandlerReady }: EditorWithToolbarProps) {
+  // Initialize document with provided content or create new
+  const [document, setDocument] = useState<DocumentType | null>(() => {
+    const doc = createNewDocument(initialTitle);
+    if (initialContent && initialContent.text !== undefined) {
+      doc.content = initialContent.text || '';
+    }
+    return doc;
+  });
   const createDocument = useCreateDocument();
   
-  // Initialize document only once when component mounts
+  // Update content when it changes
   useEffect(() => {
-    if (!document) {
-      setDocument(createNewDocument(initialTitle));
+    if (onContentChange && document) {
+      onContentChange({ text: document.content });
     }
-  }, [initialTitle, document]);
+  }, [document?.content, onContentChange]);
+  
+  // Update title when it changes from props
+  useEffect(() => {
+    if (initialTitle && document && document.title !== initialTitle) {
+      setDocument(prev => prev ? { ...prev, title: initialTitle } : null);
+    }
+  }, [initialTitle]);
   
   // Handle document title changes
   const handleDocumentTitleChange = useCallback((newTitle: string) => {
@@ -61,7 +76,7 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', o
     content,
     isModified,
     isSaving,
-    onContentChange,
+    onContentChange: editorContentChange,
     onSelectionChange,
     hasSelection,
     applyBold,
@@ -74,6 +89,14 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', o
     onDocumentChange: setDocument,
     autoSave: true
   });
+  
+  // Wrap content change to notify parent
+  const handleContentChange = useCallback((newContent: string) => {
+    editorContentChange(newContent);
+    if (document) {
+      setDocument(prev => prev ? { ...prev, content: newContent } : null);
+    }
+  }, [editorContentChange, document]);
 
   const [editorState, setEditorState] = useState<EditorState>({
     isEmphasisActive: false,
@@ -144,7 +167,7 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', o
       
       <Editor
         content={content}
-        onChange={onContentChange}
+        onChange={handleContentChange}
         onSelectionChange={onSelectionChange}
         autoFocus={true}
       />

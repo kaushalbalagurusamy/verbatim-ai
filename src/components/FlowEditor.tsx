@@ -3,8 +3,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 
 interface FlowEditorProps {
+  documentId?: string;
   initialTitle?: string;
+  initialData?: any;
   onTitleChange?: (title: string) => void;
+  onContentChange?: (content: any) => void;
 }
 
 interface CellData {
@@ -17,17 +20,36 @@ interface FlowData {
   rows: CellData[][];
 }
 
-export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEditorProps) {
+export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData, onTitleChange, onContentChange }: FlowEditorProps) {
   const [title, setTitle] = useState(initialTitle);
-  const [flowData, setFlowData] = useState<FlowData>(() => ({
-    columns: ['Column A', 'Column B', 'Column C', 'Column D', 'Column E'],
-    rows: Array.from({ length: 20 }, (_, rowIndex) => 
-      Array.from({ length: 5 }, (_, colIndex) => ({
-        id: `${rowIndex}-${colIndex}`,
-        value: ''
-      }))
-    )
-  }));
+  const [flowData, setFlowData] = useState<FlowData>(() => {
+    if (initialData && initialData.columns && initialData.rows) {
+      return initialData;
+    }
+    return {
+      columns: ['Column A', 'Column B', 'Column C', 'Column D', 'Column E'],
+      rows: Array.from({ length: 20 }, (_, rowIndex) => 
+        Array.from({ length: 5 }, (_, colIndex) => ({
+          id: `${rowIndex}-${colIndex}`,
+          value: ''
+        }))
+      )
+    };
+  });
+
+  // Update flow data when content changes
+  useEffect(() => {
+    if (onContentChange) {
+      onContentChange(flowData);
+    }
+  }, [flowData, onContentChange]);
+
+  // Update title when it changes from props
+  useEffect(() => {
+    if (initialTitle !== title) {
+      setTitle(initialTitle);
+    }
+  }, [initialTitle]);
 
   const handleTitleChange = (newTitle: string) => {
     setTitle(newTitle);
@@ -35,16 +57,19 @@ export function FlowEditor({ initialTitle = 'New Flow', onTitleChange }: FlowEdi
   };
 
   const updateCell = (rowIndex: number, colIndex: number, value: string) => {
-    setFlowData(prev => ({
-      ...prev,
-      rows: prev.rows.map((row, rIdx) => 
-        rIdx === rowIndex 
-          ? row.map((cell, cIdx) => 
-              cIdx === colIndex ? { ...cell, value } : cell
-            )
-          : row
-      )
-    }));
+    setFlowData(prev => {
+      const newData = {
+        ...prev,
+        rows: prev.rows.map((row, rIdx) => 
+          rIdx === rowIndex 
+            ? row.map((cell, cIdx) => 
+                cIdx === colIndex ? { ...cell, value } : cell
+              )
+            : row
+        )
+      };
+      return newData;
+    });
   };
 
   const updateColumnHeader = (colIndex: number, value: string) => {

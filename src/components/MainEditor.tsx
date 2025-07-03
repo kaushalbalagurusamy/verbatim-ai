@@ -1,25 +1,20 @@
+/**
+ * Main Editor Component - Central editor area with tab management
+ * Uses TabManager for centralized tab operations and DocumentStore for content persistence
+ */
 
-import { X, Settings, Maximize2, Minimize2, MoreHorizontal, Plus } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { X, File, Table, Telescope, Pen, Code, AudioWaveform, Plus } from 'lucide-react';
+import { useEffect } from 'react';
 import { EditorWithToolbar } from './editor/EditorWithToolbar';
 import { FlowEditor } from './FlowEditor';
+import { useTabManager, tabManager, ViewType } from '@/lib/tab-manager';
+import { useDocument } from '@/lib/document-store';
 
 // Extend window interface for file selection callback
 declare global {
   interface Window {
     fileSelectCallback?: (fileName: string, fileType: ViewType, filePath?: string) => void;
   }
-}
-
-type ViewType = 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow';
-
-interface Tab {
-  id: number;
-  title: string;
-  type: ViewType;
-  active: boolean;
-  modified: boolean;
-  filePath?: string; // Optional path to track opened files
 }
 
 interface MainEditorProps {
@@ -29,62 +24,30 @@ interface MainEditorProps {
 }
 
 export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: MainEditorProps) {
-  // Separate tab storage for each view type
-  const [tabsByView, setTabsByView] = useState<Record<ViewType, Tab[]>>({
-    document: [],
-    research: [],
-    pen: [],
-    source: [],
-    recordings: [],
-    flow: []
-  });
-  
-  // Get tabs for current view
-  const tabs = activeView ? tabsByView[activeView] : [];
+  const { tabs, activeTab, openTab, closeTab, activateTab, updateTabTitle } = useTabManager();
+  const { document: activeDocument, updateContent, updateTitle } = useDocument(activeTab?.documentId);
 
-  // Reference to the EditorWithToolbar's title change function
-  const [editorTitleChangeHandler, setEditorTitleChangeHandler] = useState<((title: string) => void) | null>(null);
-
-  const closeTab = (tabId: number) => {
-    if (!activeView) return;
-    
-    const currentTabs = tabsByView[activeView];
-    const tabIndex = currentTabs.findIndex(tab => tab.id === tabId);
-    const isActive = currentTabs[tabIndex]?.active;
-    const newTabs = currentTabs.filter(tab => tab.id !== tabId);
-    
-    // If we closed the active tab and there are still tabs, make another tab active
-    if (isActive && newTabs.length > 0) {
-      const newActiveIndex = Math.min(tabIndex, newTabs.length - 1);
-      newTabs[newActiveIndex].active = true;
+  // Get icon for tab type
+  const getTabIcon = (type: ViewType) => {
+    switch (type) {
+      case 'flow':
+        return Table;
+      case 'document':
+        return File;
+      case 'research':
+        return Telescope;
+      case 'pen':
+        return Pen;
+      case 'source':
+        return Code;
+      case 'recordings':
+        return AudioWaveform;
+      default:
+        return File;
     }
-    
-    setTabsByView(prev => ({
-      ...prev,
-      [activeView]: newTabs
-    }));
   };
 
-  const addNewTab = () => {
-    if (!activeView) return;
-    
-    const allTabs = Object.values(tabsByView).flat();
-    const newId = allTabs.length > 0 ? Math.max(...allTabs.map(t => t.id)) + 1 : 1;
-    const newTabTitle = getNewTabTitle();
-    const newTab: Tab = {
-      id: newId,
-      title: newTabTitle,
-      type: activeView,
-      active: true,
-      modified: false
-    };
-    
-    setTabsByView(prev => ({
-      ...prev,
-      [activeView]: prev[activeView].map(tab => ({ ...tab, active: false })).concat(newTab)
-    }));
-  };
-
+  // Get new tab title based on view type
   const getNewTabTitle = () => {
     switch (activeView) {
       case 'document':
@@ -104,26 +67,16 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
     }
   };
 
-  const setActiveTab = (tabId: number) => {
+  // Handle new tab creation
+  const handleNewTab = () => {
     if (!activeView) return;
     
-    setTabsByView(prev => ({
-      ...prev,
-      [activeView]: prev[activeView].map(tab => ({ ...tab, active: tab.id === tabId }))
-    }));
+    openTab({
+      title: getNewTabTitle(),
+      type: activeView
+    });
   };
 
-  const updateTabTitle = (tabId: number, newTitle: string) => {
-    if (!activeView) return;
-    
-    setTabsByView(prev => ({
-      ...prev,
-      [activeView]: prev[activeView].map(tab => 
-        tab.id === tabId ? { ...tab, title: newTitle } : tab
-      )
-    }));
-  };
-  
   // Handle file selection from FileTree
   useEffect(() => {
     if (onFileSelect) {
@@ -134,42 +87,11 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
           onFileSelect(fileName, fileType);
         }
         
-        // Always use functional update to get latest state
-        setTabsByView(prev => {
-          const currentViewTabs = prev[fileType];
-          
-          // Check if file is already open
-          if (filePath) {
-            const existingTab = currentViewTabs.find(tab => tab.filePath === filePath);
-            if (existingTab) {
-              // Just activate the existing tab
-              return {
-                ...prev,
-                [fileType]: currentViewTabs.map(tab => ({
-                  ...tab,
-                  active: tab.id === existingTab.id
-                }))
-              };
-            }
-          }
-          
-          // Create a new tab for the file
-          const allTabs = Object.values(prev).flat();
-          const newId = allTabs.length > 0 ? Math.max(...allTabs.map(t => t.id)) + 1 : 1;
-          const newTab: Tab = {
-            id: newId,
-            title: fileName,
-            type: fileType,
-            active: true,
-            modified: false,
-            filePath: filePath
-          };
-          
-          // Add new tab and deactivate others
-          return {
-            ...prev,
-            [fileType]: currentViewTabs.map(tab => ({ ...tab, active: false })).concat(newTab)
-          };
+        // Open the file in a new tab
+        openTab({
+          title: fileName,
+          type: fileType,
+          filePath: filePath
         });
       };
     }
@@ -179,55 +101,47 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
         delete window.fileSelectCallback;
       }
     };
-  }, [activeView, onFileSelect]); // Removed tabsByView from dependencies
+  }, [activeView, onFileSelect, openTab]);
 
+  // Render editor content based on active tab
   const renderEditorContent = () => {
-    const activeTab = tabs.find(tab => tab.active);
-    
-    // Show "Nothing Open" message when no tabs exist for current view
+    // Show empty state when no tabs exist
     if (!activeTab || tabs.length === 0) {
-      const getEmptyMessage = () => {
-        switch (activeView) {
-          case 'document':
-            return { title: 'No Documents Open', subtitle: 'Create a new document to get started' };
-          case 'flow':
-            return { title: 'No Flows Open', subtitle: 'Create a new flow to get started' };
-          case 'research':
-            return { title: 'No Research Open', subtitle: 'Create new research to get started' };
-          case 'pen':
-            return { title: 'No Analytics Open', subtitle: 'Create new analytics to get started' };
-          case 'source':
-            return { title: 'No Sources Open', subtitle: 'Add a source to get started' };
-          case 'recordings':
-            return { title: 'No Recordings Open', subtitle: 'Create a new recording to get started' };
-          default:
-            return { title: 'Nothing Open', subtitle: 'Create a new tab to get started' };
-        }
-      };
-      
-      const emptyMsg = getEmptyMessage();
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <div className="text-[#6a6a6a] text-lg mb-2">{emptyMsg.title}</div>
-            <div className="text-[#4a4a4a] text-sm">{emptyMsg.subtitle}</div>
+            <div className="text-[#6a6a6a] text-lg mb-2">No Tabs Open</div>
+            <div className="text-[#4a4a4a] text-sm">
+              {activeView ? 'Create a new tab or select a file from the explorer' : 'Select a view from the sidebar to get started'}
+            </div>
           </div>
         </div>
       );
     }
 
-    const tabTitle = activeTab.title;
+    // Show loading state if document not loaded yet
+    if (!activeDocument) {
+      return (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-[#6a6a6a]">Loading...</div>
+        </div>
+      );
+    }
 
-    // Render content based on tab type, not activeView
+    // Render content based on tab type
     if (activeTab.type === 'flow') {
       return (
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-x-auto overflow-y-hidden">
             <FlowEditor 
-              key={activeTab.id}
-              initialTitle={tabTitle}
+              documentId={activeTab.documentId}
+              initialTitle={activeDocument.title}
+              initialData={activeDocument.content}
               onTitleChange={(newTitle) => {
                 updateTabTitle(activeTab.id, newTitle);
+              }}
+              onContentChange={(content) => {
+                updateContent(content);
               }}
             />
           </div>
@@ -242,11 +156,9 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
           <div className="max-w-4xl">
             <input
               type="text"
-              value={tabTitle}
+              value={activeDocument.title}
               onChange={(e) => {
                 updateTabTitle(activeTab.id, e.target.value);
-                // Also update the document title via the editor
-                editorTitleChangeHandler?.(e.target.value);
               }}
               className="text-2xl font-light text-[#cccccc] mb-6 bg-transparent border-none outline-none w-full"
               placeholder={getNewTabTitle()}
@@ -257,12 +169,15 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
         {/* Full Editor with Toolbar */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <EditorWithToolbar 
-            key={activeTab.id} // Force re-render when tab changes
-            initialTitle={tabTitle}
+            documentId={activeTab.documentId}
+            initialTitle={activeDocument.title}
+            initialContent={activeDocument.content}
             onTitleChange={(newTitle) => {
               updateTabTitle(activeTab.id, newTitle);
             }}
-            onTitleChangeHandlerReady={setEditorTitleChangeHandler}
+            onContentChange={(content) => {
+              updateContent(content);
+            }}
           />
         </div>
       </div>
@@ -271,37 +186,39 @@ export function MainEditor({ activeView, onDocumentTitleChange, onFileSelect }: 
 
   return (
     <div data-testid="main-editor" className="flex flex-col h-full overflow-hidden">
-      {/* Tab Bar */}
+      {/* Tab Bar - Shows ALL tabs regardless of activeView */}
       <div className="h-9 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center overflow-x-auto flex-shrink-0">
-        {tabs.map(tab => (
-          <div 
-            key={tab.id} 
-            className={`flex items-center gap-2 px-3 h-full border-r border-[#3c3c3c] min-w-0 max-w-xs cursor-pointer flex-shrink-0 ${
-              tab.active ? 'bg-[#252526] text-[#ffffff]' : 'bg-[#2d2d30] text-[#cccccc] hover:bg-[#383838]'
-            }`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <input
-              type="text"
-              value={tab.title}
-              onChange={(e) => updateTabTitle(tab.id, e.target.value)}
-              className="text-xs bg-transparent border-none outline-none truncate min-w-0 flex-1"
-              onKeyDown={(e) => e.stopPropagation()}
-            />
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                closeTab(tab.id);
-              }} 
-              className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
+        {tabs.map(tab => {
+          const IconComponent = getTabIcon(tab.type);
+          return (
+            <div 
+              key={tab.id} 
+              className={`flex items-center gap-2 px-3 h-full border-r border-[#3c3c3c] min-w-0 max-w-xs cursor-pointer flex-shrink-0 ${
+                tab.active ? 'bg-[#252526] text-[#ffffff]' : 'bg-[#2d2d30] text-[#cccccc] hover:bg-[#383838]'
+              }`}
+              onClick={() => activateTab(tab.id)}
             >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
+              <IconComponent className="w-3 h-3 flex-shrink-0" />
+              <span className="text-xs truncate min-w-0 flex-1">
+                {tab.title}
+              </span>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeTab(tab.id);
+                }} 
+                className="opacity-0 hover:opacity-100 hover:bg-[#4c4c4c] rounded p-0.5 transition-opacity flex-shrink-0"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          );
+        })}
         <button 
-          onClick={addNewTab}
+          onClick={handleNewTab}
           className="flex items-center justify-center w-9 h-full hover:bg-[#383838] text-[#cccccc] transition-colors flex-shrink-0"
+          disabled={!activeView}
+          title={activeView ? `New ${getNewTabTitle()}` : 'Select a view to create tabs'}
         >
           <Plus className="w-4 h-4" />
         </button>
