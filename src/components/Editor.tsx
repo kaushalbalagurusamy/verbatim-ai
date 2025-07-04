@@ -125,8 +125,12 @@ export function Editor({
       const currentText = element.textContent || '';
       const blockContent = block.content || '';
       
-      if (currentText !== blockContent) {
-        const formattedHTML = applyFormatting(blockContent, block.formatting || []);
+      // Always apply formatting, not just when text changes
+      // This ensures formatting updates are rendered even when only formatting changes
+      const formattedHTML = applyFormatting(blockContent, block.formatting || []);
+      
+      // Only update innerHTML if it actually changed to preserve cursor position
+      if (element.innerHTML !== formattedHTML) {
         element.innerHTML = formattedHTML || '<br>';
       }
     } catch (error) {
@@ -162,11 +166,9 @@ export function Editor({
             editor.appendChild(newBlock);
           }
         } else {
-          const currentText = existingBlock.textContent || '';
-          const blockContent = block.content || '';
-          if (currentText !== blockContent || existingBlock.dataset.blockType !== block.type) {
-            updateBlockContent(existingBlock, block);
-          }
+          // Always update block content to ensure formatting changes are applied
+          // The updateBlockContent function will check if innerHTML actually needs updating
+          updateBlockContent(existingBlock, block);
         }
       });
 

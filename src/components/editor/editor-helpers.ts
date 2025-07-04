@@ -94,58 +94,58 @@ export function applyFormatting(text: string, formatting: TextFormatting[]): str
         }
       }
     });
+    
+    // Build HTML with proper nesting
+    let result = '';
+    const openTags: string[] = [];
+    let prevFormat: CharFormat | null = null;
+    
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const format = charFormats[i];
+      
+      // Check if formatting changed
+      if (!prevFormat || 
+          format.bold !== prevFormat.bold ||
+          format.highlight?.color !== prevFormat.highlight?.color ||
+          format.minimize !== prevFormat.minimize) {
+        
+        // Close previous tags in reverse order
+        while (openTags.length > 0) {
+          result += openTags.pop();
+        }
+        
+        // Open new tags in correct order: minimize -> highlight -> bold
+        if (format.minimize) {
+          result += '<small style="font-size: 6px; opacity: 0.6;">';
+          openTags.push('</small>');
+        }
+        if (format.highlight) {
+          const colorClass = getHighlightColorClass(format.highlight.color);
+          result += `<mark class="${colorClass}">`;
+          openTags.push('</mark>');
+        }
+        if (format.bold) {
+          result += '<strong class="font-bold underline">';
+          openTags.push('</strong>');
+        }
+      }
+      
+      // Add the character (escaped)
+      result += escapeHtml(char);
+      prevFormat = format;
+    }
+    
+    // Close remaining tags
+    while (openTags.length > 0) {
+      result += openTags.pop();
+    }
+    
+    return result || '<br>';
   } catch (error) {
     console.error('Error applying formatting:', error);
     return escapeHtml(text) || '<br>';
   }
-  
-  // Build HTML with proper nesting
-  let result = '';
-  const openTags: string[] = [];
-  let prevFormat: CharFormat | null = null;
-  
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const format = charFormats[i];
-    
-    // Check if formatting changed
-    if (!prevFormat || 
-        format.bold !== prevFormat.bold ||
-        format.highlight?.color !== prevFormat.highlight?.color ||
-        format.minimize !== prevFormat.minimize) {
-      
-      // Close previous tags in reverse order
-      while (openTags.length > 0) {
-        result += openTags.pop();
-      }
-      
-      // Open new tags in correct order: minimize -> highlight -> bold
-      if (format.minimize) {
-        result += '<small style="font-size: 6px; opacity: 0.6;">';
-        openTags.push('</small>');
-      }
-      if (format.highlight) {
-        const colorClass = getHighlightColorClass(format.highlight.color);
-        result += `<mark class="${colorClass}">`;
-        openTags.push('</mark>');
-      }
-      if (format.bold) {
-        result += '<strong class="font-bold underline">';
-        openTags.push('</strong>');
-      }
-    }
-    
-    // Add the character (escaped)
-    result += escapeHtml(char);
-    prevFormat = format;
-  }
-  
-  // Close remaining tags
-  while (openTags.length > 0) {
-    result += openTags.pop();
-  }
-  
-  return result || '<br>';
 }
 
 export function getHighlightColorClass(color: HighlightColor): string {
