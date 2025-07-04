@@ -9,7 +9,8 @@ export function handleEnterKey(
   e: React.KeyboardEvent<HTMLDivElement>,
   contentRef: React.MutableRefObject<ContentBlock[]>,
   onChange: (content: ContentBlock[]) => void,
-  editorRef: React.RefObject<HTMLDivElement>
+  editorRef: React.RefObject<HTMLDivElement>,
+  onActiveLineChange?: (index: number) => void
 ) {
   const target = e.target as HTMLElement;
   const blockElement = target.closest('[data-block-id]') as HTMLElement;
@@ -55,6 +56,9 @@ export function handleEnterKey(
         selection.removeAllRanges();
         selection.addRange(range);
       }
+      // Update active line index to the new block
+      const newBlockIndex = parseInt(newBlockEl.dataset.blockIndex || '0');
+      onActiveLineChange?.(newBlockIndex);
     }
   }, 10);
 }
@@ -63,7 +67,8 @@ export function handleBackspaceAtStart(
   e: React.KeyboardEvent<HTMLDivElement>,
   contentRef: React.MutableRefObject<ContentBlock[]>,
   onChange: (content: ContentBlock[]) => void,
-  editorRef: React.RefObject<HTMLDivElement>
+  editorRef: React.RefObject<HTMLDivElement>,
+  onActiveLineChange?: (index: number) => void
 ) {
   const target = e.target as HTMLElement;
   const blockElement = target.closest('[data-block-id]') as HTMLElement;
@@ -98,6 +103,8 @@ export function handleBackspaceAtStart(
           selection.removeAllRanges();
           selection.addRange(range);
         }
+        // Update active line index to the previous block
+        onActiveLineChange?.(blockIndex - 1);
       }
     }, 10);
   }
@@ -108,7 +115,8 @@ export function handleKeyDown(
   contentRef: React.MutableRefObject<ContentBlock[]>,
   onChange: (content: ContentBlock[]) => void,
   editorRef: React.RefObject<HTMLDivElement>,
-  applyFormat?: (type: FormattingType, color?: HighlightColor) => void
+  applyFormat?: (type: FormattingType, color?: HighlightColor) => void,
+  onActiveLineChange?: (index: number) => void
 ) {
   // Handle formatting shortcuts
   if ((e.metaKey || e.ctrlKey) && applyFormat) {
@@ -138,8 +146,21 @@ export function handleKeyDown(
   // Handle regular editing shortcuts
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
-    handleEnterKey(e, contentRef, onChange, editorRef);
+    handleEnterKey(e, contentRef, onChange, editorRef, onActiveLineChange);
   } else if (e.key === 'Backspace' && isCursorAtBlockStart()) {
-    handleBackspaceAtStart(e, contentRef, onChange, editorRef);
+    handleBackspaceAtStart(e, contentRef, onChange, editorRef, onActiveLineChange);
+  } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    // Update active line after arrow navigation
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const blockElement = range.startContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
+        if (blockElement) {
+          const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
+          onActiveLineChange?.(blockIndex);
+        }
+      }
+    }, 10);
   }
 }

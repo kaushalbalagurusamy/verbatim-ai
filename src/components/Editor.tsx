@@ -229,25 +229,28 @@ export function Editor({
   }, [onChange]);
 
   const handleSelectionChange = useCallback(() => {
-    const selection = window.getSelection();
-    onSelectionChange?.(selection);
-    
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const blockElement = range.startContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
+    // Use requestAnimationFrame to ensure cursor has moved
+    requestAnimationFrame(() => {
+      const selection = window.getSelection();
+      onSelectionChange?.(selection);
       
-      if (blockElement) {
-        const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
-        setEditorState(prev => ({ ...prev, activeLineIndex: blockIndex }));
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const blockElement = range.startContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
+        
+        if (blockElement) {
+          const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
+          setEditorState(prev => ({ ...prev, activeLineIndex: blockIndex }));
+        }
+        
+        // Update selection manager with current selection
+        if (!selection.isCollapsed) {
+          selectionManager.setFromDOMSelection(contentRef.current);
+          const selections = selectionManager.getSelections();
+          setEditorState(prev => ({ ...prev, multiSelections: selections }));
+        }
       }
-      
-      // Update selection manager with current selection
-      if (!selection.isCollapsed) {
-        selectionManager.setFromDOMSelection(contentRef.current);
-        const selections = selectionManager.getSelections();
-        setEditorState(prev => ({ ...prev, multiSelections: selections }));
-      }
-    }
+    });
   }, [onSelectionChange]);
 
   // Handle mouse down for multi-selection
@@ -325,6 +328,15 @@ export function Editor({
           ref={editorRef}
           onInput={handleInput}
           onMouseDown={handleMouseDown}
+          onFocus={(e) => {
+            // Update active line when any block receives focus
+            const target = e.target as HTMLElement;
+            const blockElement = target.closest('[data-block-id]') as HTMLElement;
+            if (blockElement) {
+              const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
+              setEditorState(prev => ({ ...prev, activeLineIndex: blockIndex }));
+            }
+          }}
           onKeyDown={(e) => {
             // Handle formatting shortcuts
             if (e.metaKey || e.ctrlKey) {
@@ -344,7 +356,9 @@ export function Editor({
             }
             
             // Handle other key events
-            handleKeyDown(e, contentRef, onChange, editorRef);
+            handleKeyDown(e, contentRef, onChange, editorRef, applyFormat, (index) => {
+              setEditorState(prev => ({ ...prev, activeLineIndex: index }));
+            });
           }}
           onMouseUp={handleSelectionChange}
           onKeyUp={handleSelectionChange}
