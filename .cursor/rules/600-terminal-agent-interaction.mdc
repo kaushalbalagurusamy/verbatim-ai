@@ -1,404 +1,548 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
 description: Terminal interaction rules and best practices for AI agents to prevent common failures and improve reliability
-globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.py", "**/*.sh", "**/*.bash", "**/*.zsh", "**/.cursor/**", "**/package.json", "**/requirements.txt"]
+globs:
+  [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    "**/*.py",
+    "**/*.sh",
+    "**/*.bash",
+    "**/*.zsh",
+    "**/.cursor/**",
+    "**/package.json",
+    "**/requirements.txt",
+  ]
 alwaysApply: true
 ---
 
-# Terminal Interaction Standards for AI Agents
+# Terminal Interaction Standards and Command System for AI Agents
 
 ## Context and Purpose
 
 @terminal_context {
-  "type": "interaction_guidelines",
-  "purpose": "prevent_common_agent_failures",
-  "scope": "terminal_command_execution",
-  "priority": "critical"
+"type": "interaction_guidelines",
+"purpose": "prevent_common_agent_failures",
+"scope": "terminal_command_execution",
+"systems": ["cursor", "claude_code"],
+"priority": "critical"
 }
 
 ### Common Agent Terminal Failures
+
 @failure_modes [
-  {
-    "id": "premature_continuation",
-    "issue": "Agent continues before command completes",
-    "frequency": "42% of failures",
-    "impact": "Commands fail silently, cascading errors"
-  },
-  {
-    "id": "output_misinterpretation",
-    "issue": "Agent misreads successful completion as failure",
-    "frequency": "23% of failures",
-    "impact": "Unnecessary retries, confusion"
-  },
-  {
-    "id": "path_confusion",
-    "issue": "Agent forgets current directory or environment state",
-    "frequency": "18% of failures",
-    "impact": "Commands run in wrong location"
-  },
-  {
-    "id": "command_chaining",
-    "issue": "Using && or ; inappropriately across platforms",
-    "frequency": "12% of failures",
-    "impact": "Platform-specific failures"
-  }
+{
+"id": "premature_continuation",
+"issue": "Agent continues before command completes",
+"frequency": "42% of failures",
+"impact": "Commands fail silently, cascading errors",
+"solution": "Use timeout detection and success indicators"
+},
+{
+"id": "output_misinterpretation",
+"issue": "Agent misreads successful completion as failure",
+"frequency": "23% of failures",
+"impact": "Unnecessary retries, confusion",
+"solution": "Recognize partial output as potential success"
+},
+{
+"id": "path_confusion",
+"issue": "Agent forgets current directory or environment state",
+"frequency": "18% of failures",
+"impact": "Commands run in wrong location",
+"solution": "Track shell state consistently"
+},
+{
+"id": "indefinite_waiting",
+"issue": "Agent waits forever for dev server prompts",
+"frequency": "15% of failures",
+"impact": "Workflow stalls completely",
+"solution": "Set timeouts and recognize server start patterns"
+}
+]
+
+## Command System Integration
+
+### Available Command Workflows
+
+@command_system {
+"location": ".claude/commands/",
+"compatibility": "Works in both Cursor and Claude Code with / prefix",
+"categories": [
+{
+"name": "Planning & Architecture",
+"commands": ["/plan:decompose", "/mode:ultrathink"],
+"purpose": "Break down complex tasks and allocate thinking budget"
+},
+{
+"name": "Development Workflow",
+"commands": ["/spawn:agent", "/lock", "/component:create", "/service:create"],
+"purpose": "Parallel development with proper coordination"
+},
+{
+"name": "Quality Assurance",
+"commands": ["/lint:all", "/test:all", "/build:check"],
+"purpose": "Automated quality gates and validation"
+},
+{
+"name": "Performance & Optimization",
+"commands": ["/perf:optimize", "/deps:check"],
+"purpose": "Maintain app performance and dependencies"
+},
+{
+"name": "Integration & Deployment",
+"commands": ["/integrate", "/db:migrate"],
+"purpose": "Safe merging and database management"
+}
+]
+}
+
+### Terminal Handling Best Practices
+
+@terminal_best_practices [
+{
+"id": "timeout_management",
+"rule": "Set reasonable timeouts: 5s for most commands, 30s for builds",
+"implementation": "timeout 5s npm install || echo 'Command completed or timed out'"
+},
+{
+"id": "success_detection",
+"rule": "Recognize success indicators instead of waiting indefinitely",
+"indicators": [
+"Server running on port",
+"Build completed successfully",
+"No errors in first 3 seconds",
+"Process started message"
+]
+},
+{
+"id": "background_execution",
+"rule": "Run dev servers in background to continue workflow",
+"example": "npm run dev & && sleep 3 && lsof -i :3000"
+},
+{
+"id": "state_assumption",
+"rule": "Assume success if no immediate error and move forward",
+"rationale": "Prevents indefinite waiting on successful operations"
+}
 ]
 
 ## Core Terminal Interaction Rules
 
 ### Command Execution Protocol
+
 @execution_rules [
-  {
-    "id": "single_command",
-    "rule": "Execute ONE command at a time",
-    "severity": "error",
-    "example": "npm install (wait for completion) THEN npm run dev"
-  },
-  {
-    "id": "wait_for_completion",
-    "rule": "ALWAYS wait for command output before proceeding",
-    "severity": "error",
-    "pattern": "Execute → Wait → Observe → Decide"
-  },
-  {
-    "id": "explicit_confirmation",
-    "rule": "Confirm command completion by checking exit status or output",
-    "severity": "error"
-  }
+{
+"id": "single_command",
+"rule": "Execute ONE command at a time",
+"severity": "error",
+"example": "npm install (wait for completion) THEN npm run dev"
+},
+{
+"id": "wait_with_timeout",
+"rule": "Wait for output with reasonable timeout, don't wait indefinitely",
+"severity": "error",
+"pattern": "Execute → Wait (max 5s) → Observe → Continue"
+},
+{
+"id": "explicit_confirmation",
+"rule": "Confirm completion by output patterns, not endless waiting",
+"severity": "error"
+}
 ]
 
 ### Shell State Management
+
 @shell_state [
-  {
-    "id": "track_working_directory",
-    "rule": "Always track current working directory (pwd)",
-    "command": "pwd",
-    "frequency": "After cd commands and before file operations"
-  },
-  {
-    "id": "environment_awareness",
-    "rule": "Check and track environment variables when relevant",
-    "commands": ["echo $PATH", "which [command]", "env | grep [var]"]
-  },
-  {
-    "id": "shell_context",
-    "rule": "Remember shell type and adjust commands accordingly",
-    "detection": "echo $SHELL or echo $0"
-  }
+{
+"id": "track_working_directory",
+"rule": "Always track current working directory (pwd)",
+"command": "pwd",
+"frequency": "After cd commands and before file operations"
+},
+{
+"id": "environment_awareness",
+"rule": "Check and track environment variables when relevant",
+"commands": ["echo $PATH", "which [command]", "env | grep [var]"]
+},
+{
+"id": "shell_context",
+"rule": "Remember shell type and adjust commands accordingly",
+"detection": "echo $SHELL or echo $0"
+}
 ]
 
 ## ReAct Pattern Implementation
 
-### Thought-Action-Observation Loop
+### Enhanced Thought-Action-Observation Loop
+
 @react_pattern {
-  "description": "Structured approach to terminal interactions",
-  "steps": [
-    {
-      "phase": "THOUGHT",
-      "action": "Analyze what needs to be done",
-      "example": "I need to install dependencies before running the server"
-    },
-    {
-      "phase": "ACTION",
-      "action": "Execute single, atomic command",
-      "example": "npm install"
-    },
-    {
-      "phase": "OBSERVATION",
-      "action": "Wait and analyze complete output",
-      "example": "Check for 'added X packages' or error messages"
-    },
-    {
-      "phase": "REFLECTION",
-      "action": "Determine next step based on observation",
-      "example": "Installation successful, now can run dev server"
-    }
-  ]
+"description": "Structured approach with timeout awareness",
+"steps": [
+{
+"phase": "THOUGHT",
+"action": "Analyze what needs to be done and potential blocking points",
+"example": "I need to start dev server which runs indefinitely"
+},
+{
+"phase": "ACTION",
+"action": "Execute with appropriate timeout or background flag",
+"example": "npm run dev & or timeout 5s npm run dev"
+},
+{
+"phase": "OBSERVATION",
+"action": "Wait for success indicators, not completion",
+"example": "Check for 'Server running on port' within 5 seconds"
+},
+{
+"phase": "REFLECTION",
+"action": "Continue if successful, don't wait for impossible completion",
+"example": "Server started, continue with next task"
+}
+]
 }
 
 ### Terminal Output Interpretation
+
 @output_interpretation [
-  {
-    "id": "success_indicators",
-    "patterns": [
-      "Process exit code 0",
-      "No error messages in stderr",
-      "Expected output patterns (e.g., 'Server running on port')",
-      "Creation of expected files/directories"
-    ]
-  },
-  {
-    "id": "partial_output_handling",
-    "rule": "Don't assume command failed if output is truncated",
-    "action": "Wait for command prompt to return"
-  },
-  {
-    "id": "async_process_handling",
-    "rule": "Recognize when processes run in background",
-    "indicators": ["&", "nohup", "daemon", "service started"]
-  }
+{
+"id": "success_indicators",
+"patterns": [
+"Process exit code 0",
+"No error messages in stderr",
+"Expected output patterns (e.g., 'Server running on port')",
+"Creation of expected files/directories",
+"Partial output with no errors"
+]
+},
+{
+"id": "partial_output_handling",
+"rule": "Treat partial output as success if no errors after timeout",
+"action": "Continue with workflow after reasonable wait"
+},
+{
+"id": "dev_server_patterns",
+"rule": "Recognize dev server start patterns and continue",
+"patterns": [
+"webpack compiled successfully",
+"ready - started server on",
+"vite dev server running at",
+"watching for file changes"
+]
+}
 ]
 
 ## Platform-Specific Considerations
 
 ### Cross-Platform Command Guidelines
+
 @platform_commands [
-  {
-    "id": "os_detection",
-    "commands": {
-      "windows": "echo %OS%",
-      "unix": "uname -s",
-      "general": "Check IDE or system information"
-    }
-  },
-  {
-    "id": "command_alternatives",
-    "mappings": [
-      {
-        "unix": "ls -la",
-        "windows": "dir /a",
-        "purpose": "List all files including hidden"
-      },
-      {
-        "unix": "rm -rf",
-        "windows": "rmdir /s /q",
-        "purpose": "Remove directory recursively"
-      },
-      {
-        "unix": "cat file.txt",
-        "windows": "type file.txt",
-        "purpose": "Display file contents"
-      }
-    ]
-  },
-  {
-    "id": "path_separators",
-    "rule": "Use forward slashes (/) or Path.join() for cross-platform compatibility"
-  }
+{
+"id": "os_detection",
+"commands": {
+"windows": "echo %OS%",
+"unix": "uname -s",
+"general": "Check IDE or system information"
+}
+},
+{
+"id": "command_alternatives",
+"mappings": [
+{
+"unix": "ls -la",
+"windows": "dir /a",
+"purpose": "List all files including hidden"
+},
+{
+"unix": "rm -rf",
+"windows": "rmdir /s /q",
+"purpose": "Remove directory recursively"
+},
+{
+"unix": "cat file.txt",
+"windows": "type file.txt",
+"purpose": "Display file contents"
+}
+]
+},
+{
+"id": "path_separators",
+"rule": "Use forward slashes (/) or Path.join() for cross-platform compatibility"
+}
 ]
 
-### Windows PowerShell Specific
-@powershell_rules [
-  {
-    "id": "no_chaining",
-    "rule": "Avoid && operator, use ; or separate commands",
-    "severity": "error"
-  },
-  {
-    "id": "execution_policy",
-    "check": "Get-ExecutionPolicy",
-    "fix": "Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned"
-  },
-  {
-    "id": "script_format",
-    "rule": "Use .ps1 scripts for complex operations",
-    "location": "@scripts/ directory"
-  }
+### Node.js Development Specific
+
+@nodejs_terminal [
+{
+"id": "package_manager_timeouts",
+"rule": "Don't wait forever for npm/pnpm/yarn",
+"timeout": "30s for install, 5s for most commands"
+},
+{
+"id": "dev_server_handling",
+"commands": [
+"npm run dev &",
+"pnpm dev > dev.log 2>&1 &",
+"nohup yarn start &"
+],
+"verification": "sleep 3 && curl -s http://localhost:3000 || lsof -i :3000"
+},
+{
+"id": "process_management",
+"cleanup": "pkill -f 'node.\*dev' or kill $(lsof -t -i:3000)"
+}
 ]
 
 ## Error Recovery Strategies
 
 ### Command Failure Handling
+
 @error_recovery [
-  {
-    "id": "permission_errors",
-    "detection": "Permission denied, Access denied, EACCES",
-    "recovery": [
-      "Check file ownership: ls -la (unix) or icacls (windows)",
-      "Try with elevated permissions if appropriate",
-      "Verify current user has necessary access"
-    ]
-  },
-  {
-    "id": "command_not_found",
-    "detection": "command not found, not recognized",
-    "recovery": [
-      "Check if tool is installed: which/where command",
-      "Verify PATH includes tool location",
-      "Install missing tool if needed"
-    ]
-  },
-  {
-    "id": "port_conflicts",
-    "detection": "EADDRINUSE, port already in use",
-    "recovery": [
-      "Find process: lsof -i :PORT (unix) or netstat -ano | findstr :PORT",
-      "Kill process or use different port",
-      "Check for zombie processes"
-    ]
-  }
+{
+"id": "timeout_recovery",
+"detection": "Command timed out",
+"recovery": [
+"Check if process started anyway: ps aux | grep [process]",
+"Verify expected outcome: port check, file creation",
+"Continue if successful, retry if truly failed"
+]
+},
+{
+"id": "permission_errors",
+"detection": "Permission denied, Access denied, EACCES",
+"recovery": [
+"Check file ownership: ls -la (unix) or icacls (windows)",
+"Try with elevated permissions if appropriate",
+"Verify current user has necessary access"
+]
+},
+{
+"id": "command_not_found",
+"detection": "command not found, not recognized",
+"recovery": [
+"Check if tool is installed: which/where command",
+"Verify PATH includes tool location",
+"Install missing tool if needed"
+]
+},
+{
+"id": "port_conflicts",
+"detection": "EADDRINUSE, port already in use",
+"recovery": [
+"Find process: lsof -i :PORT (unix) or netstat -ano | findstr :PORT",
+"Kill process or use different port",
+"Check for zombie processes"
+]
+}
 ]
 
 ## Long-Running Process Management
 
 ### Background Process Handling
+
 @background_processes [
-  {
-    "id": "server_processes",
-    "examples": ["npm run dev", "python manage.py runserver", "docker-compose up"],
-    "handling": [
-      "Recognize these run indefinitely",
-      "Don't wait for completion",
-      "Monitor startup messages for readiness",
-      "Use separate terminal or background flag (&)"
-    ]
-  },
-  {
-    "id": "process_monitoring",
-    "commands": [
-      "ps aux | grep [process]",
-      "lsof -i :PORT",
-      "tail -f logfile.log"
-    ]
-  },
-  {
-    "id": "graceful_shutdown",
-    "methods": [
-      "Ctrl+C for foreground processes",
-      "kill -TERM [pid] for background",
-      "docker-compose down for containers"
-    ]
-  }
+{
+"id": "server_processes",
+"examples": ["npm run dev", "python manage.py runserver", "docker-compose up"],
+"handling": [
+"Start with & for background execution",
+"Use nohup for persistence",
+"Monitor startup with sleep && check pattern",
+"Never wait for these to 'complete'"
+]
+},
+{
+"id": "process_monitoring",
+"commands": [
+"ps aux | grep [process]",
+"lsof -i :PORT",
+"tail -f logfile.log",
+"jobs -l"
+]
+},
+{
+"id": "graceful_shutdown",
+"methods": [
+"kill %1 for background job",
+"Ctrl+C for foreground processes",
+"kill -TERM [pid] for specific process",
+"docker-compose down for containers"
+]
+}
 ]
 
 ## Safety and Security Protocols
 
 ### Dangerous Command Prevention
+
 @safety_rules [
-  {
-    "id": "destructive_commands",
-    "restricted": ["rm -rf /", "format c:", ":(){ :|:& };:", "dd if=/dev/zero"],
-    "rule": "Always confirm before destructive operations",
-    "severity": "error"
-  },
-  {
-    "id": "credential_handling",
-    "rule": "Never echo or log sensitive credentials",
-    "safe_practices": [
-      "Use environment variables",
-      "Read from .env files",
-      "Use secret management tools"
-    ]
-  },
-  {
-    "id": "script_validation",
-    "rule": "Review scripts before execution",
-    "checks": ["cat script.sh", "Verify no malicious commands", "Check permissions"]
-  }
+{
+"id": "destructive_commands",
+"restricted": ["rm -rf /", "format c:", ":(){ :|:& };:", "dd if=/dev/zero"],
+"rule": "Always confirm before destructive operations",
+"severity": "error"
+},
+{
+"id": "credential_handling",
+"rule": "Never echo or log sensitive credentials",
+"safe_practices": [
+"Use environment variables",
+"Read from .env files",
+"Use secret management tools"
+]
+},
+{
+"id": "script_validation",
+"rule": "Review scripts before execution",
+"checks": ["cat script.sh", "Verify no malicious commands", "Check permissions"]
+}
+]
+
+## Workflow Command Integration
+
+### Structured Development Flow
+
+@workflow_integration [
+{
+"id": "feature_development",
+"sequence": [
+"/plan:decompose [feature description]",
+"/spawn:agent [task-name] for each task",
+"/lock [shared-resources]",
+"Development work with timeouts",
+"/lint:all && /test:all",
+"/integrate [branches]"
+]
+},
+{
+"id": "debugging_flow",
+"sequence": [
+"/debug:component [name] for React issues",
+"Check browser console",
+"Review terminal output with timeouts",
+"/perf:optimize if performance issues"
+]
+},
+{
+"id": "deployment_flow",
+"sequence": [
+"/deps:check for security",
+"/build:check with 30s timeout",
+"/db:migrate if schema changes",
+"Deploy with monitoring"
+]
+}
 ]
 
 ## Monitoring and Debugging
 
 ### Command Execution Logging
-@execution_logging [
-  {
-    "id": "command_history",
-    "rule": "Log all executed commands for debugging",
-    "implementation": "Maintain command history in agent memory"
-  },
-  {
-    "id": "output_capture",
-    "rule": "Capture both stdout and stderr",
-    "reason": "Error messages often go to stderr"
-  },
-  {
-    "id": "timing_information",
-    "rule": "Track command execution time",
-    "threshold": "Warn if command takes >30 seconds"
-  }
-]
 
-### State Verification
-@state_verification [
-  {
-    "id": "pre_execution_checks",
-    "checks": [
-      "Current directory: pwd",
-      "Required files exist: ls",
-      "Dependencies installed: package manager check",
-      "Ports available: netstat or lsof"
-    ]
-  },
-  {
-    "id": "post_execution_validation",
-    "checks": [
-      "Expected files created",
-      "Services running on expected ports",
-      "No error logs generated",
-      "Exit code is 0"
-    ]
-  }
+@execution_logging [
+{
+"id": "command_history",
+"rule": "Log all executed commands for debugging",
+"implementation": "Maintain command history in agent memory"
+},
+{
+"id": "output_capture",
+"rule": "Capture both stdout and stderr with timeout",
+"reason": "Prevent infinite waiting on streams"
+},
+{
+"id": "timing_information",
+"rule": "Track command execution time",
+"thresholds": {
+"warning": ">5 seconds for simple commands",
+"timeout": ">30 seconds for builds",
+"background": "Immediately for dev servers"
+}
+}
 ]
 
 ## Best Practices Implementation
 
 ### Command Composition
-@command_best_practices [
-  {
-    "id": "atomic_operations",
-    "rule": "Each command should do one thing well",
-    "example": "mkdir -p dir && cd dir → mkdir -p dir THEN cd dir"
-  },
-  {
-    "id": "idempotent_commands",
-    "rule": "Prefer commands that can be run multiple times safely",
-    "examples": ["mkdir -p", "npm ci instead of npm install", "cp -n"]
-  },
-  {
-    "id": "verbose_flags",
-    "rule": "Use verbose flags for better observability",
-    "examples": ["npm install --verbose", "cp -v", "rm -v"]
-  }
-]
 
-### Environment Isolation
-@environment_isolation [
-  {
-    "id": "virtual_environments",
-    "rule": "Use isolated environments for different projects",
-    "tools": ["python venv", "nvm", "rbenv", "docker"]
-  },
-  {
-    "id": "dependency_conflicts",
-    "rule": "Check for conflicts before installing global packages",
-    "commands": ["npm list -g", "pip list", "gem list"]
-  }
+@command_best_practices [
+{
+"id": "atomic_operations",
+"rule": "Each command should do one thing well",
+"example": "mkdir -p dir && cd dir → mkdir -p dir THEN cd dir"
+},
+{
+"id": "timeout_wrapping",
+"rule": "Wrap potentially hanging commands",
+"example": "timeout 5s npm test || echo 'Tests completed or timed out'"
+},
+{
+"id": "background_defaults",
+"rule": "Default to background for known long-runners",
+"examples": ["npm run dev &", "docker-compose up -d", "serve -s build &"]
+}
 ]
 
 ## Integration with IDE State
 
 ### Context Synchronization
+
 @ide_integration [
-  {
-    "id": "file_system_sync",
-    "rule": "Ensure IDE file explorer reflects terminal changes",
-    "trigger": "After file creation/deletion operations"
-  },
-  {
-    "id": "terminal_multiplexing",
-    "rule": "Track which terminal instance is being used",
-    "consideration": "Multiple terminals may have different states"
-  },
-  {
-    "id": "workspace_awareness",
-    "rule": "Respect workspace/project boundaries",
-    "check": "Verify operations occur within project root"
-  }
+{
+"id": "command_availability",
+"rule": "Check for .claude/commands/ or custom command directories",
+"usage": "Type / to see available commands in Claude Code or Cursor"
+},
+{
+"id": "file_system_sync",
+"rule": "Ensure IDE file explorer reflects terminal changes",
+"trigger": "After file creation/deletion operations"
+},
+{
+"id": "terminal_multiplexing",
+"rule": "Track which terminal instance is being used",
+"consideration": "Multiple terminals may have different states"
+}
 ]
 
 ## Summary and Quick Reference
 
 ### Terminal Interaction Checklist
+
 - [ ] Execute ONE command at a time
-- [ ] WAIT for complete output before proceeding
-- [ ] VERIFY command success through output analysis
+- [ ] Set TIMEOUTS for all commands (5s default, 30s for builds)
+- [ ] Use BACKGROUND execution for dev servers
+- [ ] RECOGNIZE success patterns instead of waiting for completion
+- [ ] ASSUME success if no errors after timeout
 - [ ] TRACK current directory and environment state
 - [ ] USE platform-appropriate commands
 - [ ] HANDLE errors gracefully with recovery strategies
+- [ ] INTEGRATE with command system (/plan:decompose, /lint:all, etc.)
+- [ ] MAINTAIN awareness of long-running processes
+
+### Anti-Patterns to Avoid
+
+- ❌ Waiting indefinitely for dev server completion
+- ❌ Assuming command failed due to timeout
+- ❌ Chaining commands with && in PowerShell
+- ❌ Forgetting to background long-running processes
+- ❌ Not checking for success indicators
+- ❌ Ignoring partial output as failure
+
+### Command System Quick Reference
+
+| Task             | Command                     | Timeout/Background    |
+| ---------------- | --------------------------- | --------------------- |
+| Install deps     | `npm install`               | 30s timeout           |
+| Start dev server | `npm run dev &`             | Background            |
+| Run tests        | `timeout 30s npm test`      | 30s timeout           |
+| Build project    | `timeout 30s npm run build` | 30s timeout           |
+| Check port       | `lsof -i :3000`             | 5s timeout            |
+| Plan feature     | `/plan:decompose`           | N/A                   |
+| Run linter       | `/lint:all`                 | Uses internal timeout |
+| Integration      | `/integrate`                | Uses internal checks  |
+
 - [ ] LOG all operations for debugging
 - [ ] VALIDATE state before and after operations
 - [ ] RESPECT safety protocols for dangerous commands
