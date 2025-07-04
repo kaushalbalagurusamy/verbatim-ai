@@ -1,272 +1,215 @@
-# Claude Commands for Verbatim AI
+# Claude Command System
 
-This directory contains custom slash commands for Claude Code to help with project management and configuration visibility.
+This directory contains custom commands for Claude Code to streamline development workflows in this Next.js/TypeScript project.
+
+## Overview
+
+The command system implements a "plan-spawn-work-integrate" pipeline that enables:
+
+- Structured task decomposition
+- Parallel development with isolated Git worktrees
+- Automated quality checks
+- Deterministic integration
 
 ## Available Commands
 
-### Configuration & Discovery Commands (Read-Only)
+### Planning & Architecture
 
-#### `/show-hidden`
+#### `/plan:decompose [goal]`
 
-Shows all hidden files and their contents in the project. Automatically discovers new hidden files as they're added.
+Breaks down complex goals into independent, non-overlapping tasks.
 
-**Use cases:**
+- Uses extended thinking for thorough analysis
+- Creates numbered checklist with file scopes
+- Prevents task collision
 
-- Understanding project configuration
-- Debugging development environment issues
-- Onboarding new team members
+Example: `/plan:decompose Build user authentication system`
 
-#### `/config-files`
+#### `/mode:ultrathink`
 
-Quick access to key configuration files with their current settings.
+Allocates maximum reasoning budget for complex architectural decisions.
 
-**Covers:**
+### Development Workflow
 
-- `.cursor/` - IDE rules and settings
-- `.devcontainer/` - Development environment
-- `package.json` - Dependencies and scripts
-- TypeScript, Tailwind, Vite configurations
+#### `/spawn:agent [task-name]`
 
-#### `/scan-project`
+Creates isolated sub-agent for implementing specific tasks.
 
-Comprehensive project overview including structure, hidden files, and configuration hierarchy.
+- Uses Git worktrees for isolation
+- Maintains focused scope
+- Enables true parallel development
 
-**Provides:**
+#### `/lock [files/paths]`
 
-- Complete project structure
-- All configuration files with descriptions
-- Tool relationships and dependencies
-- Development environment setup
+Applies temporary mutex to prevent concurrent edits.
 
-#### `/cursor-rules`
+- Prevents merge conflicts
+- Coordinates multi-agent work
 
-Specialized command for Cursor IDE rule management.
+### Component Development
 
-**Shows:**
+#### `/component:create [ComponentName]`
 
-- All `.mdc` rule files and their purposes
-- Rule categories and precedence
-- Active coding standards
-- IDE configuration details
+Scaffolds new React components with TypeScript.
 
-### File Modification Commands (Requires Edit Mode)
+- Follows project structure conventions
+- Includes proper TypeScript interfaces
+- Adds JSDoc documentation
 
-#### `/edit-mode`
+Example: `/component:create UserProfileCard`
 
-Master toggle for enabling/disabling file modification capabilities.
+#### `/debug:component [ComponentName]`
 
-**Commands:**
+Adds debugging helpers to troubleshoot component issues.
 
-- `/edit-mode on` - Enable configuration file editing
-- `/edit-mode off` - Disable all modifications (safety mode)
-- `/edit-mode status` - Show current editing permissions
+- Lifecycle logging
+- State inspection
+- Performance profiling
 
-#### `/edit-config`
+### Backend Development
 
-Enable modification of specific configuration files with safety checks.
+#### `/service:create [domain]`
 
-**Features:**
+Creates new backend service following architecture patterns.
 
-- Explicit permission before changes
-- Shows diffs before applying
-- Focused on specific file patterns
-- Maintains backup references
+- Extends BaseService
+- Includes validation
+- Creates corresponding API routes
 
-#### `/add-cursor-rule`
+Example: `/service:create analytics`
 
-Create new Cursor rule files with proper numbering and structure.
+### Quality Assurance
 
-**Capabilities:**
+#### `/lint:all`
 
-- Auto-numbering within categories
-- Standard .mdc template generation
-- Proper precedence ordering
-- Interactive rule creation process
+Runs ESLint with auto-fix across the codebase.
 
-#### `/update-config`
+- Fixes formatting issues
+- Enforces code standards
+- Commits fixes automatically
 
-Safely update existing configuration files with validation.
+#### `/test:all`
 
-**Safety features:**
+Executes full test suite with coverage.
 
-- JSON syntax validation
-- Dependency compatibility checks
-- Preview mode before applying
-- Version control integration
+- Runs Jest tests
+- Checks TypeScript types
+- Ensures all tests pass before proceeding
 
-#### `/sync-rules`
+#### `/build:check`
 
-Synchronize development standards between Cursor rules and CLAUDE.md.
+Verifies production build readiness.
 
-**Capabilities:**
+- Type checking
+- Bundle analysis
+- Performance metrics
+- Lighthouse scores
 
-- Compare .cursor/rules/\*.mdc with CLAUDE.md content
-- Identify inconsistencies between rule systems
-- Suggest updates for alignment
-- Ensure consistent AI tool guidance
+### Performance
 
-### Terminal & Debugging Commands
+#### `/perf:optimize [target]`
 
-#### `/check-logs [type]`
+Optimizes performance for components, pages, or overall app.
 
-Find and analyze application logs, error traces, and debugging information.
+- Profiles current performance
+- Identifies bottlenecks
+- Applies optimization strategies
+- Measures improvements
 
-**Options:**
+### Dependency Management
 
-- `/check-logs` - Show all available logs
-- `/check-logs app` - Application/server logs
-- `/check-logs error` - Error logs and stack traces
-- `/check-logs npm` - Package manager logs
-- `/check-logs build` - Build and compilation logs
+#### `/deps:check [package]`
 
-**Features:**
+Checks and updates project dependencies.
 
-- Automatic log file discovery
-- Error pattern detection and highlighting
-- Debugging suggestions based on errors
-- Support for common log locations
+- Security audit
+- Version updates
+- Breaking change review
+- Post-update testing
 
-#### `/process-status [action]`
+### Integration
 
-Check running processes, exit codes, and manage background tasks.
+#### `/integrate [branch1 branch2 ...]`
 
-**Options:**
+Merges multiple feature branches with quality gates.
 
-- `/process-status` - List all Node/npm/pnpm processes
-- `/process-status check [port]` - Check what's running on a port
-- `/process-status kill [pid/port]` - Terminate a process
-- `/process-status exit-code` - Show last command's exit code
-- `/process-status background` - List background processes
-
-**Use cases:**
-
-- Cleaning up before starting dev server
-- Understanding why commands failed
-- Managing multiple services
-- Debugging port conflicts
-
-#### `/env-state [component]`
-
-Check environment variables, paths, and system configuration.
-
-**Options:**
-
-- `/env-state` - Comprehensive environment overview
-- `/env-state path` - Display PATH and command availability
-- `/env-state node` - Node.js/npm/pnpm versions and paths
-- `/env-state vars` - List all environment variables
-- `/env-state shell` - Shell type and configuration
-
-**Helps with:**
-
-- Debugging "command not found" errors
-- Verifying development setup
-- Checking tool versions
-- Understanding execution context
-
-#### `/terminal-state [action]`
-
-Track terminal state, command history, and maintain execution context.
-
-**Options:**
-
-- `/terminal-state` - Show current terminal state summary
-- `/terminal-state history` - Display recent command history
-- `/terminal-state pwd` - Verify current working directory
-- `/terminal-state reset` - Reset terminal state tracking
-- `/terminal-state save` - Save current state for reference
-
-**Features:**
-
-- ReAct pattern tracking (Thought-Action-Observation-Reflection)
-- Command success/failure history
-- Directory change awareness
-- State validation checks
-
-#### `/debug-mode [on|off|status]`
-
-Enable verbose output and enhanced debugging for terminal commands.
-
-**Options:**
-
-- `/debug-mode on` - Enable verbose debugging
-- `/debug-mode off` - Disable debug mode
-- `/debug-mode status` - Check current debug settings
-- `/debug-mode trace [command]` - Run single command with full tracing
-
-**When enabled:**
-
-- Adds verbose flags automatically
-- Shows command execution traces
-- Enhances error information
-- Sets debugging environment variables
-
-#### `/safe-execute [command]`
-
-Execute commands with safety checks and validation.
-
-**Features:**
-
-- Pre-validates command safety
-- Detects destructive operations
-- Checks prerequisites before execution
-- Provides rollback suggestions
-- Suggests safer alternatives
-
-**Protected operations:**
-
-- `rm -rf` on directories
-- `git push --force`
-- Database operations
-- System-wide installations
-- Credential exposure
-
-## Command Design Principles
-
-### Modular Architecture
-
-- Each command has a specific, focused purpose
-- Commands can be combined for comprehensive analysis
-- Easy to add new commands for emerging needs
-
-### Dynamic Discovery
-
-- Commands automatically find new files as they're added
-- No manual maintenance required for file lists
-- Adapts to project evolution
-
-### Consistent Output Format
-
-- Structured, readable output
-- Clear categorization of information
-- Examples and usage guidance included
-
-## Adding New Commands
-
-1. Create a new `.md` file in this directory
-2. Follow the frontmatter format:
-   ```yaml
-   ---
-   name: command-name
-   description: "Brief description of what the command does"
-   ---
-   ```
-3. Include usage examples and clear documentation
-4. Test the command in Claude Code
+- Sequential merging
+- Automatic conflict resolution
+- Lint and test validation
+- Creates integration PR
 
 ## Best Practices
 
-- Keep commands focused on specific tasks
-- Include clear usage examples
-- Document when to use each command
-- Update README when adding new commands
-- Consider command combinations for complex workflows
+### 1. Always Plan First
 
-## Integration with Development Workflow
+Start complex features with `/plan:decompose` to ensure clear task boundaries.
 
-These commands complement the project's development standards:
+### 2. Use Parallel Agents
 
-- Support for Cursor IDE rule management
-- Visibility into devcontainer configuration
-- Understanding of TypeScript and React setup
-- Documentation of project architecture decisions
+Spawn multiple agents for independent tasks to maximize efficiency.
+
+### 3. Lock Critical Files
+
+Use `/lock` when multiple agents might edit the same files.
+
+### 4. Maintain Quality Gates
+
+Always run `/lint:all` and `/test:all` before integration.
+
+### 5. Optimize Incrementally
+
+Use `/perf:optimize` regularly to maintain performance standards.
+
+## Post-Edit Hooks
+
+The system includes automatic formatting hooks that run after each file edit:
+
+- Prettier for code formatting
+- ESLint for linting fixes
+- Supports TypeScript, JavaScript, JSON, Markdown, CSS
+
+## Project-Specific Adaptations
+
+This command system is tailored for:
+
+- Next.js 15 with App Router
+- React 19 with Server Components
+- TypeScript with strict mode
+- Tailwind CSS for styling
+- Shadcn UI components
+
+## Troubleshooting
+
+### Command Not Found
+
+Ensure you're in a Claude Code session and commands are in `.claude/commands/`
+
+### Git Worktree Issues
+
+Check that you have sufficient disk space and proper Git permissions
+
+### Build Failures
+
+Run `/build:check` to identify specific issues before deployment
+
+### Performance Degradation
+
+Use `/perf:optimize` to profile and fix performance bottlenecks
+
+## Contributing
+
+When adding new commands:
+
+1. Follow the existing naming convention: `category:action.md`
+2. Use appropriate thinking keywords (think, think harder, ultrathink)
+3. Include clear step-by-step instructions
+4. Add return status indicators
+5. Update this README
+
+## Integration with CI/CD
+
+These commands can be integrated into CI/CD pipelines:
+
+- Use `/lint:all` and `/test:all` in pre-commit hooks
+- Run `/build:check` before deployments
+- Execute `/deps:check` on schedule for security updates
