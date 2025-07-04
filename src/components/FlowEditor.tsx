@@ -22,6 +22,8 @@ interface FlowData {
 
 export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData, onTitleChange, onContentChange }: FlowEditorProps) {
   const [title, setTitle] = useState(initialTitle);
+  const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
   const [flowData, setFlowData] = useState<FlowData>(() => {
     if (initialData && initialData.columns && initialData.rows) {
       return initialData;
@@ -100,20 +102,24 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
       <div className="flex-1 overflow-auto">
         <div className="min-w-fit min-h-full">
           {/* Sticky Header */}
-          <div className="sticky top-0 z-10 bg-[#2d2d30] border-b border-[#3c3c3c]">
+          <div className="sticky top-0 z-10 bg-[#1e1e1e]">
             <div className="flex min-w-fit">
               {/* Row number header */}
-              <div className="w-16 h-10 bg-[#252526] border-r border-[#3c3c3c] flex items-center justify-center flex-shrink-0">
+              <div className="w-16 h-10 bg-[#1e1e1e] flex items-center justify-center flex-shrink-0">
                 <span className="text-xs text-[#6a6a6a] font-medium">#</span>
               </div>
               {/* Column headers */}
               {flowData.columns.map((column, colIndex) => (
-                <div key={colIndex} className="min-w-32 w-32 border-r border-[#3c3c3c] last:border-r-0 flex-shrink-0">
+                <div key={colIndex} className="min-w-32 w-32 flex-shrink-0">
                   <input
                     type="text"
                     value={column}
                     onChange={(e) => updateColumnHeader(colIndex, e.target.value)}
-                    className="w-full h-10 px-3 bg-transparent text-sm text-[#cccccc] font-medium outline-none border-none"
+                    onFocus={() => setActiveCell({ row: -1, col: colIndex })}
+                    onBlur={() => setActiveCell(null)}
+                    className={`w-full h-10 px-3 bg-transparent text-sm font-medium outline-none border-none transition-colors ${
+                      activeCell?.col === colIndex ? 'text-[#ffffff]' : 'text-[#6a6a6a]'
+                    }`}
                     placeholder={`Column ${String.fromCharCode(65 + colIndex)}`}
                   />
                 </div>
@@ -124,19 +130,32 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
           {/* Scrollable Content */}
           <div className="min-h-full min-w-fit">
             {flowData.rows.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex border-b border-[#3c3c3c] hover:bg-[#252526] transition-colors min-w-fit">
+              <div key={rowIndex} className="flex transition-colors min-w-fit">
                 {/* Row number */}
-                <div className="w-16 h-10 bg-[#252526] border-r border-[#3c3c3c] flex items-center justify-center sticky left-0 z-5 flex-shrink-0">
-                  <span className="text-xs text-[#6a6a6a] font-medium">{rowIndex + 1}</span>
+                <div className="w-16 h-10 bg-[#1e1e1e] flex items-center justify-center sticky left-0 z-5 flex-shrink-0">
+                  <span className={`text-xs font-medium transition-colors ${
+                    activeCell?.row === rowIndex ? 'text-[#ffffff]' : 'text-[#6a6a6a]'
+                  }`}>{rowIndex + 1}</span>
                 </div>
                 {/* Row cells */}
                 {row.map((cell, colIndex) => (
-                  <div key={cell.id} className="min-w-32 w-32 border-r border-[#3c3c3c] last:border-r-0 flex-shrink-0">
+                  <div 
+                    key={cell.id} 
+                    className={`min-w-32 w-32 flex-shrink-0 relative ${
+                      hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 'border border-[#3c3c3c]' : 
+                      activeCell?.row === rowIndex && activeCell?.col === colIndex ? 'border border-[#4fc3f7]' : 
+                      ''
+                    }`}
+                    onMouseEnter={() => setHoveredCell({ row: rowIndex, col: colIndex })}
+                    onMouseLeave={() => setHoveredCell(null)}
+                  >
                     <input
                       type="text"
                       value={cell.value}
                       onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
-                      className="w-full h-10 px-3 bg-transparent text-sm text-[#cccccc] outline-none border-none focus:bg-[#383838] transition-colors"
+                      onFocus={() => setActiveCell({ row: rowIndex, col: colIndex })}
+                      onBlur={() => setActiveCell(null)}
+                      className="w-full h-10 px-3 bg-transparent text-sm text-[#cccccc] outline-none border-none transition-colors"
                       placeholder=""
                     />
                   </div>
