@@ -2,14 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from './ui/scroll-area';
 
-interface FlowEditorProps {
-  documentId?: string;
-  initialTitle?: string;
-  initialData?: any;
-  onTitleChange?: (title: string) => void;
-  onContentChange?: (content: any) => void;
-}
-
 interface CellData {
   id: string;
   value: string;
@@ -18,6 +10,14 @@ interface CellData {
 interface FlowData {
   columns: string[];
   rows: CellData[][];
+}
+
+interface FlowEditorProps {
+  documentId?: string;
+  initialTitle?: string;
+  initialData?: FlowData;
+  onTitleChange?: (title: string) => void;
+  onContentChange?: (content: FlowData) => void;
 }
 
 export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData, onTitleChange, onContentChange }: FlowEditorProps) {
@@ -105,12 +105,12 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
           <div className="sticky top-0 z-10 bg-[#1e1e1e]">
             <div className="flex min-w-fit">
               {/* Row number header */}
-              <div className="w-16 h-10 bg-[#1e1e1e] flex items-center justify-center flex-shrink-0">
+              <div className="w-16 h-10 bg-[#1e1e1e] flex items-center justify-center flex-shrink-0 border border-[#2a2a2a]">
                 <span className="text-xs text-[#6a6a6a] font-medium">#</span>
               </div>
               {/* Column headers */}
               {flowData.columns.map((column, colIndex) => (
-                <div key={colIndex} className="min-w-32 w-32 flex-shrink-0">
+                <div key={colIndex} className="min-w-32 w-32 flex-shrink-0 border border-[#2a2a2a]">
                   <input
                     type="text"
                     value={column}
@@ -119,7 +119,7 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
                     onBlur={() => setActiveCell(null)}
                     className={`w-full h-10 px-3 bg-transparent text-sm font-medium outline-none border-none transition-colors ${
                       activeCell?.col === colIndex ? 'text-[#ffffff]' : 'text-[#6a6a6a]'
-                    }`}
+                    } hover:bg-[#2a2a2a]/20`}
                     placeholder={`Column ${String.fromCharCode(65 + colIndex)}`}
                   />
                 </div>
@@ -132,7 +132,7 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
             {flowData.rows.map((row, rowIndex) => (
               <div key={rowIndex} className="flex transition-colors min-w-fit">
                 {/* Row number */}
-                <div className="w-16 h-10 bg-[#1e1e1e] flex items-center justify-center sticky left-0 z-5 flex-shrink-0">
+                <div className="w-16 h-10 bg-[#1e1e1e] flex items-center justify-center sticky left-0 z-5 flex-shrink-0 border border-[#2a2a2a]">
                   <span className={`text-xs font-medium transition-colors ${
                     activeCell?.row === rowIndex ? 'text-[#ffffff]' : 'text-[#6a6a6a]'
                   }`}>{rowIndex + 1}</span>
@@ -141,10 +141,10 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
                 {row.map((cell, colIndex) => (
                   <div 
                     key={cell.id} 
-                    className={`min-w-32 w-32 flex-shrink-0 relative ${
-                      hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 'border border-[#3c3c3c]' : 
-                      activeCell?.row === rowIndex && activeCell?.col === colIndex ? 'border border-[#4fc3f7]' : 
-                      ''
+                    className={`min-w-32 w-32 flex-shrink-0 relative border border-transparent ${
+                      hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 'border-[#3c3c3c]' : 
+                      activeCell?.row === rowIndex && activeCell?.col === colIndex ? 'border-[#4fc3f7]' : 
+                      'border-[#2a2a2a]'
                     }`}
                     onMouseEnter={() => setHoveredCell({ row: rowIndex, col: colIndex })}
                     onMouseLeave={() => setHoveredCell(null)}
@@ -155,7 +155,7 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
                       onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
                       onFocus={() => setActiveCell({ row: rowIndex, col: colIndex })}
                       onBlur={() => setActiveCell(null)}
-                      className="w-full h-10 px-3 bg-transparent text-sm text-[#cccccc] outline-none border-none transition-colors"
+                      className="w-full h-10 px-3 bg-transparent text-sm text-[#cccccc] outline-none border-none transition-colors hover:bg-[#2a2a2a]/20"
                       placeholder=""
                     />
                   </div>
