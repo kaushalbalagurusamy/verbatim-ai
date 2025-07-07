@@ -12,6 +12,7 @@ import { handleKeyDown } from './editor/editor-handlers';
 import { selectionManager } from '@/utils/selection-manager';
 import type { TextSelection } from '@/utils/selection-manager';
 import { findBlockElement } from '@/utils/selection-helpers';
+import { calculateVisualLinesForBlocks, createDebouncedCalculator } from '@/utils/visual-line-calculator';
 import { 
   applyBoldFormatting,
   applyHighlightFormatting,
@@ -32,6 +33,7 @@ interface EditorState {
   activeLineIndex: number;
   isComposing: boolean;
   multiSelections: TextSelection[];
+  visualLines: Map<string, number>; // blockId -> visual line count
 }
 
 export function Editor({ 
@@ -44,30 +46,71 @@ export function Editor({
 }: EditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<ContentBlock[]>(content);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [editorState, setEditorState] = useState<EditorState>({
     activeLineIndex: 0,
     isComposing: false,
-    multiSelections: []
+    multiSelections: [],
+    visualLines: new Map()
   });
 
   // Update content ref when content changes
   useEffect(() => {
     contentRef.current = content;
   }, [content]);
+  
+  // Function to update visual line counts
+  const updateVisualLines = useCallback(() => {
+    if (!editorRef.current) return;
+    
+    const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
+    const visualLines = calculateVisualLinesForBlocks(blocks);
+    
+    setEditorState(prev => ({
+      ...prev,
+      visualLines
+    }));
+  }, []);
+  
+  // Debounced version for resize events
+  const debouncedUpdateVisualLines = useRef(
+    createDebouncedCalculator(100)
+  ).current;
 
   // Initialize editor only once
   useEffect(() => {
     if (editorRef.current) {
       initializeEditor();
+      // Initial visual line calculation
+      setTimeout(updateVisualLines, 50);
     }
   }, []); // Empty deps - only run once
+  
+  // Setup ResizeObserver for dynamic visual line updates
+  useEffect(() => {
+    if (!editorRef.current) return;
+    
+    const observer = new ResizeObserver(() => {
+      debouncedUpdateVisualLines(() => updateVisualLines());
+    });
+    
+    observer.observe(editorRef.current);
+    resizeObserverRef.current = observer;
+    
+    return () => {
+      observer.disconnect();
+      resizeObserverRef.current = null;
+    };
+  }, [updateVisualLines, debouncedUpdateVisualLines]);
 
   // Update blocks when content changes (but not during composition)
   useEffect(() => {
     if (editorRef.current && !editorState.isComposing) {
       updateBlocks();
+      // Update visual lines after DOM updates
+      setTimeout(updateVisualLines, 50);
     }
-  }, [content, editorState.isComposing]);
+  }, [content, editorState.isComposing, updateVisualLines]);
 
   // Auto focus
   useEffect(() => {
@@ -380,14 +423,25 @@ export function Editor({
       <div className="flex h-full">
         {/* Line Numbers */}
         <div className="w-8 bg-[#1e1e1e] flex-shrink-0 pt-6 pb-6 px-1">
-          {content.map((block, index) => (
-            <LineNumber
-              key={`line-${block.id}`}
-              index={index}
-              block={block}
-              isActive={index === editorState.activeLineIndex}
-            />
-          ))}
+          {content.map((block, index) => {
+            // Calculate cumulative line number
+            let startLineNumber = 1;
+            for (let i = 0; i < index; i++) {
+              const prevBlock = content[i];
+              startLineNumber += editorState.visualLines.get(prevBlock.id) || 1;
+            }
+            
+            return (
+              <LineNumber
+                key={`line-${block.id}`}
+                index={index}
+                block={block}
+                isActive={index === editorState.activeLineIndex}
+                visualLineCount={editorState.visualLines.get(block.id) || 1}
+                startLineNumber={startLineNumber}
+              />
+            );
+          })}
         </div>
         
         {/* Editor Content */}
