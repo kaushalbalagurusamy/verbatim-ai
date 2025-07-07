@@ -11,6 +11,7 @@ import { getBlockClassName, applyFormatting } from './editor/editor-helpers';
 import { handleKeyDown } from './editor/editor-handlers';
 import { selectionManager } from '@/utils/selection-manager';
 import type { TextSelection } from '@/utils/selection-manager';
+import { findBlockElement } from '@/utils/selection-helpers';
 import { 
   applyBoldFormatting,
   applyHighlightFormatting,
@@ -198,7 +199,7 @@ export function Editor({
   const handleInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
     try {
       const target = e.target as HTMLElement;
-      const blockElement = target.closest('[data-block-id]') as HTMLElement;
+      const blockElement = findBlockElement(target);
       if (!blockElement) return;
 
       const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
@@ -242,7 +243,7 @@ export function Editor({
       
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0);
-        const blockElement = range.startContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
+        const blockElement = findBlockElement(range.startContainer);
         
         if (blockElement) {
           const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
@@ -397,7 +398,7 @@ export function Editor({
           onFocus={(e) => {
             // Update active line when any block receives focus
             const target = e.target as HTMLElement;
-            const blockElement = target.closest('[data-block-id]') as HTMLElement;
+            const blockElement = findBlockElement(target);
             if (blockElement) {
               const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
               setEditorState(prev => ({ ...prev, activeLineIndex: blockIndex }));

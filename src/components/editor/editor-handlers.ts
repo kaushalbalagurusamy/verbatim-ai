@@ -4,6 +4,7 @@
  */
 import type { ContentBlock, FormattingType, HighlightColor } from '@/types/document.types';
 import { getCursorPosition, isCursorAtBlockStart, isCursorAtBlockEnd } from '@/utils/cursor-manager';
+import { findBlockElement } from '@/utils/selection-helpers';
 
 export function handleEnterKey(
   e: React.KeyboardEvent<HTMLDivElement>,
@@ -160,7 +161,7 @@ export function handleKeyDown(
   // Handle paragraph selection with Cmd/Ctrl + Shift + Up/Down
   if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
     e.preventDefault();
-    handleParagraphSelection(e, editorRef, contentRef);
+    handleParagraphSelection(e, editorRef, contentRef, onActiveLineChange);
     return;
   }
   
@@ -271,53 +272,91 @@ export function handleKeyDown(
 export function handleParagraphSelection(
   e: React.KeyboardEvent<HTMLDivElement>,
   editorRef: React.RefObject<HTMLDivElement>,
-  contentRef: React.MutableRefObject<ContentBlock[]>
+  contentRef: React.MutableRefObject<ContentBlock[]>,
+  onActiveLineChange?: (index: number) => void
 ) {
   const selection = window.getSelection();
-  if (!selection || !editorRef.current) return;
+  if (!selection || !editorRef.current || selection.rangeCount === 0) return;
   
-  // Get current block
   const range = selection.getRangeAt(0);
-  const currentBlock = range.startContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
-  if (!currentBlock) return;
-  
-  const currentIndex = parseInt(currentBlock.dataset.blockIndex || '0');
   const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
   
-  if (e.key === 'ArrowUp' && currentIndex > 0) {
-    // Select from current position to start of previous block
-    const prevBlock = blocks[currentIndex - 1];
-    if (prevBlock) {
+  // Use proper block detection for both anchor and focus
+  const anchorBlock = findBlockElement(range.startContainer);
+  const focusBlock = findBlockElement(range.endContainer);
+  
+  if (!focusBlock) return;
+  
+  const focusIndex = parseInt(focusBlock.dataset.blockIndex || '0');
+  
+  // Determine if we're extending or creating a new selection
+  const isCollapsed = range.collapsed;
+  const isExtending = !isCollapsed;
+  
+  if (e.key === 'ArrowUp') {
+    if (focusIndex > 0) {
+      const targetBlock = blocks[focusIndex - 1];
+      if (!targetBlock) return;
+      
       const newRange = document.createRange();
       
-      // Set start at beginning of previous block
-      newRange.setStart(prevBlock, 0);
-      
-      // Keep end at current position
-      newRange.setEnd(range.endContainer, range.endOffset);
-      
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-    }
-  } else if (e.key === 'ArrowDown' && currentIndex < blocks.length - 1) {
-    // Select from current position to end of next block
-    const nextBlock = blocks[currentIndex + 1];
-    if (nextBlock) {
-      const newRange = document.createRange();
-      
-      // Keep start at current position
-      newRange.setStart(range.startContainer, range.startOffset);
-      
-      // Set end at end of next block
-      const lastChild = nextBlock.lastChild || nextBlock;
-      if (lastChild.nodeType === Node.TEXT_NODE) {
-        newRange.setEnd(lastChild, lastChild.textContent?.length || 0);
+      if (isExtending) {
+        // Extend existing selection
+        newRange.setStart(range.startContainer, range.startOffset);
+        newRange.setEnd(targetBlock, 0);
       } else {
-        newRange.setEndAfter(lastChild);
+        // Create new selection from current position to start of previous block
+        newRange.setStart(targetBlock, 0);
+        newRange.setEnd(range.endContainer, range.endOffset);
       }
       
       selection.removeAllRanges();
       selection.addRange(newRange);
+      
+      // Update active line to the focus block (where cursor visually is)
+      onActiveLineChange?.(focusIndex - 1);
+    }
+  } else if (e.key === 'ArrowDown') {
+    if (focusIndex < blocks.length - 1) {
+      const targetBlock = blocks[focusIndex + 1];
+      if (!targetBlock) return;
+      
+      const newRange = document.createRange();
+      
+      // Find the last text node in the target block
+      let lastNode: Node = targetBlock;
+      let lastOffset = 0;
+      
+      // Traverse to find the actual last text position
+      const findLastPosition = (node: Node): void => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          lastNode = node;
+          lastOffset = node.textContent?.length || 0;
+        } else if (node.hasChildNodes()) {
+          for (let i = node.childNodes.length - 1; i >= 0; i--) {
+            findLastPosition(node.childNodes[i]);
+            if (lastNode !== targetBlock) break;
+          }
+        }
+      };
+      
+      findLastPosition(targetBlock);
+      
+      if (isExtending) {
+        // Extend existing selection
+        newRange.setStart(range.startContainer, range.startOffset);
+        newRange.setEnd(lastNode, lastOffset);
+      } else {
+        // Create new selection from current position to end of next block
+        newRange.setStart(range.startContainer, range.startOffset);
+        newRange.setEnd(lastNode, lastOffset);
+      }
+      
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+      
+      // Update active line to the focus block
+      onActiveLineChange?.(focusIndex + 1);
     }
   }
 }
