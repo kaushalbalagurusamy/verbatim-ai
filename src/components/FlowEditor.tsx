@@ -26,6 +26,8 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
   const [activeCell, setActiveCell] = useState<{ row: number; col: number } | null>(null);
   const [hoveredCell, setHoveredCell] = useState<{ row: number; col: number } | null>(null);
   const [resizingColumn, setResizingColumn] = useState<number | null>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
+  const gridContentRef = useRef<HTMLDivElement>(null);
   const [flowData, setFlowData] = useState<FlowData>(() => {
     if (initialData && initialData.columns && initialData.rows) {
       return {
@@ -59,6 +61,18 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
       textarea.style.height = 'auto';
       textarea.style.height = `${textarea.scrollHeight}px`;
     });
+    
+    // Update line number heights to match row heights
+    if (lineNumbersRef.current && gridContentRef.current) {
+      const rows = gridContentRef.current.querySelectorAll('[data-row-index]');
+      const lineNumbers = lineNumbersRef.current.querySelectorAll('[data-line-number]');
+      
+      rows.forEach((row, index) => {
+        if (lineNumbers[index]) {
+          (lineNumbers[index] as HTMLElement).style.height = `${row.getBoundingClientRect().height}px`;
+        }
+      });
+    }
   }, [flowData]);
 
   // Update title when it changes from props
@@ -131,6 +145,13 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
     }
   }, [resizingColumn, updateColumnWidth]);
 
+  // Synchronize scrolling between line numbers and grid content
+  const handleGridScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (lineNumbersRef.current && gridContentRef.current) {
+      lineNumbersRef.current.scrollTop = gridContentRef.current.scrollTop;
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#1e1e1e] overflow-hidden min-w-fit">
       {/* Title Section */}
@@ -146,16 +167,33 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
         </div>
       </div>
 
-      {/* Table Container with horizontal scroll */}
-      <div className="flex-1 overflow-auto">
-        <div className="min-w-fit min-h-full">
-          {/* Sticky Header */}
-          <div className="sticky top-0 z-10 bg-[#1e1e1e]">
-            <div className="flex min-w-fit">
-              {/* Row number header */}
-              <div className="w-8 h-[40px] bg-[#1e1e1e] flex items-center justify-center flex-shrink-0">
-                <span className="text-xs text-[#6a6a6a] font-mono">#</span>
+      {/* Table Container */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Line Numbers Sidebar */}
+        <div ref={lineNumbersRef} className="w-8 bg-[#1e1e1e] flex-shrink-0 overflow-y-auto overflow-x-hidden">
+          <div className="pt-[40px] pb-6 px-1">
+            {flowData.rows.map((_, rowIndex) => (
+              <div 
+                key={rowIndex}
+                data-line-number={rowIndex}
+                className="flex items-center justify-center text-xs font-mono transition-colors"
+                style={{ 
+                  minHeight: '40px',
+                  color: activeCell?.row === rowIndex ? '#ffffff' : '#6a6a6a'
+                }}
+              >
+                {rowIndex + 1}
               </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Scrollable Grid Content */}
+        <div ref={gridContentRef} className="flex-1 overflow-auto" onScroll={handleGridScroll}>
+          <div className="min-w-fit min-h-full">
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-10 bg-[#1e1e1e]">
+              <div className="flex min-w-fit">
               {/* Column headers */}
               {flowData.columns.map((column, colIndex) => (
                 <div 
@@ -191,18 +229,12 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
           {/* Scrollable Content */}
           <div className="min-h-full min-w-fit">
             {flowData.rows.map((row, rowIndex) => (
-              <div key={rowIndex} className="flex transition-colors min-w-fit items-stretch">
-                {/* Row number */}
-                <div className="w-8 min-h-[40px] bg-[#1e1e1e] flex items-center justify-center sticky left-0 z-5 flex-shrink-0">
-                  <span className={`text-xs font-mono transition-colors ${
-                    activeCell?.row === rowIndex ? 'text-[#ffffff]' : 'text-[#6a6a6a]'
-                  }`}>{rowIndex + 1}</span>
-                </div>
+              <div key={rowIndex} data-row-index={rowIndex} className="flex transition-colors min-w-fit items-stretch">
                 {/* Row cells */}
                 {row.map((cell, colIndex) => (
                   <div 
                     key={cell.id} 
-                    className={`flex-shrink-0 relative border flex items-stretch ${
+                    className={`flex-shrink-0 relative border-2 flex items-stretch transition-colors ${
                       hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 'border-[#4fc3f7]' : 
                       activeCell?.row === rowIndex && activeCell?.col === colIndex ? 'border-[#4fc3f7]' : 
                       'border-transparent'
@@ -216,6 +248,8 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
                       onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
                       onFocus={() => setActiveCell({ row: rowIndex, col: colIndex })}
                       onBlur={() => setActiveCell(null)}
+                      onMouseEnter={() => setHoveredCell({ row: rowIndex, col: colIndex })}
+                      onMouseLeave={() => setHoveredCell(null)}
                       className="w-full min-h-[40px] px-3 py-2 bg-transparent text-sm text-[#cccccc] outline-none border-none transition-colors hover:bg-[#2a2a2a]/20 resize-none overflow-hidden whitespace-pre-wrap break-words"
                       placeholder=""
                       style={{ height: 'auto' }}
@@ -229,6 +263,7 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
                 ))}
               </div>
             ))}
+            </div>
           </div>
         </div>
       </div>
