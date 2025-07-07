@@ -338,24 +338,7 @@ export function Editor({
             }
           }}
           onKeyDown={(e) => {
-            // Handle formatting shortcuts
-            if (e.metaKey || e.ctrlKey) {
-              if (e.key === 'b') {
-                e.preventDefault();
-                applyFormat('bold');
-              } else if (e.key === 'h') {
-                e.preventDefault();
-                applyFormat('highlight');
-              } else if (e.key === 'm') {
-                e.preventDefault();
-                applyFormat('minimize');
-              } else if (e.shiftKey && e.key === 'C') {
-                e.preventDefault();
-                applyFormat('clear');
-              }
-            }
-            
-            // Handle other key events
+            // Let handleKeyDown process all events first
             handleKeyDown(e, contentRef, onChange, editorRef, applyFormat, (index) => {
               setEditorState(prev => ({ ...prev, activeLineIndex: index }));
             });

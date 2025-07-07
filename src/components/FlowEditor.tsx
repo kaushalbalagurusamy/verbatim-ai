@@ -234,23 +234,32 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
                 {row.map((cell, colIndex) => (
                   <div 
                     key={cell.id} 
-                    className={`flex-shrink-0 relative border-2 flex items-stretch transition-colors ${
-                      hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 'border-[#4fc3f7]' : 
-                      activeCell?.row === rowIndex && activeCell?.col === colIndex ? 'border-[#4fc3f7]' : 
-                      'border-transparent'
-                    }`}
-                    style={{ width: `${flowData.columnWidths?.[colIndex] || 128}px` }}
+                    className="flex-shrink-0 relative flex items-stretch transition-all duration-150 cursor-text"
+                    style={{ 
+                      width: `${flowData.columnWidths?.[colIndex] || 128}px`,
+                      border: `2px solid ${
+                        hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? '#4fc3f7' : 
+                        activeCell?.row === rowIndex && activeCell?.col === colIndex ? '#4fc3f7' : 
+                        'transparent'
+                      }`,
+                      backgroundColor: hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 'rgba(79, 195, 247, 0.1)' : 'transparent'
+                    }}
                     onMouseEnter={() => setHoveredCell({ row: rowIndex, col: colIndex })}
                     onMouseLeave={() => setHoveredCell(null)}
+                    onClick={(e) => {
+                      // Focus the textarea when clicking anywhere in the cell
+                      const textarea = e.currentTarget.querySelector('textarea');
+                      if (textarea && e.target !== textarea) {
+                        textarea.focus();
+                      }
+                    }}
                   >
                     <textarea
                       value={cell.value}
                       onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
                       onFocus={() => setActiveCell({ row: rowIndex, col: colIndex })}
                       onBlur={() => setActiveCell(null)}
-                      onMouseEnter={() => setHoveredCell({ row: rowIndex, col: colIndex })}
-                      onMouseLeave={() => setHoveredCell(null)}
-                      className="w-full min-h-[40px] px-3 py-2 bg-transparent text-sm text-[#cccccc] outline-none border-none transition-colors hover:bg-[#2a2a2a]/20 resize-none overflow-hidden whitespace-pre-wrap break-words"
+                      className="w-full min-h-[40px] px-3 py-2 bg-transparent text-sm text-[#cccccc] outline-none border-none transition-colors hover:bg-[#2a2a2a]/20 resize-none overflow-hidden whitespace-pre-wrap break-words cursor-text"
                       placeholder=""
                       style={{ height: 'auto' }}
                       onInput={(e) => {

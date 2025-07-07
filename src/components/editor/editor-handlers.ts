@@ -3,7 +3,7 @@
  * Extracted to keep main Editor component under 200 lines
  */
 import type { ContentBlock, FormattingType, HighlightColor } from '@/types/document.types';
-import { getCursorPosition, isCursorAtBlockStart } from '@/utils/cursor-manager';
+import { getCursorPosition, isCursorAtBlockStart, isCursorAtBlockEnd } from '@/utils/cursor-manager';
 
 export function handleEnterKey(
   e: React.KeyboardEvent<HTMLDivElement>,
@@ -149,18 +149,100 @@ export function handleKeyDown(
     handleEnterKey(e, contentRef, onChange, editorRef, onActiveLineChange);
   } else if (e.key === 'Backspace' && isCursorAtBlockStart()) {
     handleBackspaceAtStart(e, contentRef, onChange, editorRef, onActiveLineChange);
-  } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-    // Update active line after arrow navigation
-    setTimeout(() => {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        const blockElement = range.startContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
-        if (blockElement) {
-          const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
-          onActiveLineChange?.(blockIndex);
+  } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    // Handle vertical navigation between blocks
+    const target = e.target as HTMLElement;
+    const blockElement = target.closest('[data-block-id]') as HTMLElement;
+    if (!blockElement || !editorRef.current) return;
+    
+    const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
+    const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
+    
+    if (e.key === 'ArrowUp' && blockIndex > 0) {
+      // Move to previous block
+      const prevBlock = blocks[blockIndex - 1];
+      if (prevBlock) {
+        e.preventDefault();
+        prevBlock.focus();
+        // Place cursor at end of previous block
+        const selection = window.getSelection();
+        if (selection) {
+          const range = document.createRange();
+          const textNode = prevBlock.lastChild || prevBlock;
+          range.selectNodeContents(textNode);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
         }
+        onActiveLineChange?.(blockIndex - 1);
       }
-    }, 10);
+    } else if (e.key === 'ArrowDown' && blockIndex < blocks.length - 1) {
+      // Move to next block
+      const nextBlock = blocks[blockIndex + 1];
+      if (nextBlock) {
+        e.preventDefault();
+        nextBlock.focus();
+        // Place cursor at beginning of next block
+        const selection = window.getSelection();
+        if (selection) {
+          const range = document.createRange();
+          range.setStart(nextBlock, 0);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        onActiveLineChange?.(blockIndex + 1);
+      }
+    }
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    // Handle horizontal navigation at block boundaries
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    
+    const range = selection.getRangeAt(0);
+    const blockElement = range.startContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
+    if (!blockElement || !editorRef.current) return;
+    
+    const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
+    const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
+    
+    // Check if cursor is at the beginning or end of block
+    const cursorAtStart = isCursorAtBlockStart();
+    const cursorAtEnd = isCursorAtBlockEnd();
+    
+    if (e.key === 'ArrowLeft' && cursorAtStart && blockIndex > 0) {
+      // Move to end of previous block
+      e.preventDefault();
+      const prevBlock = blocks[blockIndex - 1];
+      if (prevBlock) {
+        prevBlock.focus();
+        const selection = window.getSelection();
+        if (selection) {
+          const range = document.createRange();
+          const textNode = prevBlock.lastChild || prevBlock;
+          range.selectNodeContents(textNode);
+          range.collapse(false);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        onActiveLineChange?.(blockIndex - 1);
+      }
+    } else if (e.key === 'ArrowRight' && cursorAtEnd && blockIndex < blocks.length - 1) {
+      // Move to beginning of next block
+      e.preventDefault();
+      const nextBlock = blocks[blockIndex + 1];
+      if (nextBlock) {
+        nextBlock.focus();
+        const selection = window.getSelection();
+        if (selection) {
+          const range = document.createRange();
+          range.setStart(nextBlock, 0);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+        onActiveLineChange?.(blockIndex + 1);
+      }
+    }
   }
 }
