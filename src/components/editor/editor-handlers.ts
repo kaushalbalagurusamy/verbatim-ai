@@ -136,11 +136,32 @@ export function handleKeyDown(
       case 'c':
         if (e.shiftKey) {
           e.preventDefault();
-          // Clear formatting is handled differently - need to pass a special flag
-          // For now, we'll handle this in the Editor component
+          applyFormat('clear');
         }
         return;
     }
+  }
+  
+  // Handle word selection with Option/Alt + Shift + Arrow
+  if (e.altKey && e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    e.preventDefault();
+    const selection = window.getSelection();
+    if (!selection) return;
+    
+    // Use the browser's built-in word selection
+    const direction = e.key === 'ArrowLeft' ? 'backward' : 'forward';
+    const granularity = 'word';
+    
+    // Modify selection by word
+    selection.modify('extend', direction, granularity);
+    return;
+  }
+  
+  // Handle paragraph selection with Cmd/Ctrl + Shift + Up/Down
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    e.preventDefault();
+    handleParagraphSelection(e, editorRef, contentRef);
+    return;
   }
   
   // Handle regular editing shortcuts
@@ -243,6 +264,60 @@ export function handleKeyDown(
         }
         onActiveLineChange?.(blockIndex + 1);
       }
+    }
+  }
+}
+
+export function handleParagraphSelection(
+  e: React.KeyboardEvent<HTMLDivElement>,
+  editorRef: React.RefObject<HTMLDivElement>,
+  contentRef: React.MutableRefObject<ContentBlock[]>
+) {
+  const selection = window.getSelection();
+  if (!selection || !editorRef.current) return;
+  
+  // Get current block
+  const range = selection.getRangeAt(0);
+  const currentBlock = range.startContainer.parentElement?.closest('[data-block-id]') as HTMLElement;
+  if (!currentBlock) return;
+  
+  const currentIndex = parseInt(currentBlock.dataset.blockIndex || '0');
+  const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
+  
+  if (e.key === 'ArrowUp' && currentIndex > 0) {
+    // Select from current position to start of previous block
+    const prevBlock = blocks[currentIndex - 1];
+    if (prevBlock) {
+      const newRange = document.createRange();
+      
+      // Set start at beginning of previous block
+      newRange.setStart(prevBlock, 0);
+      
+      // Keep end at current position
+      newRange.setEnd(range.endContainer, range.endOffset);
+      
+      selection.removeAllRanges();
+      selection.addRange(newRange);
+    }
+  } else if (e.key === 'ArrowDown' && currentIndex < blocks.length - 1) {
+    // Select from current position to end of next block
+    const nextBlock = blocks[currentIndex + 1];
+    if (nextBlock) {
+      const newRange = document.createRange();
+      
+      // Keep start at current position
+      newRange.setStart(range.startContainer, range.startOffset);
+      
+      // Set end at end of next block
+      const lastChild = nextBlock.lastChild || nextBlock;
+      if (lastChild.nodeType === Node.TEXT_NODE) {
+        newRange.setEnd(lastChild, lastChild.textContent?.length || 0);
+      } else {
+        newRange.setEndAfter(lastChild);
+      }
+      
+      selection.removeAllRanges();
+      selection.addRange(newRange);
     }
   }
 }

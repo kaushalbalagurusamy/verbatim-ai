@@ -116,8 +116,10 @@ export function Editor({
     blockElement.spellcheck = false;
     blockElement.style.wordWrap = 'break-word';
     blockElement.style.overflowWrap = 'break-word';
-    blockElement.style.whiteSpace = 'pre-wrap';
+    blockElement.style.wordBreak = 'break-word';
+    blockElement.style.whiteSpace = 'normal';
     blockElement.style.lineHeight = '1.15';
+    blockElement.style.width = '100%';
     updateBlockContent(blockElement, block);
     return blockElement;
   };
@@ -262,23 +264,83 @@ export function Editor({
     if (e.metaKey || e.ctrlKey) {
       e.preventDefault();
       
-      // Get current selection before it changes
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
+      // First, capture any existing selection before the click
+      const currentSelection = window.getSelection();
+      if (currentSelection && currentSelection.rangeCount > 0 && !currentSelection.isCollapsed) {
+        const currentRange = currentSelection.getRangeAt(0);
         
-        // Add to existing selections
-        if (!selection.isCollapsed) {
-          selectionManager.addFromDOMRange(range, contentRef.current);
-          const selections = selectionManager.getSelections();
-          setEditorState(prev => ({ ...prev, multiSelections: selections }));
+        // If we don't have any selections yet, add the current one
+        if (selectionManager.getSelections().length === 0) {
+          selectionManager.addFromDOMRange(currentRange, contentRef.current);
         }
       }
+      
+      // Then handle the click location for a new selection
+      // We'll let the mouseup event handle adding the new selection
+      return;
     } else {
       // Clear multi-selections on normal click
       selectionManager.clear();
       setEditorState(prev => ({ ...prev, multiSelections: [] }));
     }
+  }, []);
+  
+  // Handle mouse up for completing multi-selection
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey) {
+      setTimeout(() => {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
+          const range = selection.getRangeAt(0);
+          selectionManager.addFromDOMRange(range, contentRef.current);
+          const selections = selectionManager.getSelections();
+          setEditorState(prev => ({ ...prev, multiSelections: selections }));
+          
+          // Highlight all selections visually
+          highlightMultipleSelections(selections);
+        }
+      }, 10);
+    }
+    
+    // Always handle regular selection change
+    handleSelectionChange();
+  }, [handleSelectionChange]);
+  
+  // Visual highlighting for multiple selections
+  const highlightMultipleSelections = useCallback((selections: TextSelection[]) => {
+    // Clear previous highlights
+    const existingHighlights = editorRef.current?.querySelectorAll('.multi-selection-highlight');
+    existingHighlights?.forEach(el => {
+      const parent = el.parentNode;
+      while (el.firstChild) {
+        parent?.insertBefore(el.firstChild, el);
+      }
+      parent?.removeChild(el);
+    });
+    
+    // Apply new highlights
+    selections.forEach((selection, index) => {
+      const blockElement = editorRef.current?.querySelector(`[data-block-id="${selection.blockId}"]`);
+      if (blockElement && blockElement.textContent) {
+        const text = blockElement.textContent;
+        const before = text.substring(0, selection.start);
+        const selected = text.substring(selection.start, selection.end);
+        const after = text.substring(selection.end);
+        
+        if (selected) {
+          const span = document.createElement('span');
+          span.className = 'multi-selection-highlight';
+          span.style.backgroundColor = index === 0 ? 'rgba(79, 195, 247, 0.3)' : 'rgba(79, 195, 247, 0.2)';
+          span.style.borderRadius = '2px';
+          span.textContent = selected;
+          
+          blockElement.innerHTML = '';
+          blockElement.appendChild(document.createTextNode(before));
+          blockElement.appendChild(span);
+          blockElement.appendChild(document.createTextNode(after));
+        }
+      }
+    });
   }, []);
     
   
@@ -347,11 +409,11 @@ export function Editor({
               setEditorState(prev => ({ ...prev, activeLineIndex: index }));
             });
           }}
-          onMouseUp={handleSelectionChange}
+          onMouseUp={handleMouseUp}
           onKeyUp={handleSelectionChange}
           onCompositionStart={() => setEditorState(prev => ({ ...prev, isComposing: true }))}
           onCompositionEnd={() => setEditorState(prev => ({ ...prev, isComposing: false }))}
-          className="flex-1 p-6 bg-[#1e1e1e] text-[#cccccc] focus:outline-none"
+          className="flex-1 p-6 bg-[#1e1e1e] text-[#cccccc] focus:outline-none overflow-x-hidden"
           style={{ 
             minHeight: '100%',
             fontFamily: '"Segoe UI", "Roboto", sans-serif',
@@ -359,7 +421,8 @@ export function Editor({
             lineHeight: '1.15',
             wordWrap: 'break-word',
             overflowWrap: 'break-word',
-            whiteSpace: 'pre-wrap'
+            wordBreak: 'break-word',
+            whiteSpace: 'normal'
           }}
           data-placeholder={placeholder}
         />

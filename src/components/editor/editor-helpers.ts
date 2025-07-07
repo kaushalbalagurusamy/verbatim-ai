@@ -5,7 +5,7 @@
 import type { TextFormatting, HighlightColor } from '@/types/document.types';
 
 export function getBlockClassName(type: string): string {
-  const baseClasses = 'min-h-[1.15rem] outline-none break-words whitespace-pre-wrap';
+  const baseClasses = 'min-h-[1.15rem] outline-none break-words';
   
   switch (type) {
     case 'heading1':
