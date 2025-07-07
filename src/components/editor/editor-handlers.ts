@@ -117,8 +117,21 @@ export function handleKeyDown(
   onChange: (content: ContentBlock[]) => void,
   editorRef: React.RefObject<HTMLDivElement>,
   applyFormat?: (type: FormattingType, color?: HighlightColor) => void,
-  onActiveLineChange?: (index: number) => void
+  onActiveLineChange?: (index: number) => void,
+  onUndo?: () => void,
+  onRedo?: () => void
 ) {
+  // Handle undo/redo shortcuts first
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+    e.preventDefault();
+    if (e.shiftKey) {
+      onRedo?.();
+    } else {
+      onUndo?.();
+    }
+    return;
+  }
+  
   // Handle formatting shortcuts
   if ((e.metaKey || e.ctrlKey) && applyFormat) {
     switch (e.key.toLowerCase()) {
@@ -358,5 +371,123 @@ export function handleParagraphSelection(
       // Update active line to the focus block
       onActiveLineChange?.(focusIndex + 1);
     }
+  }
+}
+
+export function handlePaste(
+  e: React.ClipboardEvent<HTMLDivElement>,
+  contentRef: React.MutableRefObject<ContentBlock[]>,
+  onChange: (content: ContentBlock[]) => void,
+  editorRef: React.RefObject<HTMLDivElement>,
+  onActiveLineChange?: (index: number) => void
+) {
+  e.preventDefault();
+  
+  // Get the pasted text
+  const pastedText = e.clipboardData.getData('text/plain');
+  if (!pastedText) return;
+  
+  const selection = window.getSelection();
+  if (!selection || !editorRef.current) return;
+  
+  const range = selection.getRangeAt(0);
+  const currentBlock = findBlockElement(range.startContainer);
+  if (!currentBlock) return;
+  
+  const currentIndex = parseInt(currentBlock.dataset.blockIndex || '0');
+  const cursorPos = getCursorPosition();
+  
+  // Split pasted text by line breaks
+  const lines = pastedText.split(/\r?\n/);
+  
+  if (lines.length === 1) {
+    // Single line paste - insert into current block
+    const currentContent = contentRef.current[currentIndex];
+    const beforeCursor = currentContent.content.substring(0, cursorPos?.offset || 0);
+    const afterCursor = currentContent.content.substring(cursorPos?.offset || 0);
+    
+    const newContent = [...contentRef.current];
+    newContent[currentIndex] = {
+      ...currentContent,
+      content: beforeCursor + pastedText + afterCursor
+    };
+    
+    onChange(newContent);
+    
+    // Set cursor position after pasted text
+    setTimeout(() => {
+      const updatedBlock = editorRef.current?.querySelector(`[data-block-id="${currentContent.id}"]`) as HTMLElement;
+      if (updatedBlock) {
+        const textNode = updatedBlock.firstChild || updatedBlock;
+        const newOffset = beforeCursor.length + pastedText.length;
+        const newRange = document.createRange();
+        newRange.setStart(textNode, Math.min(newOffset, textNode.textContent?.length || 0));
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    }, 10);
+  } else {
+    // Multi-line paste - create new blocks
+    const currentContent = contentRef.current[currentIndex];
+    const beforeCursor = currentContent.content.substring(0, cursorPos?.offset || 0);
+    const afterCursor = currentContent.content.substring(cursorPos?.offset || 0);
+    
+    const newBlocks: ContentBlock[] = [];
+    
+    // First line goes into current block with content before cursor
+    if (lines[0]) {
+      newBlocks.push({
+        ...currentContent,
+        content: beforeCursor + lines[0]
+      });
+    }
+    
+    // Middle lines become new blocks
+    for (let i = 1; i < lines.length - 1; i++) {
+      newBlocks.push({
+        id: `block-${Date.now()}-${i}`,
+        type: 'paragraph',
+        content: lines[i],
+        formatting: []
+      });
+    }
+    
+    // Last line gets the content after cursor
+    if (lines.length > 1) {
+      newBlocks.push({
+        id: `block-${Date.now()}-last`,
+        type: 'paragraph',
+        content: lines[lines.length - 1] + afterCursor,
+        formatting: []
+      });
+    }
+    
+    // Replace current block with new blocks
+    const newContent = [
+      ...contentRef.current.slice(0, currentIndex),
+      ...newBlocks,
+      ...contentRef.current.slice(currentIndex + 1)
+    ];
+    
+    onChange(newContent);
+    
+    // Focus on the last new block
+    const lastNewBlockIndex = currentIndex + newBlocks.length - 1;
+    setTimeout(() => {
+      const blocks = editorRef.current?.querySelectorAll('[data-block-id]') as NodeListOf<HTMLElement>;
+      const lastNewBlock = blocks[lastNewBlockIndex];
+      if (lastNewBlock) {
+        lastNewBlock.focus();
+        const textNode = lastNewBlock.firstChild || lastNewBlock;
+        const offset = lines[lines.length - 1].length;
+        const newRange = document.createRange();
+        newRange.setStart(textNode, Math.min(offset, textNode.textContent?.length || 0));
+        newRange.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+        onActiveLineChange?.(lastNewBlockIndex);
+      }
+    }, 10);
   }
 }

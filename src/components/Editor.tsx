@@ -13,6 +13,8 @@ import { selectionManager } from '@/utils/selection-manager';
 import type { TextSelection } from '@/utils/selection-manager';
 import { findBlockElement } from '@/utils/selection-helpers';
 import { calculateVisualLinesForBlocks, createDebouncedCalculator } from '@/utils/visual-line-calculator';
+import { UndoManager } from '@/utils/undo-manager';
+import { handlePaste } from './editor/editor-handlers';
 import { 
   applyBoldFormatting,
   applyHighlightFormatting,
@@ -47,6 +49,7 @@ export function Editor({
   const editorRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<ContentBlock[]>(content);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const undoManagerRef = useRef<UndoManager>(new UndoManager());
   const [editorState, setEditorState] = useState<EditorState>({
     activeLineIndex: 0,
     isComposing: false,
@@ -57,6 +60,9 @@ export function Editor({
   // Update content ref when content changes
   useEffect(() => {
     contentRef.current = content;
+    // Save to undo history (debounced)
+    const cursorPos = getCursorPosition();
+    undoManagerRef.current.saveState(content, cursorPos || undefined);
   }, [content]);
   
   // Function to update visual line counts
@@ -76,6 +82,36 @@ export function Editor({
   const debouncedUpdateVisualLines = useRef(
     createDebouncedCalculator(100)
   ).current;
+  
+  // Undo function
+  const handleUndo = useCallback(() => {
+    const historyEntry = undoManagerRef.current.undo();
+    if (historyEntry) {
+      onChange(historyEntry.content);
+      // Restore cursor position after DOM update
+      setTimeout(() => {
+        if (historyEntry.cursorPosition) {
+          restoreCursorPosition(historyEntry.cursorPosition);
+        }
+        updateVisualLines();
+      }, 50);
+    }
+  }, [onChange, updateVisualLines]);
+  
+  // Redo function  
+  const handleRedo = useCallback(() => {
+    const historyEntry = undoManagerRef.current.redo();
+    if (historyEntry) {
+      onChange(historyEntry.content);
+      // Restore cursor position after DOM update
+      setTimeout(() => {
+        if (historyEntry.cursorPosition) {
+          restoreCursorPosition(historyEntry.cursorPosition);
+        }
+        updateVisualLines();
+      }, 50);
+    }
+  }, [onChange, updateVisualLines]);
 
   // Initialize editor only once
   useEffect(() => {
@@ -350,6 +386,20 @@ export function Editor({
     handleSelectionChange();
   }, [handleSelectionChange]);
   
+  // Handle paste events
+  const handlePasteEvent = useCallback((e: React.ClipboardEvent<HTMLDivElement>) => {
+    // Force save current state before paste
+    const cursorPos = getCursorPosition();
+    undoManagerRef.current.forceSave(contentRef.current, cursorPos || undefined);
+    
+    handlePaste(e, contentRef, onChange, editorRef, (index) => {
+      setEditorState(prev => ({ ...prev, activeLineIndex: index }));
+    });
+    
+    // Update visual lines after paste
+    setTimeout(updateVisualLines, 50);
+  }, [onChange, updateVisualLines]);
+  
   // Visual highlighting for multiple selections
   const highlightMultipleSelections = useCallback((selections: TextSelection[]) => {
     // Clear previous highlights
@@ -462,8 +512,9 @@ export function Editor({
             // Let handleKeyDown process all events first
             handleKeyDown(e, contentRef, onChange, editorRef, applyFormat, (index) => {
               setEditorState(prev => ({ ...prev, activeLineIndex: index }));
-            });
+            }, handleUndo, handleRedo);
           }}
+          onPaste={handlePasteEvent}
           onMouseUp={handleMouseUp}
           onKeyUp={handleSelectionChange}
           onCompositionStart={() => setEditorState(prev => ({ ...prev, isComposing: true }))}
