@@ -234,23 +234,25 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
                 {row.map((cell, colIndex) => (
                   <div 
                     key={cell.id} 
-                    className="flex-shrink-0 relative flex items-stretch transition-all duration-150 cursor-text"
-                    style={{ 
-                      width: `${flowData.columnWidths?.[colIndex] || 128}px`,
-                      border: `2px solid ${
-                        hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? '#4fc3f7' : 
-                        activeCell?.row === rowIndex && activeCell?.col === colIndex ? '#4fc3f7' : 
-                        'transparent'
-                      }`,
-                      backgroundColor: hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 'rgba(79, 195, 247, 0.1)' : 'transparent'
+                    className={`flex-shrink-0 relative flex items-stretch cursor-text transition-all duration-150 box-border ${
+                      hoveredCell?.row === rowIndex && hoveredCell?.col === colIndex ? 'bg-[#4fc3f7]/10 border-2 border-[#4fc3f7]' : 
+                      activeCell?.row === rowIndex && activeCell?.col === colIndex ? 'border-2 border-[#4fc3f7]' : 
+                      'border-2 border-[#3c3c3c]'
+                    }`}
+                    style={{ width: `${flowData.columnWidths?.[colIndex] || 128}px` }}
+                    onMouseEnter={() => {
+                      setHoveredCell({ row: rowIndex, col: colIndex });
                     }}
-                    onMouseEnter={() => setHoveredCell({ row: rowIndex, col: colIndex })}
-                    onMouseLeave={() => setHoveredCell(null)}
+                    onMouseLeave={() => {
+                      setHoveredCell(null);
+                    }}
                     onClick={(e) => {
                       // Focus the textarea when clicking anywhere in the cell
-                      const textarea = e.currentTarget.querySelector('textarea');
+                      const textarea = e.currentTarget.querySelector('textarea') as HTMLTextAreaElement;
                       if (textarea && e.target !== textarea) {
                         textarea.focus();
+                        // Ensure active cell is set
+                        setActiveCell({ row: rowIndex, col: colIndex });
                       }
                     }}
                   >
@@ -259,7 +261,7 @@ export function FlowEditor({ documentId, initialTitle = 'New Flow', initialData,
                       onChange={(e) => updateCell(rowIndex, colIndex, e.target.value)}
                       onFocus={() => setActiveCell({ row: rowIndex, col: colIndex })}
                       onBlur={() => setActiveCell(null)}
-                      className="w-full min-h-[40px] px-3 py-2 bg-transparent text-sm text-[#cccccc] outline-none border-none transition-colors hover:bg-[#2a2a2a]/20 resize-none overflow-hidden whitespace-pre-wrap break-words cursor-text"
+                      className="w-full min-h-[40px] px-3 py-2 bg-transparent text-sm text-[#cccccc] outline-none border-none resize-none overflow-hidden whitespace-pre-wrap break-words cursor-text"
                       placeholder=""
                       style={{ height: 'auto' }}
                       onInput={(e) => {
