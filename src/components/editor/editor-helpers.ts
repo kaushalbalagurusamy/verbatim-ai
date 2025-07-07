@@ -5,17 +5,17 @@
 import type { TextFormatting, HighlightColor } from '@/types/document.types';
 
 export function getBlockClassName(type: string): string {
-  const baseClasses = 'min-h-[1.5rem] leading-relaxed outline-none';
+  const baseClasses = 'min-h-[1.15rem] outline-none break-words whitespace-pre-wrap';
   
   switch (type) {
     case 'heading1':
-      return `${baseClasses} text-2xl font-bold text-[#ffffff] mb-4`;
+      return `${baseClasses} text-2xl font-bold text-[#ffffff] mb-2`;
     case 'heading2':
-      return `${baseClasses} text-xl font-bold text-[#ffffff] mb-3`;
+      return `${baseClasses} text-xl font-bold text-[#ffffff] mb-2`;
     case 'heading3':
-      return `${baseClasses} text-lg font-bold text-[#ffffff] mb-2`;
+      return `${baseClasses} text-lg font-bold text-[#ffffff] mb-1`;
     case 'heading4':
-      return `${baseClasses} text-base font-bold text-[#ffffff] mb-2`;
+      return `${baseClasses} text-base font-bold text-[#ffffff] mb-1`;
     case 'heading5':
       return `${baseClasses} text-sm font-bold text-[#ffffff] mb-1`;
     case 'heading6':
@@ -25,31 +25,32 @@ export function getBlockClassName(type: string): string {
     case 'command':
       return `${baseClasses} text-[#ffa726] bg-[#ffa726]/10 px-1 rounded`;
     default:
-      return `${baseClasses} text-[#cccccc] mb-2`;
+      return `${baseClasses} text-[#cccccc]`;
   }
 }
 
 export function getLineHeight(type: string): string {
+  // Line height matches 1.15 spacing with 14px base font
   switch (type) {
-    case 'heading1': return '2rem';
-    case 'heading2': return '1.75rem';
-    case 'heading3': return '1.5rem';
-    case 'heading4': return '1.25rem';
-    case 'heading5': return '1rem';
-    case 'heading6': return '0.875rem';
-    default: return '1.5rem';
+    case 'heading1': return 'calc(2rem * 1.15)';
+    case 'heading2': return 'calc(1.5rem * 1.15)';
+    case 'heading3': return 'calc(1.25rem * 1.15)';
+    case 'heading4': return 'calc(1rem * 1.15)';
+    case 'heading5': return 'calc(0.875rem * 1.15)';
+    case 'heading6': return 'calc(0.75rem * 1.15)';
+    default: return '1.15rem'; // 14px * 1.15 ≈ 16px
   }
 }
 
 export function getLineMarginBottom(type: string): string {
   switch (type) {
-    case 'heading1': return '1rem';
-    case 'heading2': return '0.75rem';
-    case 'heading3': return '0.5rem';
-    case 'heading4': return '0.5rem';
+    case 'heading1': return '0.5rem';
+    case 'heading2': return '0.5rem';
+    case 'heading3': return '0.25rem';
+    case 'heading4': return '0.25rem';
     case 'heading5': return '0.25rem';
     case 'heading6': return '0.25rem';
-    default: return '0.5rem';
+    default: return '0';
   }
 }
 

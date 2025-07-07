@@ -114,6 +114,10 @@ export function Editor({
     blockElement.className = getBlockClassName(block.type);
     blockElement.contentEditable = 'true';
     blockElement.spellcheck = false;
+    blockElement.style.wordWrap = 'break-word';
+    blockElement.style.overflowWrap = 'break-word';
+    blockElement.style.whiteSpace = 'pre-wrap';
+    blockElement.style.lineHeight = '1.15';
     updateBlockContent(blockElement, block);
     return blockElement;
   };
@@ -312,7 +316,7 @@ export function Editor({
     <div className="flex-1 overflow-auto">
       <div className="flex h-full">
         {/* Line Numbers */}
-        <div className="w-8 bg-[#1e1e1e] flex-shrink-0 py-6 px-1">
+        <div className="w-8 bg-[#1e1e1e] flex-shrink-0 pt-6 pb-6 px-1">
           {content.map((block, index) => (
             <LineNumber
               key={`line-${block.id}`}
@@ -352,7 +356,10 @@ export function Editor({
             minHeight: '100%',
             fontFamily: '"Segoe UI", "Roboto", sans-serif',
             fontSize: '14px',
-            lineHeight: '1.6'
+            lineHeight: '1.15',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            whiteSpace: 'pre-wrap'
           }}
           data-placeholder={placeholder}
         />
