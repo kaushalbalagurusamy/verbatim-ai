@@ -20,7 +20,8 @@
       "Bash(git check-ignore:*)",
       "Bash(git config:*)",
       "Bash(git rm:*)",
-      "Bash(claude --version)"
+      "Bash(claude --version)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

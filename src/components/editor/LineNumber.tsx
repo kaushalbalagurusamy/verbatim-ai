@@ -36,7 +36,8 @@ export const LineNumber = memo(({
       <div 
         className="flex items-center justify-center text-xs font-mono"
         style={{
-          minHeight: getLineHeight(block.type),
+          height: '16.1px', // Match exact editor line height
+          lineHeight: '16.1px',
           marginBottom: getLineMarginBottom(block.type),
           color: isActive ? '#ffffff' : '#6a6a6a'
         }}
@@ -69,7 +70,8 @@ export const LineNumber = memo(({
             key={lineIndex}
             className="flex items-center justify-center text-xs font-mono"
             style={{
-              height: '1.15rem', // Match the line height
+              height: '16.1px', // Match exact editor line height (14px * 1.15)
+              lineHeight: '16.1px',
               color: isActiveVisualLine ? '#ffffff' : '#6a6a6a'
             }}
           >

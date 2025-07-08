@@ -17,6 +17,7 @@ import { UndoManager } from '@/utils/undo-manager';
 import { handlePaste } from './editor/editor-handlers';
 import { getCurrentCursorVisualLine } from '@/utils/cursor-visual-line';
 import { clearSelectionAnchor } from '@/utils/selection-state';
+import { clearParagraphSelectionState } from '@/utils/paragraph-selection';
 import { 
   startCrossParagraphSelection,
   updateCrossParagraphSelection,
@@ -338,8 +339,7 @@ export function Editor({
           const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
           
           // Calculate which visual line the cursor is on
-          const cursorInfo = getCurrentCursorVisualLine();
-          const visualLine = cursorInfo?.visualLine || 0;
+          const visualLine = getCurrentCursorVisualLine(blockElement);
           
           setEditorState(prev => ({ 
             ...prev, 
@@ -356,10 +356,12 @@ export function Editor({
         } else {
           // Clear selection anchor when no selection
           clearSelectionAnchor();
+          clearParagraphSelectionState();
         }
       } else {
         // Clear selection anchor when no selection
         clearSelectionAnchor();
+        clearParagraphSelectionState();
       }
     });
   }, [onSelectionChange]);
@@ -551,8 +553,7 @@ export function Editor({
               
               // Calculate visual line after a short delay to ensure cursor is positioned
               setTimeout(() => {
-                const cursorInfo = getCurrentCursorVisualLine();
-                const visualLine = cursorInfo?.visualLine || 0;
+                const visualLine = getCurrentCursorVisualLine(blockElement);
                 setEditorState(prev => ({ 
                   ...prev, 
                   activeLineIndex: blockIndex,

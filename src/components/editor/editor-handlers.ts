@@ -6,6 +6,7 @@ import type { ContentBlock, FormattingType, HighlightColor } from '@/types/docum
 import { getCursorPosition, isCursorAtBlockStart, isCursorAtBlockEnd } from '@/utils/cursor-manager';
 import { findBlockElement } from '@/utils/selection-helpers';
 import { saveSelectionAnchor, getSelectionAnchor, clearSelectionAnchor, isExtendingSelection } from '@/utils/selection-state';
+import { handleAltShiftParagraphSelection, clearParagraphSelectionState } from '@/utils/paragraph-selection';
 
 export function handleEnterKey(
   e: React.KeyboardEvent<HTMLDivElement>,
@@ -164,6 +165,13 @@ export function handleKeyDown(
     return;
   }
   
+  // Handle paragraph selection with Alt + Shift + Up/Down
+  if (e.altKey && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    e.preventDefault();
+    handleAltShiftParagraphSelection(e, editorRef, onActiveLineChange);
+    return;
+  }
+  
   // Handle word selection with Option/Alt + Shift + Arrow
   if (e.altKey && e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
     e.preventDefault();
@@ -302,115 +310,57 @@ export function handleParagraphSelection(
   const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
   if (blocks.length === 0) return;
   
-  // Get current selection state
-  const hasSelection = selection.rangeCount > 0;
-  const currentRange = hasSelection ? selection.getRangeAt(0) : null;
+  // Get current cursor position
+  let cursorBlock: HTMLElement | null = null;
+  let cursorContainer: Node | null = null;
+  let cursorOffset = 0;
   
-  // Find current focus block
-  let focusBlock: HTMLElement | null = null;
-  let focusIndex = -1;
-  
-  if (currentRange) {
-    focusBlock = findBlockElement(currentRange.commonAncestorContainer);
-    if (focusBlock) {
-      focusIndex = parseInt(focusBlock.dataset.blockIndex || '0');
-    }
+  if (selection.rangeCount > 0) {
+    const range = selection.getRangeAt(0);
+    cursorBlock = findBlockElement(range.startContainer);
+    cursorContainer = range.startContainer;
+    cursorOffset = range.startOffset;
   }
   
-  // If no focus block, find the active block
-  if (!focusBlock) {
-    const activeBlock = editorRef.current.querySelector('[data-block-id]:focus');
+  // If no cursor block, find the focused block
+  if (!cursorBlock) {
+    const activeBlock = editorRef.current.querySelector('[data-block-id]:focus') as HTMLElement;
     if (activeBlock) {
-      focusBlock = activeBlock as HTMLElement;
-      focusIndex = parseInt(focusBlock.dataset.blockIndex || '0');
+      cursorBlock = activeBlock;
+      cursorContainer = activeBlock.firstChild || activeBlock;
+      cursorOffset = 0;
     } else {
       return;
     }
   }
   
-  // Check if we should start a new selection or extend existing
-  const savedAnchor = getSelectionAnchor();
-  const shouldExtend = isExtendingSelection() && savedAnchor.anchorBlock;
-  
-  // If starting new selection, save the anchor point
-  if (!shouldExtend && currentRange && !currentRange.collapsed) {
-    const anchorBlock = findBlockElement(currentRange.startContainer);
-    if (anchorBlock) {
-      saveSelectionAnchor(anchorBlock, currentRange.startContainer, currentRange.startOffset);
-    }
-  } else if (!shouldExtend && currentRange) {
-    // Save current position as anchor for new selection
-    saveSelectionAnchor(focusBlock, currentRange.startContainer, currentRange.startOffset);
-  }
-  
   const newRange = document.createRange();
   
   if (e.key === 'ArrowUp') {
-    if (focusIndex > 0) {
-      const targetBlock = blocks[focusIndex - 1];
-      if (!targetBlock) return;
-      
-      // Get the start of the target block
-      const targetStart = getBlockStart(targetBlock);
-      
-      if (shouldExtend && savedAnchor.anchorContainer) {
-        // Extend from saved anchor to target
-        const anchorIndex = parseInt(savedAnchor.anchorBlock?.dataset.blockIndex || '0');
-        
-        if (focusIndex - 1 >= anchorIndex) {
-          // Moving up but still below or at anchor
-          newRange.setStart(savedAnchor.anchorContainer, savedAnchor.anchorOffset);
-          newRange.setEnd(targetStart.node, targetStart.offset);
-        } else {
-          // Moving up past anchor - flip the range
-          newRange.setStart(targetStart.node, targetStart.offset);
-          newRange.setEnd(savedAnchor.anchorContainer, savedAnchor.anchorOffset);
-        }
-      } else {
-        // Create new selection from current to target
-        if (currentRange) {
-          newRange.setStart(targetStart.node, targetStart.offset);
-          newRange.setEnd(currentRange.endContainer, currentRange.endOffset);
-        }
-      }
-      
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-      onActiveLineChange?.(focusIndex - 1);
-    }
+    // Select from cursor position to document start
+    const firstBlock = blocks[0];
+    if (!firstBlock) return;
+    
+    const docStart = getBlockStart(firstBlock);
+    newRange.setStart(docStart.node, docStart.offset);
+    newRange.setEnd(cursorContainer, cursorOffset);
+    
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+    onActiveLineChange?.(0);
+    
   } else if (e.key === 'ArrowDown') {
-    if (focusIndex < blocks.length - 1) {
-      const targetBlock = blocks[focusIndex + 1];
-      if (!targetBlock) return;
-      
-      // Get the end of the target block
-      const targetEnd = getBlockEnd(targetBlock);
-      
-      if (shouldExtend && savedAnchor.anchorContainer) {
-        // Extend from saved anchor to target
-        const anchorIndex = parseInt(savedAnchor.anchorBlock?.dataset.blockIndex || '0');
-        
-        if (focusIndex + 1 <= anchorIndex) {
-          // Moving down but still above or at anchor
-          newRange.setStart(targetEnd.node, targetEnd.offset);
-          newRange.setEnd(savedAnchor.anchorContainer, savedAnchor.anchorOffset);
-        } else {
-          // Moving down past anchor - normal order
-          newRange.setStart(savedAnchor.anchorContainer, savedAnchor.anchorOffset);
-          newRange.setEnd(targetEnd.node, targetEnd.offset);
-        }
-      } else {
-        // Create new selection from current to target
-        if (currentRange) {
-          newRange.setStart(currentRange.startContainer, currentRange.startOffset);
-          newRange.setEnd(targetEnd.node, targetEnd.offset);
-        }
-      }
-      
-      selection.removeAllRanges();
-      selection.addRange(newRange);
-      onActiveLineChange?.(focusIndex + 1);
-    }
+    // Select from cursor position to document end
+    const lastBlock = blocks[blocks.length - 1];
+    if (!lastBlock) return;
+    
+    const docEnd = getBlockEnd(lastBlock);
+    newRange.setStart(cursorContainer, cursorOffset);
+    newRange.setEnd(docEnd.node, docEnd.offset);
+    
+    selection.removeAllRanges();
+    selection.addRange(newRange);
+    onActiveLineChange?.(blocks.length - 1);
   }
 }
 

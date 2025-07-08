@@ -58,21 +58,21 @@ function getLineYPositions(textNodes: Text[]): number[] {
  */
 export function getCurrentCursorVisualLine(blockElement: HTMLElement): number {
   const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0) return 1;
+  if (!selection || selection.rangeCount === 0) return 0;
   
   const range = selection.getRangeAt(0);
   
   // Check if cursor is in this block
   if (!blockElement.contains(range.commonAncestorContainer)) {
-    return 1;
+    return 0;
   }
   
   try {
     const textNodes = getTextNodes(blockElement);
-    if (textNodes.length === 0) return 1;
+    if (textNodes.length === 0) return 0;
     
     const lineYPositions = getLineYPositions(textNodes);
-    if (lineYPositions.length === 0) return 1;
+    if (lineYPositions.length === 0) return 0;
     
     // Get cursor position
     const cursorRange = range.cloneRange();
@@ -85,21 +85,21 @@ export function getCurrentCursorVisualLine(blockElement: HTMLElement): number {
     const cursorY = Math.round(cursorRect.top);
     tempNode.remove();
     
-    // Find which line the cursor is on
-    let visualLine = 1;
+    // Find which line the cursor is on (return 0-based index)
+    let visualLine = 0;
     for (let i = 0; i < lineYPositions.length; i++) {
       if (cursorY >= lineYPositions[i]) {
-        visualLine = i + 1;
+        visualLine = i;
       } else {
         break;
       }
     }
     
-    return Math.max(1, Math.min(visualLine, lineYPositions.length));
+    return Math.max(0, Math.min(visualLine, lineYPositions.length - 1));
     
   } catch (error) {
     console.warn('Failed to calculate cursor visual line:', error);
-    return 1;
+    return 0;
   }
 }
 
