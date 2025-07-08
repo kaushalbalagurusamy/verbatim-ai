@@ -12,6 +12,7 @@ import { useCreateDocument } from '@/hooks/useDocuments';
 import { createNewDocument } from '@/utils/document.utils';
 import { validateDocumentContent } from '@/utils/content-validation';
 import type { HighlightColor, Document as DocumentType, ContentBlock } from '@/types/document.types';
+import { getFormatsAtCursor, getCursorInfo } from '@/utils/format-detection';
 
 interface EditorState {
   isEmphasisActive: boolean;
@@ -120,21 +121,42 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
     isHighlightActive: false,
     currentHeadingLevel: 1
   });
-
-  const handleEmphasis = () => {
+  
+  // Update formatting states based on cursor position
+  const updateFormattingStates = useCallback(() => {
+    const cursorInfo = getCursorInfo();
+    if (!cursorInfo || !document) return;
+    
+    const formats = getFormatsAtCursor(
+      document.content.blocks,
+      cursorInfo.blockIndex,
+      cursorInfo.offset
+    );
+    
     setEditorState(prev => ({
       ...prev,
-      isEmphasisActive: !prev.isEmphasisActive
+      isEmphasisActive: formats.isBold,
+      isHighlightActive: formats.isHighlighted,
+      currentHeadingLevel: formats.headingLevel || prev.currentHeadingLevel
     }));
+  }, [document]);
+  
+  // Handle selection changes to update button states
+  const handleSelectionChange = useCallback(() => {
+    updateFormattingStates();
+    onSelectionChange();
+  }, [updateFormattingStates, onSelectionChange]);
+
+  const handleEmphasis = () => {
     applyBold();
+    // Update formatting states after a short delay to allow DOM to update
+    setTimeout(updateFormattingStates, 50);
   };
 
   const handleHighlight = (color: string) => {
-    setEditorState(prev => ({
-      ...prev,
-      isHighlightActive: !prev.isHighlightActive
-    }));
     applyHighlight(color as HighlightColor);
+    // Update formatting states after a short delay to allow DOM to update
+    setTimeout(updateFormattingStates, 50);
   };
 
   const handleMinimize = () => {
@@ -142,20 +164,19 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
   };
 
   const handleClear = () => {
-    setEditorState(prev => ({
-      ...prev,
-      isEmphasisActive: false,
-      isHighlightActive: false
-    }));
     clearFormatting();
+    // Update formatting states after a short delay to allow DOM to update
+    setTimeout(updateFormattingStates, 50);
   };
 
   const handleHeading = (level: number) => {
+    setHeading(level as 1 | 2 | 3 | 4 | 5 | 6);
     setEditorState(prev => ({
       ...prev,
       currentHeadingLevel: level
     }));
-    setHeading(level as 1 | 2 | 3 | 4 | 5 | 6);
+    // Update formatting states after a short delay to allow DOM to update
+    setTimeout(updateFormattingStates, 50);
   };
 
   // Don't render anything until document is initialized
@@ -185,7 +206,7 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
       <Editor
         content={content}
         onChange={handleContentChange}
-        onSelectionChange={onSelectionChange}
+        onSelectionChange={handleSelectionChange}
         setApplyFormatRef={setApplyFormatRef}
         autoFocus={true}
       />
