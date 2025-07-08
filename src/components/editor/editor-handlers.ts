@@ -5,6 +5,7 @@
 import type { ContentBlock, FormattingType, HighlightColor } from '@/types/document.types';
 import { getCursorPosition, isCursorAtBlockStart, isCursorAtBlockEnd } from '@/utils/cursor-manager';
 import { findBlockElement } from '@/utils/selection-helpers';
+import { saveSelectionAnchor, getSelectionAnchor, clearSelectionAnchor, isExtendingSelection } from '@/utils/selection-state';
 
 export function handleEnterKey(
   e: React.KeyboardEvent<HTMLDivElement>,
@@ -156,6 +157,13 @@ export function handleKeyDown(
     }
   }
   
+  // Handle Select All (Cmd/Ctrl + A)
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+    e.preventDefault();
+    handleSelectAll(editorRef);
+    return;
+  }
+  
   // Handle word selection with Option/Alt + Shift + Arrow
   if (e.altKey && e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
     e.preventDefault();
@@ -289,44 +297,85 @@ export function handleParagraphSelection(
   onActiveLineChange?: (index: number) => void
 ) {
   const selection = window.getSelection();
-  if (!selection || !editorRef.current || selection.rangeCount === 0) return;
+  if (!selection || !editorRef.current) return;
   
-  const range = selection.getRangeAt(0);
   const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
+  if (blocks.length === 0) return;
   
-  // Use proper block detection for both anchor and focus
-  const anchorBlock = findBlockElement(range.startContainer);
-  const focusBlock = findBlockElement(range.endContainer);
+  // Get current selection state
+  const hasSelection = selection.rangeCount > 0;
+  const currentRange = hasSelection ? selection.getRangeAt(0) : null;
   
-  if (!focusBlock) return;
+  // Find current focus block
+  let focusBlock: HTMLElement | null = null;
+  let focusIndex = -1;
   
-  const focusIndex = parseInt(focusBlock.dataset.blockIndex || '0');
+  if (currentRange) {
+    focusBlock = findBlockElement(currentRange.commonAncestorContainer);
+    if (focusBlock) {
+      focusIndex = parseInt(focusBlock.dataset.blockIndex || '0');
+    }
+  }
   
-  // Determine if we're extending or creating a new selection
-  const isCollapsed = range.collapsed;
-  const isExtending = !isCollapsed;
+  // If no focus block, find the active block
+  if (!focusBlock) {
+    const activeBlock = editorRef.current.querySelector('[data-block-id]:focus');
+    if (activeBlock) {
+      focusBlock = activeBlock as HTMLElement;
+      focusIndex = parseInt(focusBlock.dataset.blockIndex || '0');
+    } else {
+      return;
+    }
+  }
+  
+  // Check if we should start a new selection or extend existing
+  const savedAnchor = getSelectionAnchor();
+  const shouldExtend = isExtendingSelection() && savedAnchor.anchorBlock;
+  
+  // If starting new selection, save the anchor point
+  if (!shouldExtend && currentRange && !currentRange.collapsed) {
+    const anchorBlock = findBlockElement(currentRange.startContainer);
+    if (anchorBlock) {
+      saveSelectionAnchor(anchorBlock, currentRange.startContainer, currentRange.startOffset);
+    }
+  } else if (!shouldExtend && currentRange) {
+    // Save current position as anchor for new selection
+    saveSelectionAnchor(focusBlock, currentRange.startContainer, currentRange.startOffset);
+  }
+  
+  const newRange = document.createRange();
   
   if (e.key === 'ArrowUp') {
     if (focusIndex > 0) {
       const targetBlock = blocks[focusIndex - 1];
       if (!targetBlock) return;
       
-      const newRange = document.createRange();
+      // Get the start of the target block
+      const targetStart = getBlockStart(targetBlock);
       
-      if (isExtending) {
-        // Extend existing selection
-        newRange.setStart(range.startContainer, range.startOffset);
-        newRange.setEnd(targetBlock, 0);
+      if (shouldExtend && savedAnchor.anchorContainer) {
+        // Extend from saved anchor to target
+        const anchorIndex = parseInt(savedAnchor.anchorBlock?.dataset.blockIndex || '0');
+        
+        if (focusIndex - 1 >= anchorIndex) {
+          // Moving up but still below or at anchor
+          newRange.setStart(savedAnchor.anchorContainer, savedAnchor.anchorOffset);
+          newRange.setEnd(targetStart.node, targetStart.offset);
+        } else {
+          // Moving up past anchor - flip the range
+          newRange.setStart(targetStart.node, targetStart.offset);
+          newRange.setEnd(savedAnchor.anchorContainer, savedAnchor.anchorOffset);
+        }
       } else {
-        // Create new selection from current position to start of previous block
-        newRange.setStart(targetBlock, 0);
-        newRange.setEnd(range.endContainer, range.endOffset);
+        // Create new selection from current to target
+        if (currentRange) {
+          newRange.setStart(targetStart.node, targetStart.offset);
+          newRange.setEnd(currentRange.endContainer, currentRange.endOffset);
+        }
       }
       
       selection.removeAllRanges();
       selection.addRange(newRange);
-      
-      // Update active line to the focus block (where cursor visually is)
       onActiveLineChange?.(focusIndex - 1);
     }
   } else if (e.key === 'ArrowDown') {
@@ -334,44 +383,97 @@ export function handleParagraphSelection(
       const targetBlock = blocks[focusIndex + 1];
       if (!targetBlock) return;
       
-      const newRange = document.createRange();
+      // Get the end of the target block
+      const targetEnd = getBlockEnd(targetBlock);
       
-      // Find the last text node in the target block
-      let lastNode: Node = targetBlock;
-      let lastOffset = 0;
-      
-      // Traverse to find the actual last text position
-      const findLastPosition = (node: Node): void => {
-        if (node.nodeType === Node.TEXT_NODE) {
-          lastNode = node;
-          lastOffset = node.textContent?.length || 0;
-        } else if (node.hasChildNodes()) {
-          for (let i = node.childNodes.length - 1; i >= 0; i--) {
-            findLastPosition(node.childNodes[i]);
-            if (lastNode !== targetBlock) break;
-          }
+      if (shouldExtend && savedAnchor.anchorContainer) {
+        // Extend from saved anchor to target
+        const anchorIndex = parseInt(savedAnchor.anchorBlock?.dataset.blockIndex || '0');
+        
+        if (focusIndex + 1 <= anchorIndex) {
+          // Moving down but still above or at anchor
+          newRange.setStart(targetEnd.node, targetEnd.offset);
+          newRange.setEnd(savedAnchor.anchorContainer, savedAnchor.anchorOffset);
+        } else {
+          // Moving down past anchor - normal order
+          newRange.setStart(savedAnchor.anchorContainer, savedAnchor.anchorOffset);
+          newRange.setEnd(targetEnd.node, targetEnd.offset);
         }
-      };
-      
-      findLastPosition(targetBlock);
-      
-      if (isExtending) {
-        // Extend existing selection
-        newRange.setStart(range.startContainer, range.startOffset);
-        newRange.setEnd(lastNode, lastOffset);
       } else {
-        // Create new selection from current position to end of next block
-        newRange.setStart(range.startContainer, range.startOffset);
-        newRange.setEnd(lastNode, lastOffset);
+        // Create new selection from current to target
+        if (currentRange) {
+          newRange.setStart(currentRange.startContainer, currentRange.startOffset);
+          newRange.setEnd(targetEnd.node, targetEnd.offset);
+        }
       }
       
       selection.removeAllRanges();
       selection.addRange(newRange);
-      
-      // Update active line to the focus block
       onActiveLineChange?.(focusIndex + 1);
     }
   }
+}
+
+/**
+ * Get the start position of a block
+ */
+function getBlockStart(block: HTMLElement): { node: Node; offset: number } {
+  if (block.textContent === '') {
+    // Empty block - create text node
+    const textNode = document.createTextNode('');
+    block.appendChild(textNode);
+    return { node: textNode, offset: 0 };
+  }
+  
+  // Find first text node
+  const walker = document.createTreeWalker(
+    block,
+    NodeFilter.SHOW_TEXT,
+    null
+  );
+  
+  const firstTextNode = walker.firstChild() as Text;
+  if (firstTextNode) {
+    return { node: firstTextNode, offset: 0 };
+  }
+  
+  // Fallback
+  return { node: block, offset: 0 };
+}
+
+/**
+ * Get the end position of a block
+ */
+function getBlockEnd(block: HTMLElement): { node: Node; offset: number } {
+  if (block.textContent === '') {
+    // Empty block - create text node
+    const textNode = document.createTextNode('');
+    block.appendChild(textNode);
+    return { node: textNode, offset: 0 };
+  }
+  
+  // Find last text node
+  let lastTextNode: Text | null = null;
+  
+  const findLastTextNode = (node: Node): void => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      lastTextNode = node as Text;
+    } else if (node.hasChildNodes()) {
+      for (let i = node.childNodes.length - 1; i >= 0; i--) {
+        findLastTextNode(node.childNodes[i]);
+        if (lastTextNode) break;
+      }
+    }
+  };
+  
+  findLastTextNode(block);
+  
+  if (lastTextNode) {
+    return { node: lastTextNode, offset: lastTextNode.textContent?.length || 0 };
+  }
+  
+  // Fallback
+  return { node: block, offset: block.childNodes.length };
 }
 
 export function handlePaste(
@@ -397,8 +499,19 @@ export function handlePaste(
   const currentIndex = parseInt(currentBlock.dataset.blockIndex || '0');
   const cursorPos = getCursorPosition();
   
-  // Split pasted text by line breaks
+  // Split pasted text by line breaks and clean up
   const lines = pastedText.split(/\r?\n/);
+  
+  // Remove empty lines at the beginning and end
+  while (lines.length > 0 && lines[0].trim() === '') {
+    lines.shift();
+  }
+  while (lines.length > 0 && lines[lines.length - 1].trim() === '') {
+    lines.pop();
+  }
+  
+  // If no content left after cleaning, just return
+  if (lines.length === 0) return;
   
   if (lines.length === 1) {
     // Single line paste - insert into current block
@@ -436,21 +549,30 @@ export function handlePaste(
     const newBlocks: ContentBlock[] = [];
     
     // First line goes into current block with content before cursor
-    if (lines[0]) {
-      newBlocks.push({
-        ...currentContent,
-        content: beforeCursor + lines[0]
-      });
-    }
+    newBlocks.push({
+      ...currentContent,
+      content: beforeCursor + lines[0]
+    });
     
     // Middle lines become new blocks
     for (let i = 1; i < lines.length - 1; i++) {
-      newBlocks.push({
-        id: `block-${Date.now()}-${i}`,
-        type: 'paragraph',
-        content: lines[i],
-        formatting: []
-      });
+      // Don't create blocks for empty lines in the middle
+      if (lines[i].trim() === '') {
+        // Add a single space to preserve the empty line visually
+        newBlocks.push({
+          id: `block-${Date.now()}-${i}`,
+          type: 'paragraph',
+          content: ' ',
+          formatting: []
+        });
+      } else {
+        newBlocks.push({
+          id: `block-${Date.now()}-${i}`,
+          type: 'paragraph',
+          content: lines[i],
+          formatting: []
+        });
+      }
     }
     
     // Last line gets the content after cursor
@@ -490,4 +612,42 @@ export function handlePaste(
       }
     }, 10);
   }
+}
+
+export function handleSelectAll(editorRef: React.RefObject<HTMLDivElement>) {
+  if (!editorRef.current) return;
+  
+  const selection = window.getSelection();
+  if (!selection) return;
+  
+  const blocks = editorRef.current.querySelectorAll('[data-block-id]');
+  if (blocks.length === 0) return;
+  
+  // Create a range that spans from the start of the first block to the end of the last block
+  const range = document.createRange();
+  
+  // Set start at the beginning of the first block
+  const firstBlock = blocks[0];
+  range.setStart(firstBlock, 0);
+  
+  // Set end at the end of the last block
+  const lastBlock = blocks[blocks.length - 1];
+  if (lastBlock.childNodes.length > 0) {
+    const lastChild = lastBlock.lastChild;
+    if (lastChild) {
+      if (lastChild.nodeType === Node.TEXT_NODE) {
+        range.setEnd(lastChild, lastChild.textContent?.length || 0);
+      } else {
+        range.setEnd(lastBlock, lastBlock.childNodes.length);
+      }
+    } else {
+      range.setEnd(lastBlock, 0);
+    }
+  } else {
+    range.setEnd(lastBlock, 0);
+  }
+  
+  // Apply the selection
+  selection.removeAllRanges();
+  selection.addRange(range);
 }

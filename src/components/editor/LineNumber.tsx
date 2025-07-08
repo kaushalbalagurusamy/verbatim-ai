@@ -10,6 +10,7 @@ interface LineNumberProps {
   index: number;
   block: ContentBlock;
   isActive: boolean;
+  activeVisualLine?: number;
   visualLineCount: number;
   startLineNumber: number;
 }
@@ -18,6 +19,7 @@ export const LineNumber = memo(({
   index, 
   block, 
   isActive,
+  activeVisualLine = 0,
   visualLineCount,
   startLineNumber
 }: LineNumberProps) => {
@@ -58,18 +60,23 @@ export const LineNumber = memo(({
         marginBottom: getLineMarginBottom(block.type)
       }}
     >
-      {Array.from({ length: visualLineCount }, (_, lineIndex) => (
-        <div
-          key={lineIndex}
-          className="flex items-center justify-center text-xs font-mono"
-          style={{
-            height: '1.15rem', // Match the line height
-            color: isActive ? '#ffffff' : '#6a6a6a'
-          }}
-        >
-          <span>{startLineNumber + lineIndex}</span>
-        </div>
-      ))}
+      {Array.from({ length: visualLineCount }, (_, lineIndex) => {
+        // Only highlight the specific visual line where the cursor is
+        const isActiveVisualLine = isActive && lineIndex === activeVisualLine;
+        
+        return (
+          <div
+            key={lineIndex}
+            className="flex items-center justify-center text-xs font-mono"
+            style={{
+              height: '1.15rem', // Match the line height
+              color: isActiveVisualLine ? '#ffffff' : '#6a6a6a'
+            }}
+          >
+            <span>{startLineNumber + lineIndex}</span>
+          </div>
+        );
+      })}
     </div>
   );
 });

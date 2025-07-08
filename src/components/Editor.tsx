@@ -15,6 +15,14 @@ import { findBlockElement } from '@/utils/selection-helpers';
 import { calculateVisualLinesForBlocks, createDebouncedCalculator } from '@/utils/visual-line-calculator';
 import { UndoManager } from '@/utils/undo-manager';
 import { handlePaste } from './editor/editor-handlers';
+import { getCurrentCursorVisualLine } from '@/utils/cursor-visual-line';
+import { clearSelectionAnchor } from '@/utils/selection-state';
+import { 
+  startCrossParagraphSelection,
+  updateCrossParagraphSelection,
+  endCrossParagraphSelection,
+  isSelectingCrossParagraph
+} from '@/utils/cross-paragraph-selection';
 import { 
   applyBoldFormatting,
   applyHighlightFormatting,
@@ -33,6 +41,7 @@ interface EditorProps {
 
 interface EditorState {
   activeLineIndex: number;
+  activeVisualLine: number; // Which visual line within the active block
   isComposing: boolean;
   multiSelections: TextSelection[];
   visualLines: Map<string, number>; // blockId -> visual line count
@@ -52,6 +61,7 @@ export function Editor({
   const undoManagerRef = useRef<UndoManager>(new UndoManager());
   const [editorState, setEditorState] = useState<EditorState>({
     activeLineIndex: 0,
+    activeVisualLine: 0,
     isComposing: false,
     multiSelections: [],
     visualLines: new Map()
@@ -326,7 +336,16 @@ export function Editor({
         
         if (blockElement) {
           const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
-          setEditorState(prev => ({ ...prev, activeLineIndex: blockIndex }));
+          
+          // Calculate which visual line the cursor is on
+          const cursorInfo = getCurrentCursorVisualLine();
+          const visualLine = cursorInfo?.visualLine || 0;
+          
+          setEditorState(prev => ({ 
+            ...prev, 
+            activeLineIndex: blockIndex,
+            activeVisualLine: visualLine
+          }));
         }
         
         // Update selection manager with current selection
@@ -334,12 +353,18 @@ export function Editor({
           selectionManager.setFromDOMSelection(contentRef.current);
           const selections = selectionManager.getSelections();
           setEditorState(prev => ({ ...prev, multiSelections: selections }));
+        } else {
+          // Clear selection anchor when no selection
+          clearSelectionAnchor();
         }
+      } else {
+        // Clear selection anchor when no selection
+        clearSelectionAnchor();
       }
     });
   }, [onSelectionChange]);
 
-  // Handle mouse down for multi-selection
+  // Handle mouse down for multi-selection and cross-paragraph selection
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey) {
       e.preventDefault();
@@ -362,6 +387,16 @@ export function Editor({
       // Clear multi-selections on normal click
       selectionManager.clear();
       setEditorState(prev => ({ ...prev, multiSelections: [] }));
+      
+      // Start cross-paragraph selection
+      startCrossParagraphSelection(e.nativeEvent, editorRef);
+    }
+  }, []);
+  
+  // Handle mouse move for cross-paragraph selection
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isSelectingCrossParagraph()) {
+      updateCrossParagraphSelection(e.nativeEvent, editorRef);
     }
   }, []);
   
@@ -380,6 +415,9 @@ export function Editor({
           highlightMultipleSelections(selections);
         }
       }, 10);
+    } else {
+      // End cross-paragraph selection
+      endCrossParagraphSelection();
     }
     
     // Always handle regular selection change
@@ -396,8 +434,12 @@ export function Editor({
       setEditorState(prev => ({ ...prev, activeLineIndex: index }));
     });
     
-    // Update visual lines after paste
-    setTimeout(updateVisualLines, 50);
+    // Update visual lines after paste using requestAnimationFrame for better timing
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        updateVisualLines();
+      });
+    });
   }, [onChange, updateVisualLines]);
   
   // Visual highlighting for multiple selections
@@ -487,6 +529,7 @@ export function Editor({
                 index={index}
                 block={block}
                 isActive={index === editorState.activeLineIndex}
+                activeVisualLine={editorState.activeVisualLine}
                 visualLineCount={editorState.visualLines.get(block.id) || 1}
                 startLineNumber={startLineNumber}
               />
@@ -505,7 +548,17 @@ export function Editor({
             const blockElement = findBlockElement(target);
             if (blockElement) {
               const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
-              setEditorState(prev => ({ ...prev, activeLineIndex: blockIndex }));
+              
+              // Calculate visual line after a short delay to ensure cursor is positioned
+              setTimeout(() => {
+                const cursorInfo = getCurrentCursorVisualLine();
+                const visualLine = cursorInfo?.visualLine || 0;
+                setEditorState(prev => ({ 
+                  ...prev, 
+                  activeLineIndex: blockIndex,
+                  activeVisualLine: visualLine
+                }));
+              }, 10);
             }
           }}
           onKeyDown={(e) => {
@@ -516,6 +569,7 @@ export function Editor({
           }}
           onPaste={handlePasteEvent}
           onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
           onKeyUp={handleSelectionChange}
           onCompositionStart={() => setEditorState(prev => ({ ...prev, isComposing: true }))}
           onCompositionEnd={() => setEditorState(prev => ({ ...prev, isComposing: false }))}
