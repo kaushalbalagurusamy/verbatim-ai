@@ -34,16 +34,17 @@ export function handleAltShiftParagraphSelection(
   const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
   if (blocks.length === 0) return;
   
-  // Get current cursor position
+  // Get current cursor position - use focus position for extending selections
   let currentBlock: HTMLElement | null = null;
   let currentOffset = 0;
   let currentContainer: Node | null = null;
   
   if (selection.rangeCount > 0) {
-    const range = selection.getRangeAt(0);
-    currentBlock = findBlockElement(range.startContainer);
-    currentContainer = range.startContainer;
-    currentOffset = range.startOffset;
+    // Use focusNode/focusOffset to get the actual cursor position
+    // This is important when extending an existing selection
+    currentBlock = findBlockElement(selection.focusNode!);
+    currentContainer = selection.focusNode;
+    currentOffset = selection.focusOffset;
   }
   
   // If no current block, find the focused block
@@ -58,7 +59,9 @@ export function handleAltShiftParagraphSelection(
     }
   }
   
-  const currentIndex = parseInt(currentBlock.dataset.blockIndex || '0');
+  // Get the current index based on where the focus is
+  const focusBlock = currentBlock;
+  const currentIndex = parseInt(focusBlock.dataset.blockIndex || '0');
   
   // Initialize anchor if not extending
   if (!paragraphSelectionState.isExtending || !paragraphSelectionState.anchorBlock) {
@@ -73,29 +76,40 @@ export function handleAltShiftParagraphSelection(
   const newRange = document.createRange();
   
   if (e.key === 'ArrowUp') {
-    if (currentIndex > 0) {
-      const targetBlock = blocks[currentIndex - 1];
-      if (!targetBlock) return;
-      
-      // Set range from cursor position to start of target paragraph
-      const targetStart = getBlockStart(targetBlock);
-      
-      // Always extend from original anchor
-      const anchorIsBelow = parseInt(paragraphSelectionState.anchorBlock?.dataset.blockIndex || '0') > currentIndex - 1;
-      
-      if (anchorIsBelow) {
-        // Selecting upward from anchor
+    // Handle selection when moving up
+    const targetIndex = Math.max(0, currentIndex - 1);
+    const targetBlock = blocks[targetIndex];
+    if (!targetBlock) return;
+    
+    // Get the start of the target block (where we're moving to)
+    const targetStart = getBlockStart(targetBlock);
+    
+    // Get anchor block index
+    const anchorIndex = parseInt(paragraphSelectionState.anchorBlock?.dataset.blockIndex || '0');
+    
+    if (targetIndex === currentIndex) {
+      // Already at the first block, select from start to anchor if anchor is not at start
+      if (anchorIndex > 0 || paragraphSelectionState.anchorOffset > 0) {
         newRange.setStart(targetStart.node, targetStart.offset);
         newRange.setEnd(paragraphSelectionState.anchorContainer!, paragraphSelectionState.anchorOffset);
-      } else {
-        // Anchor is above or at target
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+      }
+    } else {
+      // Moving to a different block
+      if (anchorIndex <= targetIndex) {
+        // Anchor is above or at the target - extend from anchor to start of target
         newRange.setStart(paragraphSelectionState.anchorContainer!, paragraphSelectionState.anchorOffset);
-        newRange.setEnd(getBlockEnd(currentBlock).node, getBlockEnd(currentBlock).offset);
+        newRange.setEnd(targetStart.node, targetStart.offset);
+      } else {
+        // Anchor is below target - extend from start of target to anchor
+        newRange.setStart(targetStart.node, targetStart.offset);
+        newRange.setEnd(paragraphSelectionState.anchorContainer!, paragraphSelectionState.anchorOffset);
       }
       
       selection.removeAllRanges();
       selection.addRange(newRange);
-      onActiveLineChange?.(currentIndex - 1);
+      onActiveLineChange?.(targetIndex);
     }
   } else if (e.key === 'ArrowDown') {
     if (currentIndex < blocks.length - 1) {
