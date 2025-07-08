@@ -7,6 +7,13 @@ import { getCursorPosition, isCursorAtBlockStart, isCursorAtBlockEnd } from '@/u
 import { findBlockElement } from '@/utils/selection-helpers';
 import { saveSelectionAnchor, getSelectionAnchor, clearSelectionAnchor, isExtendingSelection } from '@/utils/selection-state';
 import { handleAltShiftParagraphSelection, clearParagraphSelectionState } from '@/utils/paragraph-selection';
+import { 
+  saveColumnPosition, 
+  getSavedColumnPosition, 
+  getSavedXCoordinate,
+  clearColumnPosition, 
+  restoreCursorToColumn 
+} from '@/utils/cursor-column-tracker';
 
 export function handleEnterKey(
   e: React.KeyboardEvent<HTMLDivElement>,
@@ -15,6 +22,9 @@ export function handleEnterKey(
   editorRef: React.RefObject<HTMLDivElement>,
   onActiveLineChange?: (index: number) => void
 ) {
+  // Clear column position when creating new line
+  clearColumnPosition();
+  
   const target = e.target as HTMLElement;
   const blockElement = target.closest('[data-block-id]') as HTMLElement;
   if (!blockElement) return;
@@ -209,21 +219,32 @@ export function handleKeyDown(
     const blockIndex = parseInt(blockElement.dataset.blockIndex || '0');
     const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
     
+    // Save current column position before moving
+    saveColumnPosition(blockElement);
+    const savedColumn = getSavedColumnPosition();
+    const savedX = getSavedXCoordinate();
+    
     if (e.key === 'ArrowUp' && blockIndex > 0) {
       // Move to previous block
       const prevBlock = blocks[blockIndex - 1];
       if (prevBlock) {
         e.preventDefault();
         prevBlock.focus();
-        // Place cursor at end of previous block
-        const selection = window.getSelection();
-        if (selection) {
-          const range = document.createRange();
-          const textNode = prevBlock.lastChild || prevBlock;
-          range.selectNodeContents(textNode);
-          range.collapse(false);
-          selection.removeAllRanges();
-          selection.addRange(range);
+        
+        // Restore column position if we have one saved
+        if (savedColumn !== null) {
+          restoreCursorToColumn(prevBlock, savedColumn, savedX || undefined);
+        } else {
+          // Fallback: place cursor at end of previous block
+          const selection = window.getSelection();
+          if (selection) {
+            const range = document.createRange();
+            const textNode = prevBlock.lastChild || prevBlock;
+            range.selectNodeContents(textNode);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
         }
         onActiveLineChange?.(blockIndex - 1);
       }
@@ -233,19 +254,28 @@ export function handleKeyDown(
       if (nextBlock) {
         e.preventDefault();
         nextBlock.focus();
-        // Place cursor at beginning of next block
-        const selection = window.getSelection();
-        if (selection) {
-          const range = document.createRange();
-          range.setStart(nextBlock, 0);
-          range.collapse(true);
-          selection.removeAllRanges();
-          selection.addRange(range);
+        
+        // Restore column position if we have one saved
+        if (savedColumn !== null) {
+          restoreCursorToColumn(nextBlock, savedColumn, savedX || undefined);
+        } else {
+          // Fallback: place cursor at beginning of next block
+          const selection = window.getSelection();
+          if (selection) {
+            const range = document.createRange();
+            range.setStart(nextBlock, 0);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
         }
         onActiveLineChange?.(blockIndex + 1);
       }
     }
   } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    // Clear column position when moving horizontally
+    clearColumnPosition();
+    
     // Handle horizontal navigation at block boundaries
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;

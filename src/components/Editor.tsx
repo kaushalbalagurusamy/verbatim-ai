@@ -30,6 +30,7 @@ import {
   applyMinimizeFormatting,
   clearFormatting
 } from '@/utils/formatting-engine';
+import { clearColumnPosition } from '@/utils/cursor-column-tracker';
 
 interface EditorProps {
   content: ContentBlock[];
@@ -287,6 +288,9 @@ export function Editor({
   }, [content]);
 
   const handleInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
+    // Clear column position when typing
+    clearColumnPosition();
+    
     try {
       const target = e.target as HTMLElement;
       const blockElement = findBlockElement(target);
@@ -368,6 +372,9 @@ export function Editor({
 
   // Handle mouse down for multi-selection and cross-paragraph selection
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Clear column position on any mouse click
+    clearColumnPosition();
+    
     if (e.metaKey || e.ctrlKey) {
       e.preventDefault();
       
