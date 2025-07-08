@@ -197,10 +197,10 @@ export function handleKeyDown(
     return;
   }
   
-  // Handle paragraph selection with Cmd/Ctrl + Shift + Up/Down
+  // Handle selection to document start/end with Cmd/Ctrl + Shift + Up/Down
   if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
     e.preventDefault();
-    handleParagraphSelection(e, editorRef, contentRef, onActiveLineChange);
+    handleDocumentBoundarySelection(e, editorRef, contentRef, onActiveLineChange);
     return;
   }
   
@@ -328,7 +328,7 @@ export function handleKeyDown(
   }
 }
 
-export function handleParagraphSelection(
+export function handleDocumentBoundarySelection(
   e: React.KeyboardEvent<HTMLDivElement>,
   editorRef: React.RefObject<HTMLDivElement>,
   contentRef: React.MutableRefObject<ContentBlock[]>,
@@ -340,25 +340,30 @@ export function handleParagraphSelection(
   const blocks = Array.from(editorRef.current.querySelectorAll('[data-block-id]')) as HTMLElement[];
   if (blocks.length === 0) return;
   
-  // Get current cursor position
-  let cursorBlock: HTMLElement | null = null;
-  let cursorContainer: Node | null = null;
-  let cursorOffset = 0;
+  // Get current cursor position - we need to preserve the exact position
+  let anchorNode: Node | null = null;
+  let anchorOffset = 0;
   
   if (selection.rangeCount > 0) {
-    const range = selection.getRangeAt(0);
-    cursorBlock = findBlockElement(range.startContainer);
-    cursorContainer = range.startContainer;
-    cursorOffset = range.startOffset;
+    // For Cmd+Shift selections, we want to extend from the current position
+    // Use anchorNode/anchorOffset to preserve the original cursor position
+    anchorNode = selection.anchorNode;
+    anchorOffset = selection.anchorOffset;
+    
+    // If we don't have an anchor (shouldn't happen), fall back to range start
+    if (!anchorNode) {
+      const range = selection.getRangeAt(0);
+      anchorNode = range.startContainer;
+      anchorOffset = range.startOffset;
+    }
   }
   
-  // If no cursor block, find the focused block
-  if (!cursorBlock) {
+  // If no anchor position, find the focused block
+  if (!anchorNode) {
     const activeBlock = editorRef.current.querySelector('[data-block-id]:focus') as HTMLElement;
     if (activeBlock) {
-      cursorBlock = activeBlock;
-      cursorContainer = activeBlock.firstChild || activeBlock;
-      cursorOffset = 0;
+      anchorNode = activeBlock.firstChild || activeBlock;
+      anchorOffset = 0;
     } else {
       return;
     }
@@ -367,25 +372,30 @@ export function handleParagraphSelection(
   const newRange = document.createRange();
   
   if (e.key === 'ArrowUp') {
-    // Select from cursor position to document start
+    // Select from document start to current cursor position
     const firstBlock = blocks[0];
     if (!firstBlock) return;
     
     const docStart = getBlockStart(firstBlock);
+    
+    // IMPORTANT: Set the range in the correct order for upward selection
+    // Start at document beginning, end at cursor position
     newRange.setStart(docStart.node, docStart.offset);
-    newRange.setEnd(cursorContainer, cursorOffset);
+    newRange.setEnd(anchorNode, anchorOffset);
     
     selection.removeAllRanges();
     selection.addRange(newRange);
     onActiveLineChange?.(0);
     
   } else if (e.key === 'ArrowDown') {
-    // Select from cursor position to document end
+    // Select from current cursor position to document end
     const lastBlock = blocks[blocks.length - 1];
     if (!lastBlock) return;
     
     const docEnd = getBlockEnd(lastBlock);
-    newRange.setStart(cursorContainer, cursorOffset);
+    
+    // Start at cursor position, end at document end
+    newRange.setStart(anchorNode, anchorOffset);
     newRange.setEnd(docEnd.node, docEnd.offset);
     
     selection.removeAllRanges();
