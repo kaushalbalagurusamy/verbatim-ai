@@ -16,8 +16,8 @@
 /* Line numbers gutter */
 .editor-gutter {
   flex-shrink: 0;
-  background: #252526;
-  border-right: 1px solid #3c3c3c;
+  background: #1e1e1e; /* Match editor background */
+  border-right: 1px solid #2d2d2d; /* Subtle border */
   user-select: none;
   padding-right: 10px;
 }
@@ -25,6 +25,8 @@
 .line-numbers {
   position: sticky;
   top: 0;
+  padding-top: 10px; /* Match editor content padding */
+  padding-bottom: 10px;
 }
 
 .line-number {
@@ -42,6 +44,7 @@
   padding: 10px 20px;
   overflow-y: auto;
   overflow-x: hidden;
+  background: #1e1e1e; /* Ensure consistent background */
 }
 
 .editor-content:empty::before {

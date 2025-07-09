@@ -404,22 +404,44 @@ export function SingleContentEditableEditor({
       e.preventDefault();
       const selection = getDocumentSelection();
       if (selection) {
-        // Delete any selected text first
-        if (!selection.isCollapsed) {
-          documentRef.current.deleteText(selection.start, selection.end);
+        const blocks = documentRef.current.getBlocks();
+        const currentBlock = blocks.find(b => 
+          selection.start >= b.offset && selection.start <= b.offset + b.length
+        );
+        
+        if (currentBlock) {
+          // Delete any selected text first
+          if (!selection.isCollapsed) {
+            documentRef.current.deleteText(selection.start, selection.end);
+          }
+          
+          // Calculate position within the block
+          const positionInBlock = selection.start - currentBlock.offset;
+          
+          // Split the text at cursor position
+          const beforeCursor = currentBlock.text.slice(0, positionInBlock);
+          const afterCursor = currentBlock.text.slice(positionInBlock);
+          
+          // Update current block with text before cursor
+          const lengthDiff = currentBlock.text.length - beforeCursor.length;
+          if (lengthDiff > 0) {
+            documentRef.current.deleteText(selection.start, selection.start + lengthDiff);
+          }
+          
+          // Insert newline and text after cursor
+          documentRef.current.insertText(selection.start, '\n' + afterCursor);
+          
+          // Create new block at the newline position
+          documentRef.current.createBlock(selection.start + 1);
+          
+          onChange?.(documentRef.current.getText());
+          renderContent();
+          
+          // Set cursor at start of new block
+          setTimeout(() => {
+            setDocumentSelection(selection.start + 1, selection.start + 1);
+          }, 10);
         }
-        
-        // Insert newline and create block
-        documentRef.current.insertText(selection.start, '\n');
-        documentRef.current.createBlock(selection.start + 1);
-        
-        onChange?.(documentRef.current.getText());
-        renderContent();
-        
-        // Set cursor after newline
-        setTimeout(() => {
-          setDocumentSelection(selection.start + 1, selection.start + 1);
-        }, 10);
       }
     }
     
@@ -592,36 +614,53 @@ function LineNumbers({ lineRegistry, activeLineNumber }: LineNumbersProps) {
   
   useEffect(() => {
     // Subscribe to line registry changes
-    const interval = setInterval(() => {
+    const updateLines = () => {
       const allLines: VisualLine[] = [];
       for (let i = 1; i <= lineRegistry.getLineCount(); i++) {
         const line = lineRegistry.getLine(i);
         if (line) allLines.push(line);
       }
-      if (allLines.length !== lines.length) {
-        setLines(allLines);
-      }
-    }, 100);
+      setLines(allLines);
+    };
+    
+    // Initial update
+    updateLines();
+    
+    // Poll for changes
+    const interval = setInterval(updateLines, 100);
     
     return () => clearInterval(interval);
-  }, [lineRegistry, lines.length]);
+  }, [lineRegistry]);
+  
+  // Group lines by block to add margins between blocks
+  const linesByBlock = lines.reduce((acc, line) => {
+    if (!acc[line.blockId]) {
+      acc[line.blockId] = [];
+    }
+    acc[line.blockId].push(line);
+    return acc;
+  }, {} as Record<string, VisualLine[]>);
   
   return (
     <div className="line-numbers" style={{ width: '50px' }}>
-      {lines.map(line => (
-        <div
-          key={line.lineNumber}
-          className={`line-number ${line.lineNumber === activeLineNumber ? 'active' : ''}`}
-          style={{
-            height: `${line.height}px`,
-            lineHeight: `${line.height}px`,
-            color: line.lineNumber === activeLineNumber ? '#ffffff' : '#6a6a6a',
-            textAlign: 'center',
-            fontSize: '12px',
-            fontFamily: 'monospace'
-          }}
-        >
-          {line.lineNumber}
+      {Object.entries(linesByBlock).map(([blockId, blockLines], blockIndex) => (
+        <div key={blockId} style={{ marginBottom: blockIndex < Object.keys(linesByBlock).length - 1 ? '8px' : 0 }}>
+          {blockLines.map(line => (
+            <div
+              key={line.lineNumber}
+              className={`line-number ${line.lineNumber === activeLineNumber ? 'active' : ''}`}
+              style={{
+                height: `${line.height}px`,
+                lineHeight: `${line.height}px`,
+                color: line.lineNumber === activeLineNumber ? '#ffffff' : '#6a6a6a',
+                textAlign: 'center',
+                fontSize: '12px',
+                fontFamily: 'monospace'
+              }}
+            >
+              {line.lineNumber}
+            </div>
+          ))}
         </div>
       ))}
     </div>

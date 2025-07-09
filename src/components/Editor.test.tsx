@@ -339,6 +339,11 @@ describe('Editor Component - Bug Tests', () => {
       );
 
       await waitForDOMUpdate();
+      
+      // Wait for line numbers to be created
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      });
 
       // Check line numbers
       const lineNumbers = newContainer.querySelectorAll('.line-number');
