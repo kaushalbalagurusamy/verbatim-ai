@@ -6,7 +6,8 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { EditorToolbar } from './EditorToolbar';
-import { Editor } from '../Editor';
+// import { Editor } from '../Editor';
+import { EditorV2Adapter as Editor } from '@/editor-v2/integration/EditorV2Adapter';
 import { useEditor } from '@/hooks/useEditor';
 import { useCreateDocument } from '@/hooks/useDocuments';
 import { createNewDocument } from '@/utils/document.utils';

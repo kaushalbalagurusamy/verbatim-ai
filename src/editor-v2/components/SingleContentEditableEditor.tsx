@@ -49,13 +49,8 @@ export function SingleContentEditableEditor({
     viewportBottom: 600
   });
   
-  // Initialize document model
-  useEffect(() => {
-    if (initialContent && documentRef.current.getLength() === 0) {
-      documentRef.current.insertText(0, initialContent);
-      renderContent();
-    }
-  }, [initialContent]);
+  // Initialize document model - moved after renderContent definition
+  const [isInitialized, setIsInitialized] = useState(false);
 
   /**
    * Convert document offset to DOM position
@@ -200,11 +195,12 @@ export function SingleContentEditableEditor({
       const formattedHTML = renderFormattedText(block);
       blockEl.innerHTML = formattedHTML;
       
+      // Add block to DOM first
       container.appendChild(blockEl);
       
-      // Calculate visual lines for this block
+      // Now calculate visual lines for this block
       const blockHeight = calculateBlockHeight(blockEl, block);
-      const linesInBlock = Math.ceil(blockHeight / 18.4); // Base line height
+      const linesInBlock = Math.max(1, Math.ceil(blockHeight / 18.4)); // At least 1 line
       
       // Update line registry
       for (let i = 0; i < linesInBlock; i++) {
@@ -311,7 +307,17 @@ export function SingleContentEditableEditor({
     const wasHidden = element.style.display === 'none';
     if (wasHidden) element.style.display = 'block';
     
-    const height = element.getBoundingClientRect().height;
+    const rect = element.getBoundingClientRect();
+    let height = rect.height;
+    
+    // In test environment, estimate height based on text length and container width
+    if (height === 0 || rect.width === 0) {
+      const containerWidth = editorRef.current?.clientWidth || 600; // Default width
+      const charWidth = 8; // Approximate monospace character width
+      const charsPerLine = Math.floor(containerWidth / charWidth);
+      const estimatedLines = Math.ceil(block.text.length / charsPerLine);
+      height = estimatedLines * 18.4;
+    }
     
     if (wasHidden) element.style.display = 'none';
     
@@ -488,6 +494,24 @@ export function SingleContentEditableEditor({
     handleInput(new Event('input'));
   }, [handleInput]);
 
+  // Initialize document model after renderContent is defined
+  useEffect(() => {
+    if (!isInitialized && initialContent && documentRef.current.getLength() === 0) {
+      documentRef.current.insertText(0, initialContent);
+      // Create initial block if content has newlines
+      const lines = initialContent.split('\n');
+      let offset = 0;
+      for (let i = 0; i < lines.length; i++) {
+        if (i > 0) {
+          documentRef.current.createBlock(offset);
+        }
+        offset += lines[i].length + 1; // +1 for newline
+      }
+      setIsInitialized(true);
+      renderContent();
+    }
+  }, [initialContent, renderContent, isInitialized]);
+
   /**
    * Setup event listeners
    */
@@ -544,7 +568,10 @@ export function SingleContentEditableEditor({
           wordBreak: 'break-word',
           fontFamily: 'monospace',
           fontSize: '14px',
-          lineHeight: '1.15rem'
+          lineHeight: '1.15rem',
+          width: '100%',
+          maxWidth: '600px',
+          boxSizing: 'border-box'
         }}
       />
     </div>
@@ -561,16 +588,23 @@ interface LineNumbersProps {
 
 function LineNumbers({ lineRegistry, activeLineNumber }: LineNumbersProps) {
   const [lines, setLines] = useState<VisualLine[]>([]);
+  const [updateCounter, setUpdateCounter] = useState(0);
   
   useEffect(() => {
-    // Get all lines for now (will optimize with viewport later)
-    const allLines: VisualLine[] = [];
-    for (let i = 1; i <= lineRegistry.getLineCount(); i++) {
-      const line = lineRegistry.getLine(i);
-      if (line) allLines.push(line);
-    }
-    setLines(allLines);
-  }, [lineRegistry]);
+    // Subscribe to line registry changes
+    const interval = setInterval(() => {
+      const allLines: VisualLine[] = [];
+      for (let i = 1; i <= lineRegistry.getLineCount(); i++) {
+        const line = lineRegistry.getLine(i);
+        if (line) allLines.push(line);
+      }
+      if (allLines.length !== lines.length) {
+        setLines(allLines);
+      }
+    }, 100);
+    
+    return () => clearInterval(interval);
+  }, [lineRegistry, lines.length]);
   
   return (
     <div className="line-numbers" style={{ width: '50px' }}>
