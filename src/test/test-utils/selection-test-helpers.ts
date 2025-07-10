@@ -162,10 +162,10 @@ export function setupMockSelection(): MockSelection {
   const mockSelection = new MockSelection();
   
   // Mock window.getSelection
-  vi.spyOn(window, 'getSelection').mockReturnValue(mockSelection as any);
+  vi.spyOn(window, 'getSelection').mockReturnValue(mockSelection as unknown as Selection);
   
   // Mock document.getSelection (alias)
-  vi.spyOn(document, 'getSelection').mockReturnValue(mockSelection as any);
+  vi.spyOn(document, 'getSelection').mockReturnValue(mockSelection as unknown as Selection);
   
   return mockSelection;
 }

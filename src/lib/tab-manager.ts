@@ -64,7 +64,7 @@ class TabManager {
     title: string;
     type: ViewType;
     filePath?: string;
-    content?: any;
+    content?: unknown;
   }): string {
     // Check for existing tab with same file path
     if (options.filePath) {
@@ -119,7 +119,7 @@ class TabManager {
   /**
    * Get default content for a tab type
    */
-  private getDefaultContent(type: ViewType): any {
+  private getDefaultContent(type: ViewType): unknown {
     switch (type) {
       case 'flow':
         return {

@@ -24,9 +24,9 @@ interface EditorState {
 interface EditorWithToolbarProps {
   documentId?: string;
   initialTitle?: string;
-  initialContent?: any;
+  initialContent?: ContentBlock[];
   onTitleChange?: (title: string) => void;
-  onContentChange?: (content: any) => void;
+  onContentChange?: (content: ContentBlock[]) => void;
   onTitleChangeHandlerReady?: (handler: (title: string) => void) => void;
 }
 
@@ -62,7 +62,7 @@ export function EditorWithToolbar({ documentId, initialTitle = 'New Document', i
     if (initialTitle && document && document.title !== initialTitle) {
       setDocument(prev => prev ? { ...prev, title: initialTitle } : null);
     }
-  }, [initialTitle]);
+  }, [initialTitle, document]);
   
   // Handle document title changes
   const handleDocumentTitleChange = useCallback((newTitle: string) => {

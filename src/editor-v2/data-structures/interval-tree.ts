@@ -33,7 +33,7 @@ export class IntervalTree<T extends Interval> {
   insert(interval: T): void {
     // Assign ID if it's a TextFormatting without one
     if ('type' in interval && !('id' in interval)) {
-      (interval as any).id = `fmt-${this.idCounter++}`;
+      (interval as T & { id: string }).id = `fmt-${this.idCounter++}`;
     }
     this.root = this.insertNode(this.root, interval);
   }

@@ -462,7 +462,7 @@ export function SingleContentEditableEditor({
           renderContent();
           break;
           
-        case 'h':
+        case 'h': {
           e.preventDefault();
           // Cycle through highlight colors
           const colors: TextFormatting['color'][] = ['yellow', 'blue', 'green', 'pink'];
@@ -481,6 +481,7 @@ export function SingleContentEditableEditor({
           });
           renderContent();
           break;
+        }
           
         case 'm':
           e.preventDefault();

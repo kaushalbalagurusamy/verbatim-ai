@@ -7,7 +7,7 @@ export interface DocumentContent {
   id: string;
   type: 'document' | 'flow';
   title: string;
-  content: any; // Editor-specific content
+  content: unknown; // Editor-specific content
   metadata?: {
     createdAt: Date;
     modifiedAt: Date;
@@ -47,7 +47,7 @@ class DocumentStore {
   /**
    * Update document content only
    */
-  updateContent(id: string, content: any): void {
+  updateContent(id: string, content: unknown): void {
     const doc = this.documents.get(id);
     if (doc) {
       this.setDocument({ ...doc, content });
@@ -148,7 +148,7 @@ export function useDocument(id: string | undefined) {
     return unsubscribe;
   }, [id]);
 
-  const updateContent = (content: any) => {
+  const updateContent = (content: unknown) => {
     if (id) {
       documentStore.updateContent(id, content);
     }

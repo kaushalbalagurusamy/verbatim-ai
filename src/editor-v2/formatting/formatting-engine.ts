@@ -176,7 +176,7 @@ export class FormattingEngine {
         this.applyBold(start, end);
         break;
         
-      case 'highlight':
+      case 'highlight': {
         // For paragraph highlighting, find emphasized text
         const emphasizedRanges = this.findEmphasizedRanges(block);
         if (emphasizedRanges.length > 0) {
@@ -192,8 +192,9 @@ export class FormattingEngine {
           this.applyHighlight(start, end, colorOrHex);
         }
         break;
+      }
         
-      case 'minimize':
+      case 'minimize': {
         // For paragraph minimize, find non-emphasized text
         const nonEmphasizedRanges = this.findNonEmphasizedRanges(block);
         for (const range of nonEmphasizedRanges) {
@@ -203,6 +204,7 @@ export class FormattingEngine {
           );
         }
         break;
+      }
     }
   }
 

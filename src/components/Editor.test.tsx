@@ -32,7 +32,7 @@ import {
 
 describe('Editor Component - Bug Tests', () => {
   let container: HTMLElement;
-  let mockSelection: any;
+  let mockSelection: ReturnType<typeof setupMockSelection>;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -531,7 +531,7 @@ describe('Editor Component - Bug Tests', () => {
       }];
 
       const onChange = vi.fn();
-      let applyFormatFn: any;
+      let applyFormatFn: ((type: string, value?: string) => void) | undefined;
 
       const { container: editorContainer } = renderWithProviders(
         <Editor
@@ -574,7 +574,7 @@ describe('Editor Component - Bug Tests', () => {
       }];
 
       const onChange = vi.fn();
-      let applyFormatFn: any;
+      let applyFormatFn: ((type: string, value?: string) => void) | undefined;
 
       const { container: editorContainer } = renderWithProviders(
         <Editor
@@ -613,7 +613,7 @@ describe('Editor Component - Bug Tests', () => {
     it('should handle hex color to name conversion', async () => {
       const content = createMockContentBlocks(['Text']);
       const onChange = vi.fn();
-      let applyFormatFn: any;
+      let applyFormatFn: ((type: string, value?: string) => void) | undefined;
 
       const { container: editorContainer } = renderWithProviders(
         <Editor

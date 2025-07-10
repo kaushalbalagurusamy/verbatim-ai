@@ -26,7 +26,7 @@ export function EditorV2Adapter({
   placeholder,
   autoFocus
 }: EditorV2AdapterProps) {
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<{ applyFormat?: (type: string, color?: string) => void }>(null);
   const applyFormatRef = useRef<(type: FormattingType, color?: HighlightColor) => void>(() => {});
   
   /**
