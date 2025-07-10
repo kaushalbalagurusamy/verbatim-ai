@@ -11,6 +11,7 @@ import { TextFormatting } from '../data-structures/interval-tree';
 import { DocumentContent } from '../data-structures/btree';
 import { codeUnitLength, sliceByCodeUnits, getGraphemeAt } from '../utils/string-utils';
 import { textMeasurementService } from '../utils/text-measurement';
+import { LineUpdateObserver } from '../observers/line-update-observer';
 
 interface EditorProps {
   initialContent?: string;
@@ -44,6 +45,9 @@ export function SingleContentEditableEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const documentRef = useRef<DocumentModel>(new DocumentModel());
   const lineRegistryRef = useRef<LineRegistry>(new LineRegistry());
+  const lineObserverRef = useRef<LineUpdateObserver>(
+    new LineUpdateObserver(lineRegistryRef.current, documentRef.current)
+  );
   const [editorState, setEditorState] = useState<EditorState>({
     isComposing: false,
     lastSelection: null,
@@ -200,32 +204,7 @@ export function SingleContentEditableEditor({
       // Add block to DOM first
       container.appendChild(blockEl);
       
-      // Use text measurement service for accurate line calculation
-      const containerWidth = container.clientWidth || 600;
-      const measurement = textMeasurementService.measureBlock(
-        block.id,
-        block.text,
-        block.type,
-        containerWidth
-      );
-      
-      // Update line registry with measured lines
-      measurement.lines.forEach((measuredLine, i) => {
-        const line: VisualLine = {
-          lineNumber: lineNumber++,
-          startOffset: block.offset + measuredLine.start,
-          endOffset: block.offset + measuredLine.end,
-          y: currentY,
-          height: measuredLine.height,
-          blockId: block.id,
-          indexInBlock: i
-        };
-        
-        lineRegistryRef.current.setLine(line);
-        currentY += measuredLine.height;
-      });
-      
-      currentY += 8; // Block margin
+      // Observer will handle line measurements - no manual updates needed
     }
     
     // Restore selection
@@ -527,25 +506,13 @@ export function SingleContentEditableEditor({
     editor.addEventListener('input', handleInput);
     document.addEventListener('selectionchange', handleSelectionChange);
     
-    // Update measurement service when container resizes
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const width = entry.contentRect.width;
-        textMeasurementService.updateContainerWidth(width);
-        // Re-render to update line numbers
-        renderContent();
-      }
-    });
-    
-    const container = editor.parentElement;
-    if (container) {
-      resizeObserver.observe(container);
-    }
+    // Attach line update observer to editor
+    lineObserverRef.current.attach(editor);
     
     return () => {
       editor.removeEventListener('input', handleInput);
       document.removeEventListener('selectionchange', handleSelectionChange);
-      resizeObserver.disconnect();
+      lineObserverRef.current.detach();
     };
   }, [handleInput, handleSelectionChange, renderContent]);
 
@@ -565,6 +532,7 @@ export function SingleContentEditableEditor({
       <div className="editor-gutter">
         <LineNumbers 
           lineRegistry={lineRegistryRef.current}
+          lineObserver={lineObserverRef.current}
           activeLineNumber={editorState.lastSelection ? 
             lineRegistryRef.current.getLineByOffset(editorState.lastSelection.start)?.lineNumber : 
             undefined
@@ -604,15 +572,15 @@ export function SingleContentEditableEditor({
  */
 interface LineNumbersProps {
   lineRegistry: LineRegistry;
+  lineObserver: LineUpdateObserver;
   activeLineNumber?: number;
 }
 
-function LineNumbers({ lineRegistry, activeLineNumber }: LineNumbersProps) {
+function LineNumbers({ lineRegistry, lineObserver, activeLineNumber }: LineNumbersProps) {
   const [lines, setLines] = useState<VisualLine[]>([]);
-  const [updateCounter, setUpdateCounter] = useState(0);
   
   useEffect(() => {
-    // Subscribe to line registry changes
+    // Subscribe to line updates from observer
     const updateLines = () => {
       const allLines: VisualLine[] = [];
       for (let i = 1; i <= lineRegistry.getLineCount(); i++) {
@@ -625,11 +593,11 @@ function LineNumbers({ lineRegistry, activeLineNumber }: LineNumbersProps) {
     // Initial update
     updateLines();
     
-    // Poll for changes
-    const interval = setInterval(updateLines, 100);
+    // Subscribe to observer updates (event-driven, no polling)
+    const unsubscribe = lineObserver.subscribe(updateLines);
     
-    return () => clearInterval(interval);
-  }, [lineRegistry]);
+    return unsubscribe;
+  }, [lineRegistry, lineObserver]);
   
   // Group lines by block to add margins between blocks
   const linesByBlock = lines.reduce((acc, line) => {
