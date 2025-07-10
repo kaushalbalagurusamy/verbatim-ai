@@ -6,6 +6,7 @@
 
 import { BTree, DocumentContent } from '../data-structures/btree';
 import { IntervalTree, TextFormatting } from '../data-structures/interval-tree';
+import { codeUnitLength, sliceByCodeUnits, safeSubstring } from '../utils/string-utils';
 
 export interface LineInfo {
   lineNumber: number;
@@ -59,23 +60,23 @@ export class DocumentModel {
     if (block) {
       // Insert within existing block
       const localOffset = offset - block.offset;
-      const newText = block.text.slice(0, localOffset) + text + block.text.slice(localOffset);
+      const newText = sliceByCodeUnits(block.text, 0, localOffset) + text + sliceByCodeUnits(block.text, localOffset);
       
       // Update block
       block.text = newText;
-      block.length = newText.length;
+      block.length = codeUnitLength(newText);
       
       // Update formatting positions after this offset
-      this.formatting.updateOffsets(offset, text.length);
+      this.formatting.updateOffsets(offset, codeUnitLength(text));
       
       // Update subsequent block offsets
-      this.updateBlockOffsets(block.offset + block.length, text.length);
+      this.updateBlockOffsets(block.offset + block.length, codeUnitLength(text));
     } else if (offset === this.totalLength) {
       // Append new block at end
       const newBlock: DocumentContent = {
         id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         offset: offset,
-        length: text.length,
+        length: codeUnitLength(text),
         text: text,
         type: blockType
       };
@@ -83,7 +84,7 @@ export class DocumentModel {
       this.content.insert(newBlock);
     }
 
-    this.totalLength += text.length;
+    this.totalLength += codeUnitLength(text);
     this.version++;
     
     // Notify listeners
@@ -126,11 +127,11 @@ export class DocumentModel {
         const localStart = start - block.offset;
         const localEnd = Math.min(end - block.offset, block.length);
         
-        deletedText.push(block.text.slice(localStart, localEnd));
+        deletedText.push(sliceByCodeUnits(block.text, localStart, localEnd));
         
         // Update block text
-        block.text = block.text.slice(0, localStart) + block.text.slice(localEnd);
-        block.length = block.text.length;
+        block.text = sliceByCodeUnits(block.text, 0, localStart) + sliceByCodeUnits(block.text, localEnd);
+        block.length = codeUnitLength(block.text);
         
         if (block.length === 0) {
           affectedBlocks.push(block);
@@ -140,11 +141,11 @@ export class DocumentModel {
       else if (end > block.offset && end <= blockEnd) {
         const localEnd = end - block.offset;
         
-        deletedText.push(block.text.slice(0, localEnd));
+        deletedText.push(sliceByCodeUnits(block.text, 0, localEnd));
         
         // Update block text
-        block.text = block.text.slice(localEnd);
-        block.length = block.text.length;
+        block.text = sliceByCodeUnits(block.text, localEnd);
+        block.length = codeUnitLength(block.text);
         block.offset = start;
         
         if (block.length === 0) {
@@ -396,7 +397,7 @@ export class DocumentModel {
       const localStart = Math.max(0, start - block.offset);
       const localEnd = Math.min(block.length, end - block.offset);
       
-      result.push(block.text.slice(localStart, localEnd));
+      result.push(sliceByCodeUnits(block.text, localStart, localEnd));
     }
     
     return result.join('');
@@ -457,18 +458,18 @@ export class DocumentModel {
     if (block && offset < block.offset + block.length) {
       // Split existing block
       const localOffset = offset - block.offset;
-      const beforeText = block.text.slice(0, localOffset);
-      const afterText = block.text.slice(localOffset);
+      const beforeText = sliceByCodeUnits(block.text, 0, localOffset);
+      const afterText = sliceByCodeUnits(block.text, localOffset);
       
       // Update current block
       block.text = beforeText;
-      block.length = beforeText.length;
+      block.length = codeUnitLength(beforeText);
       
       // Create new block
       const newBlock: DocumentContent = {
         id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         offset: offset,
-        length: afterText.length,
+        length: codeUnitLength(afterText),
         text: afterText,
         type: type
       };
@@ -494,7 +495,7 @@ export class DocumentModel {
     
     // Merge text
     firstBlock.text += secondBlock.text;
-    firstBlock.length = firstBlock.text.length;
+    firstBlock.length = codeUnitLength(firstBlock.text);
     
     // Delete second block
     this.content.delete(secondBlock.offset, secondBlock.length);

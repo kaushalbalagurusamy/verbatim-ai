@@ -6,6 +6,7 @@
 
 import { DocumentModel } from '../models/document-model';
 import { LineRegistry } from '../models/line-registry';
+import { codeUnitLength, getGraphemeAt } from '../utils/string-utils';
 
 export interface SelectionRange {
   id: string;
@@ -162,7 +163,7 @@ export class SelectionManager {
     }
     
     // Find end of word
-    while (end < text.length && !wordBoundary.test(text[end])) {
+    while (end < codeUnitLength(text) && !wordBoundary.test(text[end])) {
       end++;
     }
     
@@ -291,16 +292,16 @@ export class SelectionManager {
       let pos = from;
       
       // Skip current word
-      while (pos < text.length && !wordBoundary.test(text[pos])) {
+      while (pos < codeUnitLength(text) && !wordBoundary.test(text[pos])) {
         pos++;
       }
       
       // Skip whitespace
-      while (pos < text.length && wordBoundary.test(text[pos])) {
+      while (pos < codeUnitLength(text) && wordBoundary.test(text[pos])) {
         pos++;
       }
       
-      return Math.min(pos, text.length);
+      return Math.min(pos, codeUnitLength(text));
     } else {
       let pos = from;
       

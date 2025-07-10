@@ -9,6 +9,7 @@ import { DocumentModel, DocumentChange } from '../models/document-model';
 import { LineRegistry, VisualLine } from '../models/line-registry';
 import { TextFormatting } from '../data-structures/interval-tree';
 import { DocumentContent } from '../data-structures/btree';
+import { codeUnitLength, sliceByCodeUnits, getGraphemeAt } from '../utils/string-utils';
 
 interface EditorProps {
   initialContent?: string;
@@ -68,7 +69,7 @@ export function SingleContentEditableEditor({
     let node = walker.nextNode();
     
     while (node) {
-      const textLength = node.textContent?.length || 0;
+      const textLength = codeUnitLength(node.textContent || '');
       
       if (currentOffset + textLength >= offset) {
         return {
@@ -86,7 +87,7 @@ export function SingleContentEditableEditor({
     if (lastChild) {
       return {
         node: lastChild,
-        offset: lastChild.textContent?.length || 0
+        offset: codeUnitLength(lastChild.textContent || '')
       };
     }
     
@@ -113,7 +114,7 @@ export function SingleContentEditableEditor({
         return currentOffset + offset;
       }
       
-      currentOffset += node.textContent?.length || 0;
+      currentOffset += codeUnitLength(node.textContent || '');
       node = walker.nextNode();
     }
     
@@ -207,8 +208,8 @@ export function SingleContentEditableEditor({
         const lineHeight = 18.4;
         const line: VisualLine = {
           lineNumber: lineNumber++,
-          startOffset: block.offset + (i * Math.floor(block.text.length / linesInBlock)),
-          endOffset: block.offset + ((i + 1) * Math.floor(block.text.length / linesInBlock)),
+          startOffset: block.offset + (i * Math.floor(block.length / linesInBlock)),
+          endOffset: block.offset + ((i + 1) * Math.floor(block.length / linesInBlock)),
           y: currentY,
           height: lineHeight,
           blockId: block.id,
@@ -257,13 +258,13 @@ export function SingleContentEditableEditor({
     for (const fmt of sorted) {
       // Add unformatted text before this formatting
       if (fmt.start > lastOffset) {
-        html += escapeHtml(block.text.slice(lastOffset - block.offset, fmt.start - block.offset));
+        html += escapeHtml(sliceByCodeUnits(block.text, lastOffset - block.offset, fmt.start - block.offset));
       }
       
       // Add formatted text
       const startInBlock = Math.max(0, fmt.start - block.offset);
       const endInBlock = Math.min(block.length, fmt.end - block.offset);
-      const formattedText = block.text.slice(startInBlock, endInBlock);
+      const formattedText = sliceByCodeUnits(block.text, startInBlock, endInBlock);
       
       html += wrapWithFormatting(formattedText, fmt);
       lastOffset = block.offset + endInBlock;
@@ -271,7 +272,7 @@ export function SingleContentEditableEditor({
     
     // Add remaining unformatted text
     if (lastOffset < block.offset + block.length) {
-      html += escapeHtml(block.text.slice(lastOffset - block.offset));
+      html += escapeHtml(sliceByCodeUnits(block.text, lastOffset - block.offset));
     }
     
     return html;
@@ -315,7 +316,7 @@ export function SingleContentEditableEditor({
       const containerWidth = editorRef.current?.clientWidth || 600; // Default width
       const charWidth = 8; // Approximate monospace character width
       const charsPerLine = Math.floor(containerWidth / charWidth);
-      const estimatedLines = Math.ceil(block.text.length / charsPerLine);
+      const estimatedLines = Math.ceil(block.length / charsPerLine);
       height = estimatedLines * 18.4;
     }
     
@@ -340,35 +341,35 @@ export function SingleContentEditableEditor({
     // Find the difference
     if (currentText !== modelText) {
       // Simple case: insertion at cursor
-      if (currentText.length > modelText.length && selection.isCollapsed) {
-        const insertedText = currentText.slice(selection.start, selection.start + (currentText.length - modelText.length));
+      if (codeUnitLength(currentText) > codeUnitLength(modelText) && selection.isCollapsed) {
+        const insertedText = sliceByCodeUnits(currentText, selection.start, selection.start + (codeUnitLength(currentText) - codeUnitLength(modelText)));
         documentRef.current.insertText(selection.start, insertedText);
       }
       // Simple case: deletion
-      else if (currentText.length < modelText.length) {
-        const deletedLength = modelText.length - currentText.length;
+      else if (codeUnitLength(currentText) < codeUnitLength(modelText)) {
+        const deletedLength = codeUnitLength(modelText) - codeUnitLength(currentText);
         documentRef.current.deleteText(selection.start, selection.start + deletedLength);
       }
       // Complex case: replacement
       else {
         // Find common prefix and suffix to isolate the change
         let prefixLen = 0;
-        while (prefixLen < currentText.length && prefixLen < modelText.length &&
+        while (prefixLen < codeUnitLength(currentText) && prefixLen < codeUnitLength(modelText) &&
                currentText[prefixLen] === modelText[prefixLen]) {
           prefixLen++;
         }
         
         let suffixLen = 0;
-        while (suffixLen < currentText.length - prefixLen && 
-               suffixLen < modelText.length - prefixLen &&
-               currentText[currentText.length - 1 - suffixLen] === 
-               modelText[modelText.length - 1 - suffixLen]) {
+        while (suffixLen < codeUnitLength(currentText) - prefixLen && 
+               suffixLen < codeUnitLength(modelText) - prefixLen &&
+               currentText[codeUnitLength(currentText) - 1 - suffixLen] === 
+               modelText[codeUnitLength(modelText) - 1 - suffixLen]) {
           suffixLen++;
         }
         
         const replaceStart = prefixLen;
-        const replaceEnd = modelText.length - suffixLen;
-        const newText = currentText.slice(prefixLen, currentText.length - suffixLen);
+        const replaceEnd = codeUnitLength(modelText) - suffixLen;
+        const newText = sliceByCodeUnits(currentText, prefixLen, codeUnitLength(currentText) - suffixLen);
         
         documentRef.current.replaceText(replaceStart, replaceEnd, newText);
       }
@@ -419,11 +420,11 @@ export function SingleContentEditableEditor({
           const positionInBlock = selection.start - currentBlock.offset;
           
           // Split the text at cursor position
-          const beforeCursor = currentBlock.text.slice(0, positionInBlock);
-          const afterCursor = currentBlock.text.slice(positionInBlock);
+          const beforeCursor = sliceByCodeUnits(currentBlock.text, 0, positionInBlock);
+          const afterCursor = sliceByCodeUnits(currentBlock.text, positionInBlock);
           
           // Update current block with text before cursor
-          const lengthDiff = currentBlock.text.length - beforeCursor.length;
+          const lengthDiff = currentBlock.length - codeUnitLength(beforeCursor);
           if (lengthDiff > 0) {
             documentRef.current.deleteText(selection.start, selection.start + lengthDiff);
           }
@@ -528,7 +529,7 @@ export function SingleContentEditableEditor({
         if (i > 0) {
           documentRef.current.createBlock(offset);
         }
-        offset += lines[i].length + 1; // +1 for newline
+        offset += codeUnitLength(lines[i]) + 1; // +1 for newline
       }
       setIsInitialized(true);
       renderContent();
