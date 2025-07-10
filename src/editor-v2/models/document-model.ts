@@ -7,6 +7,7 @@
 import { BTree, DocumentContent } from '../data-structures/btree';
 import { IntervalTree, TextFormatting } from '../data-structures/interval-tree';
 import { codeUnitLength, sliceByCodeUnits, safeSubstring } from '../utils/string-utils';
+import { textMeasurementService } from '../utils/text-measurement';
 
 export interface LineInfo {
   lineNumber: number;
@@ -311,30 +312,22 @@ export class DocumentModel {
   }
 
   /**
-   * Calculate visual lines within a block
+   * Calculate visual lines within a block using text measurement service
    */
   private calculateBlockLines(block: DocumentContent): { start: number; end: number }[] {
-    // For now, simple implementation - split by newlines
-    // In the full implementation, this would calculate based on width
-    const lines: { start: number; end: number }[] = [];
-    const text = block.text;
-    let lineStart = block.offset;
+    // Use text measurement service for accurate line calculation
+    const measurement = textMeasurementService.measureBlock(
+      block.id,
+      block.text,
+      block.type,
+      600 // Default editor width, should be configurable
+    );
     
-    for (let i = 0; i < text.length; i++) {
-      if (text[i] === '\n' || i === text.length - 1) {
-        lines.push({
-          start: lineStart,
-          end: block.offset + i + (i === text.length - 1 ? 1 : 0)
-        });
-        lineStart = block.offset + i + 1;
-      }
-    }
-    
-    if (lines.length === 0) {
-      lines.push({ start: block.offset, end: block.offset });
-    }
-    
-    return lines;
+    // Convert measurement lines to document offsets
+    return measurement.lines.map(line => ({
+      start: block.offset + line.start,
+      end: block.offset + line.end
+    }));
   }
 
   /**

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Measurement Demo</title>
+  <style>
+    body {
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+      background: #1e1e1e;
+      color: #cccccc;
+      padding: 20px;
+      margin: 0;
+    }
+    
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .input-section {
+      margin-bottom: 20px;
+    }
+    
+    textarea {
+      width: 100%;
+      height: 100px;
+      background: #252526;
+      color: #cccccc;
+      border: 1px solid #3c3c3c;
+      padding: 10px;
+      font-family: inherit;
+      font-size: 14px;
+    }
+    
+    .controls {
+      margin: 10px 0;
+      display: flex;
+      gap: 10px;
+    }
+    
+    input[type="number"] {
+      background: #252526;
+      color: #cccccc;
+      border: 1px solid #3c3c3c;
+      padding: 5px 10px;
+    }
+    
+    button {
+      background: #4fc3f7;
+      color: #1e1e1e;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
+    button:hover {
+      background: #29b6f6;
+    }
+    
+    .results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .visualization {
+      background: #252526;
+      border: 1px solid #3c3c3c;
+      padding: 20px;
+      position: relative;
+      overflow: auto;
+      max-height: 400px;
+    }
+    
+    .editor-mock {
+      width: 600px;
+      font-size: 14px;
+      line-height: 1.15rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      padding: 10px 20px;
+      box-sizing: border-box;
+      background: #1e1e1e;
+      position: relative;
+    }
+    
+    .line-overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border: 1px solid #4fc3f7;
+      background: rgba(79, 195, 247, 0.1);
+      pointer-events: none;
+    }
+    
+    .metrics {
+      background: #252526;
+      border: 1px solid #3c3c3c;
+      padding: 20px;
+    }
+    
+    .metric-item {
+      margin: 10px 0;
+      padding: 10px;
+      background: #1e1e1e;
+      border-radius: 4px;
+    }
+    
+    .metric-label {
+      color: #6a6a6a;
+      font-size: 12px;
+    }
+    
+    .metric-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #4fc3f7;
+    }
+    
+    .line-details {
+      margin-top: 20px;
+    }
+    
+    .line-item {
+      padding: 8px;
+      margin: 4px 0;
+      background: #1e1e1e;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    
+    .performance-info {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #252526;
+      border: 1px solid #3c3c3c;
+      padding: 10px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <h1>Text Measurement Service Demo</h1>
+    
+    <div class="input-section">
+      <textarea id="textInput" placeholder="Enter text to measure...">The quick brown fox jumps over the lazy dog. This is a sample paragraph that will be measured to determine how many visual lines it creates when rendered in an editor with a specific width.</textarea>
+      
+      <div class="controls">
+        <label>
+          Width: <input type="number" id="widthInput" value="600" min="100" max="1200">
+        </label>
+        <label>
+          Block Type:
+          <select id="blockTypeInput">
+            <option value="paragraph">Paragraph</option>
+            <option value="heading1">Heading 1</option>
+            <option value="heading2">Heading 2</option>
+            <option value="heading3">Heading 3</option>
+          </select>
+        </label>
+        <button onclick="measureText()">Measure</button>
+        <button onclick="runBenchmark()">Run Benchmark</button>
+      </div>
+    </div>
+    
+    <div class="results">
+      <div class="visualization">
+        <h3>Visual Representation</h3>
+        <div class="editor-mock" id="editorMock">
+          <div id="textContent"></div>
+          <div id="lineOverlays"></div>
+        </div>
+      </div>
+      
+      <div class="metrics">
+        <h3>Measurement Results</h3>
+        <div class="metric-item">
+          <div class="metric-label">Total Lines</div>
+          <div class="metric-value" id="totalLines">-</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Total Height</div>
+          <div class="metric-value" id="totalHeight">-</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Measurement Time</div>
+          <div class="metric-value" id="measurementTime">-</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Cache Hit</div>
+          <div class="metric-value" id="cacheHit">-</div>
+        </div>
+        
+        <div class="line-details" id="lineDetails"></div>
+      </div>
+    </div>
+    
+    <div class="performance-info" id="performanceInfo" style="display: none;">
+      <div>Benchmark Running...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Import the measurement service
+    import { textMeasurementService } from './text-measurement.js';
+    
+    window.measureText = function() {
+      const text = document.getElementById('textInput').value;
+      const width = parseInt(document.getElementById('widthInput').value);
+      const blockType = document.getElementById('blockTypeInput').value;
+      
+      // Update mock editor width
+      const editorMock = document.getElementById('editorMock');
+      editorMock.style.width = width + 'px';
+      
+      // Measure text
+      const start = performance.now();
+      const result = textMeasurementService.measureBlock('demo-block', text, blockType, width);
+      const measurementTime = performance.now() - start;
+      
+      // Measure again to check cache
+      const cacheStart = performance.now();
+      textMeasurementService.measureBlock('demo-block', text, blockType, width);
+      const cacheTime = performance.now() - cacheStart;
+      const isCacheHit = cacheTime < 0.1;
+      
+      // Update visualization
+      const textContent = document.getElementById('textContent');
+      textContent.textContent = text;
+      textContent.style.fontSize = blockType.startsWith('heading') ? 
+        `${2.5 - (parseInt(blockType.replace('heading', '')) - 1) * 0.3}rem` : '14px';
+      
+      // Draw line overlays
+      const lineOverlays = document.getElementById('lineOverlays');
+      lineOverlays.innerHTML = '';
+      
+      let currentY = 10; // Padding
+      result.lines.forEach((line, index) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'line-overlay';
+        overlay.style.top = currentY + 'px';
+        overlay.style.height = line.height + 'px';
+        overlay.title = `Line ${index + 1}: chars ${line.start}-${line.end}`;
+        lineOverlays.appendChild(overlay);
+        currentY += line.height;
+      });
+      
+      // Update metrics
+      document.getElementById('totalLines').textContent = result.totalLines;
+      document.getElementById('totalHeight').textContent = result.totalHeight.toFixed(1) + 'px';
+      document.getElementById('measurementTime').textContent = measurementTime.toFixed(3) + 'ms';
+      document.getElementById('cacheHit').textContent = isCacheHit ? 'Yes' : 'No';
+      
+      // Update line details
+      const lineDetails = document.getElementById('lineDetails');
+      lineDetails.innerHTML = '<h4>Line Details:</h4>';
+      result.lines.forEach((line, index) => {
+        const lineText = text.substring(line.start, line.end);
+        const lineItem = document.createElement('div');
+        lineItem.className = 'line-item';
+        lineItem.innerHTML = `
+          <strong>Line ${index + 1}:</strong> 
+          chars ${line.start}-${line.end} | 
+          width: ${line.width.toFixed(1)}px | 
+          height: ${line.height}px<br>
+          <code>${lineText.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>
+        `;
+        lineDetails.appendChild(lineItem);
+      });
+    };
+    
+    window.runBenchmark = async function() {
+      const perfInfo = document.getElementById('performanceInfo');
+      perfInfo.style.display = 'block';
+      perfInfo.innerHTML = '<div>Running benchmark...</div>';
+      
+      const fixtures = [
+        'Short text',
+        'Medium length text that might wrap to multiple lines',
+        'A very long paragraph that will definitely wrap to multiple lines when rendered. ' +
+        'It contains enough text to properly test the measurement system performance.',
+        'Code example: function test() { return "Hello World"; }'.repeat(5)
+      ];
+      
+      const results = [];
+      const iterations = 50;
+      
+      for (const fixture of fixtures) {
+        const times = [];
+        for (let i = 0; i < iterations; i++) {
+          const start = performance.now();
+          textMeasurementService.measureBlock(`bench-${i}`, fixture, 'paragraph', 600);
+          times.push(performance.now() - start);
+        }
+        
+        const avg = times.reduce((a, b) => a + b, 0) / times.length;
+        results.push({
+          fixture: fixture.substring(0, 50) + '...',
+          avg: avg.toFixed(3),
+          min: Math.min(...times).toFixed(3),
+          max: Math.max(...times).toFixed(3)
+        });
+      }
+      
+      perfInfo.innerHTML = `
+        <h4>Benchmark Results</h4>
+        ${results.map(r => `
+          <div style="margin: 5px 0;">
+            <strong>${r.fixture}</strong><br>
+            Avg: ${r.avg}ms | Min: ${r.min}ms | Max: ${r.max}ms
+          </div>
+        `).join('')}
+        <div style="margin-top: 10px; color: ${results.every(r => parseFloat(r.avg) < 0.4) ? '#4fc3f7' : '#f44336'};">
+          ${results.every(r => parseFloat(r.avg) < 0.4) ? '✅ All measurements < 0.4ms' : '❌ Some measurements > 0.4ms'}
+        </div>
+      `;
+      
+      setTimeout(() => {
+        perfInfo.style.display = 'none';
+      }, 10000);
+    };
+    
+    // Initial measurement
+    measureText();
+  </script>
+</body>
+</html>

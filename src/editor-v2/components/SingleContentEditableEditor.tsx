@@ -10,6 +10,7 @@ import { LineRegistry, VisualLine } from '../models/line-registry';
 import { TextFormatting } from '../data-structures/interval-tree';
 import { DocumentContent } from '../data-structures/btree';
 import { codeUnitLength, sliceByCodeUnits, getGraphemeAt } from '../utils/string-utils';
+import { textMeasurementService } from '../utils/text-measurement';
 
 interface EditorProps {
   initialContent?: string;
@@ -199,26 +200,30 @@ export function SingleContentEditableEditor({
       // Add block to DOM first
       container.appendChild(blockEl);
       
-      // Now calculate visual lines for this block
-      const blockHeight = calculateBlockHeight(blockEl, block);
-      const linesInBlock = Math.max(1, Math.ceil(blockHeight / 18.4)); // At least 1 line
+      // Use text measurement service for accurate line calculation
+      const containerWidth = container.clientWidth || 600;
+      const measurement = textMeasurementService.measureBlock(
+        block.id,
+        block.text,
+        block.type,
+        containerWidth
+      );
       
-      // Update line registry
-      for (let i = 0; i < linesInBlock; i++) {
-        const lineHeight = 18.4;
+      // Update line registry with measured lines
+      measurement.lines.forEach((measuredLine, i) => {
         const line: VisualLine = {
           lineNumber: lineNumber++,
-          startOffset: block.offset + (i * Math.floor(block.length / linesInBlock)),
-          endOffset: block.offset + ((i + 1) * Math.floor(block.length / linesInBlock)),
+          startOffset: block.offset + measuredLine.start,
+          endOffset: block.offset + measuredLine.end,
           y: currentY,
-          height: lineHeight,
+          height: measuredLine.height,
           blockId: block.id,
           indexInBlock: i
         };
         
         lineRegistryRef.current.setLine(line);
-        currentY += lineHeight;
-      }
+        currentY += measuredLine.height;
+      });
       
       currentY += 8; // Block margin
     }
@@ -300,30 +305,6 @@ export function SingleContentEditableEditor({
     return div.innerHTML;
   };
 
-  /**
-   * Calculate block height for line calculations
-   */
-  const calculateBlockHeight = (element: HTMLElement, block: DocumentContent): number => {
-    // Temporarily make visible if needed
-    const wasHidden = element.style.display === 'none';
-    if (wasHidden) element.style.display = 'block';
-    
-    const rect = element.getBoundingClientRect();
-    let height = rect.height;
-    
-    // In test environment, estimate height based on text length and container width
-    if (height === 0 || rect.width === 0) {
-      const containerWidth = editorRef.current?.clientWidth || 600; // Default width
-      const charWidth = 8; // Approximate monospace character width
-      const charsPerLine = Math.floor(containerWidth / charWidth);
-      const estimatedLines = Math.ceil(block.length / charsPerLine);
-      height = estimatedLines * 18.4;
-    }
-    
-    if (wasHidden) element.style.display = 'none';
-    
-    return height || 18.4; // Default line height
-  };
 
   /**
    * Handle input events
@@ -546,11 +527,27 @@ export function SingleContentEditableEditor({
     editor.addEventListener('input', handleInput);
     document.addEventListener('selectionchange', handleSelectionChange);
     
+    // Update measurement service when container resizes
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.contentRect.width;
+        textMeasurementService.updateContainerWidth(width);
+        // Re-render to update line numbers
+        renderContent();
+      }
+    });
+    
+    const container = editor.parentElement;
+    if (container) {
+      resizeObserver.observe(container);
+    }
+    
     return () => {
       editor.removeEventListener('input', handleInput);
       document.removeEventListener('selectionchange', handleSelectionChange);
+      resizeObserver.disconnect();
     };
-  }, [handleInput, handleSelectionChange]);
+  }, [handleInput, handleSelectionChange, renderContent]);
 
   /**
    * Subscribe to document changes
