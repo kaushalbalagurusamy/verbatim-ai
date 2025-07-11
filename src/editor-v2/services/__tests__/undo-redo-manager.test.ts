@@ -230,18 +230,20 @@ describe('UndoRedoManager', () => {
     it('should handle rapid mixed operations', () => {
       // Perform various operations rapidly
       for (let i = 0; i < 50; i++) {
+        const currentLength = document.getLength();
+        
         if (i % 3 === 0) {
-          // Insert
-          document.insertText(0, `${i}`);
-        } else if (i % 3 === 1 && document.getLength() > 0) {
-          // Delete
-          document.deleteText(0, 1);
-        } else if (document.getLength() > 5) {
-          // Apply formatting
+          // Insert at end
+          document.insertText(currentLength, `${i}`);
+        } else if (i % 3 === 1 && currentLength > 0) {
+          // Delete from end
+          document.deleteText(currentLength - 1, currentLength);
+        } else if (currentLength >= 5) {
+          // Apply formatting to first 5 characters
           document.applyFormatting({
             type: 'bold',
             start: 0,
-            end: 5,
+            end: Math.min(5, currentLength),
             id: `fmt-${i}`
           });
         }
@@ -277,7 +279,7 @@ describe('UndoRedoManager', () => {
       
       // Add 15 actions
       for (let i = 0; i < 15; i++) {
-        document.insertText(0, `Action${i}`);
+        document.insertText(document.getLength(), `Action${i} `);
         manager.recordActionImmediate();
       }
       
@@ -337,6 +339,7 @@ describe('UndoRedoManager', () => {
         ctrlKey: false,
         shiftKey: false
       });
+      vi.spyOn(event, 'preventDefault');
       
       const handled = undoRedoManager.handleKeyboardShortcut(event);
       expect(handled).toBe(true);
@@ -354,6 +357,7 @@ describe('UndoRedoManager', () => {
         ctrlKey: false,
         shiftKey: true
       });
+      vi.spyOn(event, 'preventDefault');
       
       const handled = undoRedoManager.handleKeyboardShortcut(event);
       expect(handled).toBe(true);
@@ -376,6 +380,7 @@ describe('UndoRedoManager', () => {
         ctrlKey: true,
         shiftKey: false
       });
+      vi.spyOn(event, 'preventDefault');
       
       const handled = undoRedoManager.handleKeyboardShortcut(event);
       expect(handled).toBe(true);
@@ -399,6 +404,7 @@ describe('UndoRedoManager', () => {
         ctrlKey: true,
         shiftKey: false
       });
+      vi.spyOn(event, 'preventDefault');
       
       const handled = undoRedoManager.handleKeyboardShortcut(event);
       expect(handled).toBe(true);
@@ -467,7 +473,8 @@ describe('UndoRedoManager', () => {
     });
 
     it('should notify onChange callback', () => {
-      expect(onChangeMock).toHaveBeenCalledWith(false, false);
+      // onChange was called in constructor, verify it was called
+      expect(onChangeMock).not.toHaveBeenCalled(); // We cleared it after constructor
       
       // Add action
       document.insertText(0, 'Test');

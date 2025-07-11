@@ -5,7 +5,8 @@
  */
 
 import { DocumentModel } from '../models/document-model';
-import { DocumentDiffEmitter, DocumentSnapshot, DiffOp } from './document-diff-emitter';
+import { DocumentDiffEmitter, DocumentSnapshot, DiffOp, InsertTextOp, DeleteTextOp, ReplaceTextOp, RemoveFormattingOp } from './document-diff-emitter';
+import { codeUnitLength } from '../utils/string-utils';
 
 export interface UndoRedoConfig {
   maxActions: number;  // Maximum number of undo actions to keep
@@ -48,6 +49,9 @@ export class UndoRedoManager {
     
     // Create initial snapshot
     this.createSnapshot();
+    
+    // Notify initial state
+    this.notifyStateChange();
   }
   
   /**
@@ -130,6 +134,70 @@ export class UndoRedoManager {
   }
   
   /**
+   * Apply inverse operations for undo
+   */
+  private createInverseOperations(operations: DiffOp[]): DiffOp[] {
+    const inverse: DiffOp[] = [];
+    
+    // Process in reverse order
+    for (let i = operations.length - 1; i >= 0; i--) {
+      const op = operations[i];
+      
+      switch (op.type) {
+        case 'insert-text':
+          // Inverse of insert is delete
+          inverse.push({
+            type: 'delete-text',
+            offset: op.offset,
+            length: codeUnitLength(op.text),
+            deletedText: op.text,
+            timestamp: Date.now()
+          } as DeleteTextOp);
+          break;
+          
+        case 'delete-text':
+          // Inverse of delete is insert
+          inverse.push({
+            type: 'insert-text',
+            offset: op.offset,
+            text: op.deletedText,
+            timestamp: Date.now()
+          } as InsertTextOp);
+          break;
+          
+        case 'replace-text':
+          // Inverse of replace is replace with old text
+          inverse.push({
+            type: 'replace-text',
+            offset: op.offset,
+            length: codeUnitLength(op.newText),
+            oldText: op.newText,
+            newText: op.oldText,
+            timestamp: Date.now()
+          } as ReplaceTextOp);
+          break;
+          
+        case 'add-formatting':
+          // Inverse of add is remove
+          inverse.push({
+            type: 'remove-formatting',
+            formattingId: op.formatting.id,
+            offset: op.offset,
+            timestamp: Date.now()
+          } as RemoveFormattingOp);
+          break;
+          
+        case 'remove-formatting':
+          // Would need the formatting details to restore
+          // For now, skip formatting removal inverse
+          break;
+      }
+    }
+    
+    return inverse;
+  }
+  
+  /**
    * Undo the last action
    */
   undo(): boolean {
@@ -171,26 +239,27 @@ export class UndoRedoManager {
     // Get the last redo entry
     const entry = this.redoStack.pop()!;
     
-    // Apply operations to restore next state
-    this.diffEmitter.applyOperations(this.document, entry.operations);
-    
-    // Create new snapshot of restored state
-    const newSnapshot = this.diffEmitter.createSnapshot(this.document);
-    
-    // Add current state to undo stack
+    // Save current state to undo stack before changing
     if (this.currentSnapshot) {
+      // We need to compute the reverse operations
+      const redoSnapshot = entry.snapshot;
+      const reverseDiff = this.diffEmitter.diff(redoSnapshot, this.currentSnapshot);
+      
       const undoSize = this.estimateSnapshotSize(this.currentSnapshot) +
-                      this.estimateDiffSize(entry.operations);
+                      this.estimateDiffSize(reverseDiff.operations);
       this.undoStack.push({
         snapshot: this.currentSnapshot,
-        operations: entry.operations,
+        operations: reverseDiff.operations,
         timestamp: Date.now(),
         sizeBytes: undoSize
       });
       this.totalMemoryBytes += undoSize;
     }
     
-    this.currentSnapshot = newSnapshot;
+    // Restore to the redo snapshot
+    this.restoreSnapshot(entry.snapshot);
+    this.currentSnapshot = entry.snapshot;
+    
     this.notifyStateChange();
     return true;
   }
@@ -199,32 +268,39 @@ export class UndoRedoManager {
    * Restore document to a specific snapshot
    */
   private restoreSnapshot(snapshot: DocumentSnapshot): void {
-    // Clear document
+    // Clear document completely by recreating it
+    // This ensures we start from a clean state
+    const blocks = this.document.getBlocks();
+    
+    // Delete all content
     const currentLength = this.document.getLength();
     if (currentLength > 0) {
       this.document.deleteText(0, currentLength);
     }
     
-    // Recreate blocks and content
-    let offset = 0;
-    for (const block of snapshot.blocks) {
-      if (offset > 0) {
-        // Add newline between blocks
-        this.document.insertText(offset, '\n');
-        offset += 1;
-      }
+    // If snapshot is empty, we're done
+    if (snapshot.blocks.length === 0 || 
+        (snapshot.blocks.length === 1 && snapshot.blocks[0].text === '')) {
+      return;
+    }
+    
+    // Reconstruct document from snapshot
+    let globalOffset = 0;
+    
+    for (let i = 0; i < snapshot.blocks.length; i++) {
+      const block = snapshot.blocks[i];
       
       // Insert block text
       if (block.text) {
-        this.document.insertText(offset, block.text);
+        this.document.insertText(globalOffset, block.text);
+        globalOffset += block.text.length;
       }
       
-      // Create block if not paragraph
-      if (block.type !== 'paragraph' || offset > 0) {
-        this.document.createBlock(offset, block.type);
+      // Add newline between blocks (except after last block)
+      if (i < snapshot.blocks.length - 1) {
+        this.document.insertText(globalOffset, '\n');
+        globalOffset += 1;
       }
-      
-      offset += block.length;
     }
     
     // Restore formatting

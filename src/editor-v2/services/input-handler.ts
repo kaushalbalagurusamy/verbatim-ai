@@ -6,7 +6,7 @@
 
 import { DocumentModel } from '../models/document-model';
 import { codeUnitLength, sliceByCodeUnits } from '../utils/string-utils';
-import { UndoRedoManager } from './undo-redo-manager';
+import { UndoRedoManagerV2 } from './undo-redo-manager-v2';
 import { DOMDecoratorService } from './dom-decorator';
 
 export interface InputHandlerConfig {
@@ -37,7 +37,7 @@ export class InputHandlerService {
   private config: InputHandlerConfig;
   private compositionState: CompositionState;
   private inputHandlers: Map<string, InputHandler>;
-  private undoRedoManager: UndoRedoManager;
+  private undoRedoManager: UndoRedoManagerV2;
 
   constructor(document: DocumentModel, config: InputHandlerConfig) {
     this.document = document;
@@ -49,7 +49,7 @@ export class InputHandlerService {
     };
     
     // Initialize undo/redo manager
-    this.undoRedoManager = new UndoRedoManager(document, {
+    this.undoRedoManager = new UndoRedoManagerV2(document, {
       maxActions: 100,
       maxMemoryMB: 10,
       onChange: (canUndo, canRedo) => {
@@ -674,7 +674,7 @@ export class InputHandlerService {
   /**
    * Get the undo/redo manager instance
    */
-  getUndoRedoManager(): UndoRedoManager {
+  getUndoRedoManager(): UndoRedoManagerV2 {
     return this.undoRedoManager;
   }
 }

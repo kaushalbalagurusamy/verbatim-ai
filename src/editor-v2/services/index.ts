@@ -4,7 +4,7 @@
 
 export { InputHandlerService } from './input-handler';
 export { DocumentDiffEmitter } from './document-diff-emitter';
-export { UndoRedoManager } from './undo-redo-manager';
+export { UndoRedoManagerV2 as UndoRedoManager } from './undo-redo-manager-v2';
 export { SelectionOffsetMapper } from './selection-offset-mapper';
 export type { 
   InputHandlerConfig,
@@ -29,4 +29,4 @@ export type {
 export type {
   UndoRedoConfig,
   HistoryEntry
-} from './undo-redo-manager';
+} from './undo-redo-manager-v2';
