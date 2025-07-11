@@ -96,8 +96,7 @@ export function useEditor({
   }, []);
 
   const setHeading = useCallback((level: 1 | 2 | 3 | 4 | 5 | 6) => {
-    // TODO: Implement heading conversion
-    console.log(`Set heading ${level} not yet implemented`);
+    applyFormatRef.current?.(`heading${level}` as FormattingType);
   }, []);
 
   const insertMention = useCallback((fileId: string, fileName: string) => {

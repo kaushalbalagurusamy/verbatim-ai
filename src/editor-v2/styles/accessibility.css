@@ -1,0 +1,345 @@
+/**
+ * Accessibility Styles - Comprehensive styles for WCAG AA compliance
+ * Includes focus indicators, high contrast mode, screen reader helpers,
+ * and reduced motion support
+ */
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip links */
+.skip-links {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  z-index: 1000;
+}
+
+.skip-link {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  background: #4fc3f7;
+  color: #ffffff;
+  padding: 12px 20px;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  width: auto;
+  height: auto;
+  z-index: 10000;
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Focus indicators */
+:focus {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 2px;
+}
+
+/* Editor specific focus */
+.editor-content:focus {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 4px;
+}
+
+/* Toolbar button focus */
+.toolbar-button:focus {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 2px;
+  z-index: 10;
+  position: relative;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .editor-container {
+    background: #000000;
+    color: #ffffff;
+  }
+  
+  .editor-content {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+  }
+  
+  .toolbar-button {
+    border: 2px solid #ffffff !important;
+    color: #ffffff !important;
+  }
+  
+  .toolbar-button:hover {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  .toolbar-button.active {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  :focus {
+    outline: 3px solid #ffffff !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* Manual high contrast mode class */
+.high-contrast-mode {
+  background: #000000;
+  color: #ffffff;
+}
+
+.high-contrast-mode .editor-content {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
+}
+
+.high-contrast-mode .editor-content * {
+  color: #ffffff !important;
+}
+
+.high-contrast-mode .fmt-bold {
+  font-weight: 900 !important;
+  text-decoration: underline !important;
+  text-decoration-thickness: 2px !important;
+}
+
+.high-contrast-mode .fmt-highlight {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  outline: 2px solid #ffffff !important;
+  outline-offset: -2px;
+  font-weight: 600 !important;
+}
+
+.high-contrast-mode .fmt-highlight-yellow {
+  background-color: #ffff00 !important;
+}
+
+.high-contrast-mode .fmt-highlight-blue {
+  background-color: #0066ff !important;
+  color: #ffffff !important;
+}
+
+.high-contrast-mode .fmt-highlight-green {
+  background-color: #00ff00 !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .fmt-highlight-pink {
+  background-color: #ff00ff !important;
+  color: #ffffff !important;
+}
+
+.high-contrast-mode .fmt-minimize {
+  opacity: 1 !important;
+  background-color: #404040 !important;
+  color: #cccccc !important;
+  outline: 1px dashed #ffffff !important;
+  font-size: 0.9em !important;
+}
+
+.high-contrast-mode .line-number {
+  color: #ffffff !important;
+  background: #000000 !important;
+}
+
+.high-contrast-mode .line-number.active {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  font-weight: bold !important;
+}
+
+.high-contrast-mode .toolbar-button {
+  border: 2px solid #ffffff !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+.high-contrast-mode .toolbar-button:hover {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.high-contrast-mode .toolbar-button.active {
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-weight: bold !important;
+}
+
+.high-contrast-mode .toolbar-button:focus {
+  outline: 3px solid #ffffff !important;
+  outline-offset: 2px !important;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .toolbar-button {
+    transition: none !important;
+  }
+  
+  .editor-content {
+    transition: none !important;
+  }
+}
+
+/* Live regions for screen readers */
+[aria-live="polite"],
+[aria-live="assertive"] {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Ensure interactive elements have minimum size */
+button,
+[role="button"],
+a,
+[role="link"] {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Toolbar specific minimum sizes */
+.toolbar-button {
+  min-width: 36px;
+  min-height: 32px;
+}
+
+/* Color contrast improvements */
+.editor-content {
+  color: #e0e0e0; /* Higher contrast than #cccccc */
+}
+
+/* Keyboard navigation indicators */
+.keyboard-focus-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #4fc3f7;
+  color: #000000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+:focus .keyboard-focus-indicator {
+  opacity: 1;
+}
+
+/* ARIA labels as CSS content for screen readers */
+.toolbar-button[aria-label]::before {
+  content: attr(aria-label);
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Ensure sufficient color contrast for all text */
+.fmt-minimize {
+  opacity: 0.7;
+  min-contrast: 4.5;
+}
+
+/* High contrast borders for better visibility */
+@media (prefers-contrast: high) {
+  * {
+    border-color: #ffffff !important;
+  }
+  
+  .editor-block {
+    border-top: 1px solid #333333;
+  }
+}
+
+/* Visible focus for all interactive elements */
+a:focus,
+button:focus,
+input:focus,
+textarea:focus,
+[tabindex]:focus,
+[contenteditable]:focus {
+  outline: 2px solid #4fc3f7 !important;
+  outline-offset: 2px !important;
+}
+
+/* Windows High Contrast Mode support */
+@media (-ms-high-contrast: active) {
+  .toolbar-button {
+    border: 2px solid ButtonText;
+    color: ButtonText;
+  }
+  
+  .toolbar-button:hover {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+  
+  .toolbar-button.active {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+}
+
+@media (-ms-high-contrast: white-on-black) {
+  .editor-content {
+    background: Canvas;
+    color: CanvasText;
+    forced-color-adjust: none;
+  }
+}

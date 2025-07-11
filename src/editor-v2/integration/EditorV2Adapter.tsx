@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useRef, useImperativeHandle, forwardRef 
 import { SingleContentEditableEditor } from '../components/SingleContentEditableEditor';
 import type { ContentBlock, FormattingType, HighlightColor } from '@/types/document.types';
 import type { TextFormatting } from '../data-structures/interval-tree';
+import { ToolbarIntegrationService } from '../services/toolbar-integration';
 import '../styles/editor.css';
 
 interface EditorV2AdapterProps {
@@ -35,6 +36,7 @@ export const EditorV2Adapter = forwardRef<EditorV2AdapterRef, EditorV2AdapterPro
   const editorRef = useRef<any>(null);
   const applyFormatRef = useRef<(type: FormattingType, color?: HighlightColor) => void>(() => {});
   const lastSelectionRef = useRef<{ start: number; end: number } | null>(null);
+  const toolbarServiceRef = useRef<ToolbarIntegrationService | null>(null);
   
   /**
    * Convert ContentBlock[] to plain text for the new editor
@@ -74,56 +76,70 @@ export const EditorV2Adapter = forwardRef<EditorV2AdapterRef, EditorV2AdapterPro
       const offsets = editorRef.current.getSelectionOffsets();
       if (offsets) {
         lastSelectionRef.current = offsets;
+        
+        // Update toolbar service with selection
+        if (toolbarServiceRef.current) {
+          toolbarServiceRef.current.updateSelection({
+            start: offsets.start,
+            end: offsets.end,
+            isCollapsed: false
+          });
+        }
+      }
+    } else if (selection?.isCollapsed) {
+      lastSelectionRef.current = null;
+      
+      // Clear toolbar state for collapsed selection
+      if (toolbarServiceRef.current) {
+        toolbarServiceRef.current.updateSelection(null);
       }
     }
     onSelectionChange?.();
   }, [onSelectionChange]);
   
   /**
+   * Initialize toolbar service when editor is ready
+   */
+  useEffect(() => {
+    if (editorRef.current?.getDocument) {
+      const document = editorRef.current.getDocument();
+      toolbarServiceRef.current = new ToolbarIntegrationService(document);
+    }
+  }, []);
+
+  /**
    * Apply formatting based on current selection
    */
   const applyFormat = useCallback((type: FormattingType, color?: HighlightColor) => {
-    if (!editorRef.current?.applyFormatting || !lastSelectionRef.current) {
-      console.warn('Cannot apply formatting: no editor ref or selection');
+    if (!toolbarServiceRef.current || !lastSelectionRef.current) {
+      console.warn('Cannot apply formatting: no toolbar service or selection');
       return;
     }
 
-    const { start, end } = lastSelectionRef.current;
-    
+    // Use toolbar service for all formatting operations
     if (type === 'clear') {
-      // Clear all formatting in the selection
-      editorRef.current.clearFormatting(start, end);
-    } else if (type === 'bold' || type === 'highlight' || type === 'minimize') {
-      // Map FormattingType to TextFormatting type
-      const formattingType = type === 'bold' ? 'bold' : 
-                            type === 'highlight' ? 'highlight' : 
-                            'minimize';
-      
-      // Check if formatting already exists
-      const existingFormats = editorRef.current.getFormattingAt(start, end);
-      const hasFormat = existingFormats.some((f: TextFormatting) => 
-        f.type === formattingType && 
-        (formattingType !== 'highlight' || f.color === color)
-      );
-      
-      if (hasFormat) {
-        // Remove formatting
-        editorRef.current.removeFormatting(start, end, formattingType);
-      } else {
-        // Apply formatting
-        const formatting: TextFormatting = {
-          type: formattingType,
-          start,
-          end,
-          id: `fmt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        };
-        
-        if (formattingType === 'highlight' && color) {
-          formatting.color = color as 'yellow' | 'blue' | 'green' | 'pink';
-        }
-        
-        editorRef.current.applyFormatting(formatting);
-      }
+      toolbarServiceRef.current.executeAction({ type: 'clear' });
+    } else if (type === 'bold') {
+      toolbarServiceRef.current.executeAction({ type: 'bold' });
+    } else if (type === 'highlight') {
+      toolbarServiceRef.current.executeAction({ 
+        type: 'highlight', 
+        color: color as 'yellow' | 'blue' | 'green' | 'pink' 
+      });
+    } else if (type === 'minimize') {
+      toolbarServiceRef.current.executeAction({ type: 'minimize' });
+    } else if (type === 'heading') {
+      // Handle heading - extract level from type if provided
+      const level = parseInt(type.replace('heading', '')) || 1;
+      toolbarServiceRef.current.executeAction({ 
+        type: 'heading', 
+        headingLevel: level as 1 | 2 | 3 | 4 | 5 | 6 
+      });
+    }
+    
+    // Re-render the content
+    if (editorRef.current?.renderContent) {
+      editorRef.current.renderContent();
     }
   }, []);
 
