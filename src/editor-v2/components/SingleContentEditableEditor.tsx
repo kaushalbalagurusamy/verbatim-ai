@@ -12,6 +12,7 @@ import { DocumentContent } from '../data-structures/btree';
 import { codeUnitLength, sliceByCodeUnits, getGraphemeAt } from '../utils/string-utils';
 import { textMeasurementService } from '../utils/text-measurement';
 import { LineUpdateObserver } from '../observers/line-update-observer';
+import { InputHandlerService } from '../services/input-handler';
 
 interface EditorProps {
   initialContent?: string;
@@ -48,6 +49,7 @@ export function SingleContentEditableEditor({
   const lineObserverRef = useRef<LineUpdateObserver>(
     new LineUpdateObserver(lineRegistryRef.current, documentRef.current)
   );
+  const inputHandlerRef = useRef<InputHandlerService | null>(null);
   const [editorState, setEditorState] = useState<EditorState>({
     isComposing: false,
     lastSelection: null,
@@ -64,36 +66,73 @@ export function SingleContentEditableEditor({
   const offsetToDOM = useCallback((offset: number): { node: Node; offset: number } | null => {
     if (!editorRef.current) return null;
     
+    // Handle empty editor
+    if (editorRef.current.childNodes.length === 0) {
+      return null;
+    }
+    
+    // Special case for offset 0 in empty block
+    if (offset === 0 && editorRef.current.firstChild) {
+      const firstBlock = editorRef.current.firstChild as HTMLElement;
+      if (firstBlock.innerHTML === '<br>') {
+        return {
+          node: firstBlock,
+          offset: 0
+        };
+      }
+    }
+    
     const walker = document.createTreeWalker(
       editorRef.current,
-      NodeFilter.SHOW_TEXT,
-      null
+      NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode: (node) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            return NodeFilter.FILTER_ACCEPT;
+          }
+          if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR') {
+            return NodeFilter.FILTER_ACCEPT;
+          }
+          return NodeFilter.FILTER_SKIP;
+        }
+      }
     );
     
     let currentOffset = 0;
     let node = walker.nextNode();
     
     while (node) {
-      const textLength = codeUnitLength(node.textContent || '');
-      
-      if (currentOffset + textLength >= offset) {
-        return {
-          node,
-          offset: offset - currentOffset
-        };
+      if (node.nodeType === Node.TEXT_NODE) {
+        const textLength = codeUnitLength(node.textContent || '');
+        
+        if (currentOffset + textLength >= offset) {
+          return {
+            node,
+            offset: offset - currentOffset
+          };
+        }
+        
+        currentOffset += textLength;
       }
       
-      currentOffset += textLength;
       node = walker.nextNode();
     }
     
     // If offset is at end, return last position
     const lastChild = editorRef.current.lastChild;
     if (lastChild) {
-      return {
-        node: lastChild,
-        offset: codeUnitLength(lastChild.textContent || '')
-      };
+      const lastText = lastChild.lastChild;
+      if (lastText && lastText.nodeType === Node.TEXT_NODE) {
+        return {
+          node: lastText,
+          offset: codeUnitLength(lastText.textContent || '')
+        };
+      } else if (lastChild.nodeType === Node.ELEMENT_NODE) {
+        return {
+          node: lastChild,
+          offset: 0
+        };
+      }
     }
     
     return null;
@@ -105,10 +144,35 @@ export function SingleContentEditableEditor({
   const domToOffset = useCallback((container: Node, offset: number): number => {
     if (!editorRef.current) return 0;
     
+    // Handle BR elements and empty blocks
+    if (container.nodeType === Node.ELEMENT_NODE) {
+      const elem = container as HTMLElement;
+      if (elem.innerHTML === '<br>' || elem.childNodes.length === 0) {
+        // Find the block's position
+        let blockOffset = 0;
+        const blocks = documentRef.current.getBlocks();
+        for (const block of blocks) {
+          if (elem.getAttribute('data-block-id') === block.id) {
+            return block.offset;
+          }
+        }
+      }
+    }
+    
     const walker = document.createTreeWalker(
       editorRef.current,
-      NodeFilter.SHOW_TEXT,
-      null
+      NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
+      {
+        acceptNode: (node) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            return NodeFilter.FILTER_ACCEPT;
+          }
+          if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName === 'BR') {
+            return NodeFilter.FILTER_ACCEPT;
+          }
+          return NodeFilter.FILTER_SKIP;
+        }
+      }
     );
     
     let currentOffset = 0;
@@ -119,7 +183,10 @@ export function SingleContentEditableEditor({
         return currentOffset + offset;
       }
       
-      currentOffset += codeUnitLength(node.textContent || '');
+      if (node.nodeType === Node.TEXT_NODE) {
+        currentOffset += codeUnitLength(node.textContent || '');
+      }
+      
       node = walker.nextNode();
     }
     
@@ -180,6 +247,29 @@ export function SingleContentEditableEditor({
     // Clear and rebuild content
     container.innerHTML = '';
     
+    // Handle empty document
+    if (blocks.length === 0 || (blocks.length === 1 && blocks[0].length === 0)) {
+      const blockEl = document.createElement('div');
+      blockEl.className = 'editor-block editor-block-paragraph';
+      blockEl.setAttribute('data-block-id', blocks[0]?.id || 'empty');
+      blockEl.setAttribute('data-block-type', 'paragraph');
+      blockEl.innerHTML = '<br>'; // Add BR to maintain height
+      container.appendChild(blockEl);
+      
+      // Set cursor at start
+      requestAnimationFrame(() => {
+        if (editorRef.current) {
+          const range = document.createRange();
+          const sel = window.getSelection();
+          range.setStart(blockEl, 0);
+          range.setEnd(blockEl, 0);
+          sel?.removeAllRanges();
+          sel?.addRange(range);
+        }
+      });
+      return;
+    }
+    
     let currentY = 0;
     let lineNumber = 1;
     
@@ -199,7 +289,7 @@ export function SingleContentEditableEditor({
       
       // Render text with formatting
       const formattedHTML = renderFormattedText(block);
-      blockEl.innerHTML = formattedHTML;
+      blockEl.innerHTML = formattedHTML || '<br>'; // Add BR for empty blocks
       
       // Add block to DOM first
       container.appendChild(blockEl);
@@ -286,61 +376,22 @@ export function SingleContentEditableEditor({
 
 
   /**
-   * Handle input events
+   * Handle beforeinput event - intercept all editing operations
+   */
+  const handleBeforeInput = useCallback((e: InputEvent) => {
+    if (inputHandlerRef.current) {
+      inputHandlerRef.current.handleBeforeInput(e);
+    }
+  }, []);
+
+  /**
+   * Handle input events (fallback for any missed beforeinput)
    */
   const handleInput = useCallback((e: Event) => {
-    if (editorState.isComposing) return;
-    
-    const selection = getDocumentSelection();
-    if (!selection) return;
-    
-    // Get the current text content
-    const currentText = editorRef.current?.textContent || '';
-    const modelText = documentRef.current.getText();
-    
-    // Find the difference
-    if (currentText !== modelText) {
-      // Simple case: insertion at cursor
-      if (codeUnitLength(currentText) > codeUnitLength(modelText) && selection.isCollapsed) {
-        const insertedText = sliceByCodeUnits(currentText, selection.start, selection.start + (codeUnitLength(currentText) - codeUnitLength(modelText)));
-        documentRef.current.insertText(selection.start, insertedText);
-      }
-      // Simple case: deletion
-      else if (codeUnitLength(currentText) < codeUnitLength(modelText)) {
-        const deletedLength = codeUnitLength(modelText) - codeUnitLength(currentText);
-        documentRef.current.deleteText(selection.start, selection.start + deletedLength);
-      }
-      // Complex case: replacement
-      else {
-        // Find common prefix and suffix to isolate the change
-        let prefixLen = 0;
-        while (prefixLen < codeUnitLength(currentText) && prefixLen < codeUnitLength(modelText) &&
-               currentText[prefixLen] === modelText[prefixLen]) {
-          prefixLen++;
-        }
-        
-        let suffixLen = 0;
-        while (suffixLen < codeUnitLength(currentText) - prefixLen && 
-               suffixLen < codeUnitLength(modelText) - prefixLen &&
-               currentText[codeUnitLength(currentText) - 1 - suffixLen] === 
-               modelText[codeUnitLength(modelText) - 1 - suffixLen]) {
-          suffixLen++;
-        }
-        
-        const replaceStart = prefixLen;
-        const replaceEnd = codeUnitLength(modelText) - suffixLen;
-        const newText = sliceByCodeUnits(currentText, prefixLen, codeUnitLength(currentText) - suffixLen);
-        
-        documentRef.current.replaceText(replaceStart, replaceEnd, newText);
-      }
-      
-      // Trigger onChange
-      onChange?.(documentRef.current.getText());
-      
-      // Re-render with formatting
-      renderContent();
-    }
-  }, [editorState.isComposing, getDocumentSelection, onChange, renderContent]);
+    // This should rarely be called since beforeinput handles everything
+    // Keep as fallback for edge cases
+    console.warn('Input event fired - should be handled by beforeinput');
+  }, []);
 
   /**
    * Handle selection change
@@ -360,51 +411,8 @@ export function SingleContentEditableEditor({
    * Handle keydown events
    */
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    // Handle special keys
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const selection = getDocumentSelection();
-      if (selection) {
-        const blocks = documentRef.current.getBlocks();
-        const currentBlock = blocks.find(b => 
-          selection.start >= b.offset && selection.start <= b.offset + b.length
-        );
-        
-        if (currentBlock) {
-          // Delete any selected text first
-          if (!selection.isCollapsed) {
-            documentRef.current.deleteText(selection.start, selection.end);
-          }
-          
-          // Calculate position within the block
-          const positionInBlock = selection.start - currentBlock.offset;
-          
-          // Split the text at cursor position
-          const beforeCursor = sliceByCodeUnits(currentBlock.text, 0, positionInBlock);
-          const afterCursor = sliceByCodeUnits(currentBlock.text, positionInBlock);
-          
-          // Update current block with text before cursor
-          const lengthDiff = currentBlock.length - codeUnitLength(beforeCursor);
-          if (lengthDiff > 0) {
-            documentRef.current.deleteText(selection.start, selection.start + lengthDiff);
-          }
-          
-          // Insert newline and text after cursor
-          documentRef.current.insertText(selection.start, '\n' + afterCursor);
-          
-          // Create new block at the newline position
-          documentRef.current.createBlock(selection.start + 1);
-          
-          onChange?.(documentRef.current.getText());
-          renderContent();
-          
-          // Set cursor at start of new block
-          setTimeout(() => {
-            setDocumentSelection(selection.start + 1, selection.start + 1);
-          }, 10);
-        }
-      }
-    }
+    // The beforeinput event will handle most editing operations
+    // We only need to handle special cases that don't trigger beforeinput
     
     // Handle formatting shortcuts
     if (e.metaKey || e.ctrlKey) {
@@ -464,37 +472,60 @@ export function SingleContentEditableEditor({
           break;
       }
     }
-  }, [getDocumentSelection, setDocumentSelection, onChange, renderContent]);
+  }, [getDocumentSelection, renderContent]);
 
   /**
    * Handle composition events
    */
-  const handleCompositionStart = useCallback(() => {
+  const handleCompositionStart = useCallback((e: CompositionEvent) => {
     setEditorState(prev => ({ ...prev, isComposing: true }));
+    if (inputHandlerRef.current) {
+      inputHandlerRef.current.handleCompositionStart(e);
+    }
   }, []);
 
-  const handleCompositionEnd = useCallback(() => {
-    setEditorState(prev => ({ ...prev, isComposing: false }));
-    handleInput(new Event('input'));
-  }, [handleInput]);
+  const handleCompositionUpdate = useCallback((e: CompositionEvent) => {
+    if (inputHandlerRef.current) {
+      inputHandlerRef.current.handleCompositionUpdate(e);
+    }
+  }, []);
 
-  // Initialize document model after renderContent is defined
+  const handleCompositionEnd = useCallback((e: CompositionEvent) => {
+    setEditorState(prev => ({ ...prev, isComposing: false }));
+    if (inputHandlerRef.current) {
+      inputHandlerRef.current.handleCompositionEnd(e);
+    }
+  }, []);
+
+  // Initialize input handler and document model after renderContent is defined
   useEffect(() => {
-    if (!isInitialized && initialContent && documentRef.current.getLength() === 0) {
-      documentRef.current.insertText(0, initialContent);
-      // Create initial block if content has newlines
-      const lines = initialContent.split('\n');
-      let offset = 0;
-      for (let i = 0; i < lines.length; i++) {
-        if (i > 0) {
-          documentRef.current.createBlock(offset);
+    if (!inputHandlerRef.current) {
+      inputHandlerRef.current = new InputHandlerService(documentRef.current, {
+        getSelection: getDocumentSelection,
+        setSelection: setDocumentSelection,
+        renderContent,
+        onChange
+      });
+    }
+    
+    if (!isInitialized) {
+      if (initialContent && initialContent.length > 0) {
+        // Insert initial content
+        documentRef.current.insertText(0, initialContent);
+        // Create blocks for newlines
+        const lines = initialContent.split('\n');
+        let offset = 0;
+        for (let i = 0; i < lines.length; i++) {
+          if (i > 0) {
+            documentRef.current.createBlock(offset);
+          }
+          offset += codeUnitLength(lines[i]) + 1; // +1 for newline
         }
-        offset += codeUnitLength(lines[i]) + 1; // +1 for newline
       }
       setIsInitialized(true);
       renderContent();
     }
-  }, [initialContent, renderContent, isInitialized]);
+  }, [initialContent, renderContent, isInitialized, getDocumentSelection, setDocumentSelection, onChange]);
 
   /**
    * Setup event listeners
@@ -503,6 +534,8 @@ export function SingleContentEditableEditor({
     const editor = editorRef.current;
     if (!editor) return;
     
+    // Add beforeinput listener to intercept all editing
+    editor.addEventListener('beforeinput', handleBeforeInput as any);
     editor.addEventListener('input', handleInput);
     document.addEventListener('selectionchange', handleSelectionChange);
     
@@ -510,11 +543,12 @@ export function SingleContentEditableEditor({
     lineObserverRef.current.attach(editor);
     
     return () => {
+      editor.removeEventListener('beforeinput', handleBeforeInput as any);
       editor.removeEventListener('input', handleInput);
       document.removeEventListener('selectionchange', handleSelectionChange);
       lineObserverRef.current.detach();
     };
-  }, [handleInput, handleSelectionChange, renderContent]);
+  }, [handleBeforeInput, handleInput, handleSelectionChange, renderContent]);
 
   /**
    * Subscribe to document changes
@@ -546,6 +580,7 @@ export function SingleContentEditableEditor({
         spellCheck={false}
         onKeyDown={handleKeyDown}
         onCompositionStart={handleCompositionStart}
+        onCompositionUpdate={handleCompositionUpdate}
         onCompositionEnd={handleCompositionEnd}
         role="textbox"
         aria-multiline="true"

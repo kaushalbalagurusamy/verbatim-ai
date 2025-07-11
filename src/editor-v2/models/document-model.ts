@@ -45,6 +45,27 @@ export class DocumentModel {
     this.totalLength = 0;
     this.version = 0;
     this.changeListeners = [];
+    
+    // Initialize with empty block if document is empty
+    this.initializeEmptyDocument();
+  }
+  
+  /**
+   * Initialize document with a single empty block
+   */
+  private initializeEmptyDocument(): void {
+    if (this.totalLength === 0) {
+      const emptyBlock: DocumentContent = {
+        id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        offset: 0,
+        length: 0,
+        text: '',
+        type: 'paragraph'
+      };
+      
+      this.content.insert(emptyBlock);
+      this.recalculateLines();
+    }
   }
 
   /**
@@ -53,6 +74,43 @@ export class DocumentModel {
   insertText(offset: number, text: string, blockType: DocumentContent['type'] = 'paragraph'): void {
     if (offset < 0 || offset > this.totalLength) {
       throw new Error(`Invalid offset: ${offset}. Document length: ${this.totalLength}`);
+    }
+
+    // Special case: empty document or first block
+    const blocks = this.content.toArray();
+    if (blocks.length === 0 || (blocks.length === 1 && blocks[0].length === 0 && offset === 0)) {
+      if (blocks.length === 1) {
+        // Update existing empty block
+        const emptyBlock = blocks[0];
+        emptyBlock.text = text;
+        emptyBlock.length = codeUnitLength(text);
+        emptyBlock.type = blockType;
+      } else {
+        // Create new block
+        const newBlock: DocumentContent = {
+          id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          offset: 0,
+          length: codeUnitLength(text),
+          text: text,
+          type: blockType
+        };
+        this.content.insert(newBlock);
+      }
+      
+      this.totalLength = codeUnitLength(text);
+      this.version++;
+      
+      // Notify listeners
+      this.notifyChange({
+        offset,
+        deletedLength: 0,
+        insertedText: text,
+        timestamp: Date.now()
+      });
+      
+      // Recalculate lines
+      this.recalculateLines();
+      return;
     }
 
     // Find the block containing this offset
@@ -104,8 +162,13 @@ export class DocumentModel {
    * Delete text from a specific range
    */
   deleteText(start: number, end: number): string {
-    if (start < 0 || end > this.totalLength || start >= end) {
+    if (start < 0 || end > this.totalLength || start > end) {
       throw new Error(`Invalid range: [${start}, ${end}). Document length: ${this.totalLength}`);
+    }
+    
+    // Handle empty range
+    if (start === end) {
+      return '';
     }
 
     const deletedText: string[] = [];
@@ -155,9 +218,28 @@ export class DocumentModel {
       }
     }
 
-    // Remove empty blocks
-    for (const block of affectedBlocks) {
-      this.content.delete(block.offset, block.length);
+    // Remove empty blocks but ensure at least one block remains
+    if (affectedBlocks.length < blocks.length) {
+      for (const block of affectedBlocks) {
+        this.content.delete(block.offset, block.length);
+      }
+    } else {
+      // If all blocks would be deleted, keep one empty block
+      const emptyBlock: DocumentContent = {
+        id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        offset: 0,
+        length: 0,
+        text: '',
+        type: 'paragraph'
+      };
+      
+      // Clear all blocks
+      for (const block of affectedBlocks) {
+        this.content.delete(block.offset, block.length);
+      }
+      
+      // Insert empty block
+      this.content.insert(emptyBlock);
     }
 
     // Update formatting

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input Handling Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .editor-wrapper {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 300px;
+        }
+        .event-log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .event-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            background: #f5f5f5;
+        }
+        .event-entry.beforeinput {
+            background: #e3f2fd;
+        }
+        .event-entry.composition {
+            background: #f3e5f5;
+        }
+        .event-entry.prevented {
+            border-left: 3px solid #4caf50;
+        }
+        h2 {
+            margin-top: 30px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+        }
+        .test-button {
+            margin: 5px;
+            padding: 5px 10px;
+        }
+        #testEditor {
+            min-height: 200px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>EditorV2 Input Handling Test</h1>
+    
+    <div class="test-section">
+        <h2>Interactive Test Editor</h2>
+        <p>Type in the editor below. All input events will be logged on the right.</p>
+        
+        <div class="test-container">
+            <div class="editor-wrapper">
+                <div id="testEditor" contenteditable="true" spellcheck="false">
+                    Type here to test input handling...
+                </div>
+            </div>
+            
+            <div class="event-log" id="eventLog">
+                <div style="font-weight: bold; margin-bottom: 10px;">Event Log:</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test Scenarios</h2>
+        <button class="test-button" onclick="testBasicTyping()">Test Basic Typing</button>
+        <button class="test-button" onclick="testDeletion()">Test Deletion</button>
+        <button class="test-button" onclick="testWordDeletion()">Test Word Deletion</button>
+        <button class="test-button" onclick="testComposition()">Test IME Composition</button>
+        <button class="test-button" onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div class="test-section">
+        <h2>InputType Reference</h2>
+        <ul>
+            <li><strong>insertText</strong>: Regular character input</li>
+            <li><strong>deleteContentBackward</strong>: Backspace key</li>
+            <li><strong>deleteContentForward</strong>: Delete key</li>
+            <li><strong>insertParagraph</strong>: Enter key</li>
+            <li><strong>deleteWordBackward</strong>: Ctrl/Cmd+Backspace</li>
+            <li><strong>deleteWordForward</strong>: Ctrl/Cmd+Delete</li>
+            <li><strong>insertFromPaste</strong>: Paste operation</li>
+            <li><strong>insertCompositionText</strong>: IME input</li>
+        </ul>
+    </div>
+
+    <script>
+        const editor = document.getElementById('testEditor');
+        const eventLog = document.getElementById('eventLog');
+        let eventCounter = 0;
+
+        // Log helper
+        function logEvent(type, event, prevented = false) {
+            eventCounter++;
+            const entry = document.createElement('div');
+            entry.className = `event-entry ${type}`;
+            if (prevented) entry.className += ' prevented';
+            
+            let details = `#${eventCounter} [${type}]`;
+            
+            if (event.inputType) {
+                details += ` inputType: ${event.inputType}`;
+            }
+            if (event.data !== undefined) {
+                details += ` data: "${event.data}"`;
+            }
+            if (event.key) {
+                details += ` key: ${event.key}`;
+            }
+            
+            entry.textContent = details;
+            eventLog.insertBefore(entry, eventLog.firstChild.nextSibling);
+            
+            // Keep log size manageable
+            while (eventLog.children.length > 51) {
+                eventLog.removeChild(eventLog.lastChild);
+            }
+        }
+
+        // Attach event listeners
+        editor.addEventListener('beforeinput', (e) => {
+            logEvent('beforeinput', e, true);
+            e.preventDefault(); // Always prevent to control editing
+            
+            // Simulate what InputHandlerService would do
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            
+            switch (e.inputType) {
+                case 'insertText':
+                    if (e.data) {
+                        document.execCommand('insertText', false, e.data);
+                    }
+                    break;
+                case 'deleteContentBackward':
+                    if (selection.isCollapsed) {
+                        // Delete one character back
+                        selection.modify('extend', 'backward', 'character');
+                    }
+                    document.execCommand('delete', false);
+                    break;
+                case 'deleteContentForward':
+                    if (selection.isCollapsed) {
+                        // Delete one character forward
+                        selection.modify('extend', 'forward', 'character');
+                    }
+                    document.execCommand('delete', false);
+                    break;
+                case 'insertParagraph':
+                    document.execCommand('insertText', false, '\n');
+                    break;
+                case 'deleteWordBackward':
+                    if (selection.isCollapsed) {
+                        selection.modify('extend', 'backward', 'word');
+                    }
+                    document.execCommand('delete', false);
+                    break;
+                case 'deleteWordForward':
+                    if (selection.isCollapsed) {
+                        selection.modify('extend', 'forward', 'word');
+                    }
+                    document.execCommand('delete', false);
+                    break;
+            }
+        });
+
+        editor.addEventListener('input', (e) => {
+            logEvent('input', e);
+        });
+
+        editor.addEventListener('compositionstart', (e) => {
+            logEvent('composition', e);
+        });
+
+        editor.addEventListener('compositionupdate', (e) => {
+            logEvent('composition', e);
+        });
+
+        editor.addEventListener('compositionend', (e) => {
+            logEvent('composition', e);
+        });
+
+        editor.addEventListener('keydown', (e) => {
+            // Log special keys
+            if (e.key === 'Enter' || e.key === 'Backspace' || e.key === 'Delete' || 
+                (e.ctrlKey || e.metaKey)) {
+                logEvent('keydown', e);
+            }
+        });
+
+        // Test functions
+        function testBasicTyping() {
+            editor.focus();
+            editor.textContent = '';
+            
+            // Simulate typing
+            const text = 'Hello World';
+            for (let char of text) {
+                const event = new InputEvent('beforeinput', {
+                    inputType: 'insertText',
+                    data: char,
+                    cancelable: true
+                });
+                editor.dispatchEvent(event);
+            }
+        }
+
+        function testDeletion() {
+            editor.focus();
+            editor.textContent = 'Test deletion here';
+            
+            // Place cursor at end
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(editor);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            // Simulate backspace
+            const event = new InputEvent('beforeinput', {
+                inputType: 'deleteContentBackward',
+                cancelable: true
+            });
+            editor.dispatchEvent(event);
+        }
+
+        function testWordDeletion() {
+            editor.focus();
+            editor.textContent = 'Delete this word';
+            
+            // Place cursor at end
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(editor);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            // Simulate Ctrl+Backspace
+            const event = new InputEvent('beforeinput', {
+                inputType: 'deleteWordBackward',
+                cancelable: true
+            });
+            editor.dispatchEvent(event);
+        }
+
+        function testComposition() {
+            editor.focus();
+            editor.textContent = '';
+            
+            // Simulate IME composition
+            editor.dispatchEvent(new CompositionEvent('compositionstart', { data: '' }));
+            editor.dispatchEvent(new CompositionEvent('compositionupdate', { data: 'こ' }));
+            editor.dispatchEvent(new CompositionEvent('compositionupdate', { data: 'こん' }));
+            editor.dispatchEvent(new CompositionEvent('compositionupdate', { data: 'こんに' }));
+            editor.dispatchEvent(new CompositionEvent('compositionupdate', { data: 'こんにち' }));
+            editor.dispatchEvent(new CompositionEvent('compositionend', { data: 'こんにちは' }));
+        }
+
+        function clearLog() {
+            while (eventLog.children.length > 1) {
+                eventLog.removeChild(eventLog.lastChild);
+            }
+            eventCounter = 0;
+        }
+    </script>
+</body>
+</html>

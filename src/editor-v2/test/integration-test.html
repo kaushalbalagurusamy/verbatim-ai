@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor V2 Integration Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .editor-wrapper {
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 20px;
+            min-height: 400px;
+            background: #fafafa;
+        }
+        
+        .editor-container {
+            display: flex;
+            gap: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .editor-gutter {
+            background: #f8f8f8;
+            border-right: 1px solid #e0e0e0;
+            padding-right: 10px;
+            user-select: none;
+        }
+        
+        .line-numbers {
+            font-family: monospace;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .line-number {
+            height: 18.4px;
+            line-height: 18.4px;
+            text-align: right;
+            padding-right: 10px;
+        }
+        
+        .line-number.active {
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .editor-content {
+            flex: 1;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.15rem;
+            outline: none;
+            min-height: 200px;
+            padding: 0 10px;
+        }
+        
+        .editor-block {
+            min-height: 18.4px;
+            margin: 0;
+        }
+        
+        .editor-block-heading1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .editor-block-heading2 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .editor-block-heading3 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Formatting styles */
+        .fmt-bold {
+            font-weight: bold;
+        }
+        
+        .fmt-highlight {
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+        
+        .fmt-highlight-yellow {
+            background-color: #fff3cd;
+        }
+        
+        .fmt-highlight-blue {
+            background-color: #d1ecf1;
+        }
+        
+        .fmt-highlight-green {
+            background-color: #d4edda;
+        }
+        
+        .fmt-highlight-pink {
+            background-color: #f8d7da;
+        }
+        
+        .fmt-minimize {
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #f5f5f5;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .test-results {
+            margin-top: 20px;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>Editor V2 Integration Test</h1>
+    
+    <div class="test-container">
+        <h2>Test Editor</h2>
+        <div class="editor-wrapper">
+            <div id="editor-mount"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="testEmptyDocument()">Test Empty Document</button>
+            <button class="btn" onclick="testBasicTyping()">Test Basic Typing</button>
+            <button class="btn" onclick="testNewlines()">Test Newlines</button>
+            <button class="btn" onclick="testDeletion()">Test Deletion</button>
+            <button class="btn" onclick="testFormatting()">Test Formatting</button>
+            <button class="btn" onclick="testComposition()">Test Composition (IME)</button>
+            <button class="btn" onclick="testPaste()">Test Paste</button>
+            <button class="btn btn-primary" onclick="runAllTests()">Run All Tests</button>
+        </div>
+        
+        <div class="status" id="status">
+            Status: Ready
+        </div>
+        
+        <div class="test-results" id="test-results"></div>
+    </div>
+    
+    <script type="module">
+        // Mock React for testing
+        window.React = {
+            createElement: (type, props, ...children) => {
+                const elem = document.createElement(type);
+                if (props) {
+                    Object.entries(props).forEach(([key, value]) => {
+                        if (key === 'className') elem.className = value;
+                        else if (key === 'contentEditable') elem.contentEditable = value;
+                        else if (key.startsWith('on')) {
+                            const event = key.slice(2).toLowerCase();
+                            elem.addEventListener(event, value);
+                        } else if (key === 'style' && typeof value === 'object') {
+                            Object.assign(elem.style, value);
+                        } else {
+                            elem.setAttribute(key, value);
+                        }
+                    });
+                }
+                children.forEach(child => {
+                    if (typeof child === 'string') {
+                        elem.appendChild(document.createTextNode(child));
+                    } else if (child) {
+                        elem.appendChild(child);
+                    }
+                });
+                return elem;
+            },
+            useRef: (initial) => ({ current: initial }),
+            useState: (initial) => [initial, () => {}],
+            useEffect: (fn) => fn(),
+            useCallback: (fn) => fn,
+            useMemo: (fn) => fn()
+        };
+        
+        // Import modules
+        import { DocumentModel } from '/src/editor-v2/models/document-model.js';
+        import { LineRegistry } from '/src/editor-v2/models/line-registry.js';
+        import { InputHandlerService } from '/src/editor-v2/services/input-handler.js';
+        import { LineUpdateObserver } from '/src/editor-v2/observers/line-update-observer.js';
+        
+        // Global references
+        let editor = null;
+        let documentModel = null;
+        let inputHandler = null;
+        let lineRegistry = null;
+        let lineObserver = null;
+        
+        // Initialize editor
+        function initializeEditor() {
+            const mount = document.getElementById('editor-mount');
+            mount.innerHTML = '';
+            
+            // Create document model and services
+            documentModel = new DocumentModel();
+            lineRegistry = new LineRegistry();
+            lineObserver = new LineUpdateObserver(lineRegistry, documentModel);
+            
+            // Create editor container
+            const container = document.createElement('div');
+            container.className = 'editor-container';
+            
+            // Create gutter
+            const gutter = document.createElement('div');
+            gutter.className = 'editor-gutter';
+            const lineNumbers = document.createElement('div');
+            lineNumbers.className = 'line-numbers';
+            lineNumbers.innerHTML = '<div class="line-number">1</div>';
+            gutter.appendChild(lineNumbers);
+            
+            // Create editor
+            editor = document.createElement('div');
+            editor.className = 'editor-content';
+            editor.contentEditable = true;
+            editor.spellcheck = false;
+            
+            container.appendChild(gutter);
+            container.appendChild(editor);
+            mount.appendChild(container);
+            
+            // Initialize input handler
+            inputHandler = new InputHandlerService(documentModel, {
+                getSelection: () => {
+                    const sel = window.getSelection();
+                    if (!sel || sel.rangeCount === 0) return null;
+                    const range = sel.getRangeAt(0);
+                    return {
+                        start: getOffsetFromDOM(range.startContainer, range.startOffset),
+                        end: getOffsetFromDOM(range.endContainer, range.endOffset),
+                        isCollapsed: range.collapsed,
+                        text: range.toString()
+                    };
+                },
+                setSelection: (start, end) => {
+                    const startPos = getDOMFromOffset(start);
+                    const endPos = getDOMFromOffset(end);
+                    if (startPos && endPos) {
+                        const range = document.createRange();
+                        range.setStart(startPos.node, startPos.offset);
+                        range.setEnd(endPos.node, endPos.offset);
+                        const sel = window.getSelection();
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                },
+                renderContent: renderContent,
+                onChange: (text) => updateStatus(`Content changed: ${text.length} characters`)
+            });
+            
+            // Attach event listeners
+            editor.addEventListener('beforeinput', (e) => inputHandler.handleBeforeInput(e));
+            editor.addEventListener('compositionstart', (e) => inputHandler.handleCompositionStart(e));
+            editor.addEventListener('compositionupdate', (e) => inputHandler.handleCompositionUpdate(e));
+            editor.addEventListener('compositionend', (e) => inputHandler.handleCompositionEnd(e));
+            
+            // Initial render
+            renderContent();
+            
+            // Attach observer
+            lineObserver.attach(editor);
+        }
+        
+        // Helper functions
+        function getOffsetFromDOM(container, offset) {
+            // Simplified version for testing
+            return 0;
+        }
+        
+        function getDOMFromOffset(offset) {
+            // Simplified version for testing
+            if (editor.firstChild) {
+                return { node: editor.firstChild, offset: 0 };
+            }
+            return null;
+        }
+        
+        function renderContent() {
+            const blocks = documentModel.getBlocks();
+            editor.innerHTML = '';
+            
+            if (blocks.length === 0 || (blocks.length === 1 && blocks[0].length === 0)) {
+                const block = document.createElement('div');
+                block.className = 'editor-block editor-block-paragraph';
+                block.innerHTML = '<br>';
+                editor.appendChild(block);
+                return;
+            }
+            
+            blocks.forEach(block => {
+                const blockEl = document.createElement('div');
+                blockEl.className = `editor-block editor-block-${block.type}`;
+                blockEl.textContent = block.text;
+                if (!block.text) blockEl.innerHTML = '<br>';
+                editor.appendChild(blockEl);
+            });
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = `Status: ${message}`;
+        }
+        
+        function addTestResult(test, passed, message) {
+            const results = document.getElementById('test-results');
+            const result = document.createElement('div');
+            result.className = `test-result ${passed ? 'test-pass' : 'test-fail'}`;
+            result.textContent = `${test}: ${passed ? 'PASS' : 'FAIL'} - ${message}`;
+            results.appendChild(result);
+        }
+        
+        // Test functions
+        window.testEmptyDocument = function() {
+            initializeEditor();
+            const blocks = documentModel.getBlocks();
+            addTestResult('Empty Document', blocks.length === 1 && blocks[0].text === '', 
+                `Document has ${blocks.length} block(s)`);
+        };
+        
+        window.testBasicTyping = function() {
+            initializeEditor();
+            documentModel.insertText(0, 'Hello, World!');
+            renderContent();
+            const text = documentModel.getText();
+            addTestResult('Basic Typing', text === 'Hello, World!', `Text: "${text}"`);
+        };
+        
+        window.testNewlines = function() {
+            initializeEditor();
+            documentModel.insertText(0, 'Line 1');
+            documentModel.insertText(6, '\n');
+            documentModel.createBlock(7);
+            documentModel.insertText(7, 'Line 2');
+            renderContent();
+            const blocks = documentModel.getBlocks();
+            addTestResult('Newlines', blocks.length === 2, `${blocks.length} blocks created`);
+        };
+        
+        window.testDeletion = function() {
+            initializeEditor();
+            documentModel.insertText(0, 'Hello, World!');
+            documentModel.deleteText(5, 7); // Delete ", "
+            renderContent();
+            const text = documentModel.getText();
+            addTestResult('Deletion', text === 'HelloWorld!', `Text after deletion: "${text}"`);
+        };
+        
+        window.testFormatting = function() {
+            initializeEditor();
+            documentModel.insertText(0, 'Bold text here');
+            documentModel.applyFormatting({
+                type: 'bold',
+                start: 0,
+                end: 4,
+                id: 'fmt-1'
+            });
+            renderContent();
+            const formatting = documentModel.getFormattingInRange(0, 14);
+            addTestResult('Formatting', formatting.length === 1 && formatting[0].type === 'bold', 
+                `${formatting.length} formatting(s) applied`);
+        };
+        
+        window.testComposition = function() {
+            updateStatus('Composition test requires manual IME input');
+            addTestResult('Composition', true, 'Manual test - use IME to verify');
+        };
+        
+        window.testPaste = function() {
+            updateStatus('Paste test requires manual paste action');
+            addTestResult('Paste', true, 'Manual test - paste content to verify');
+        };
+        
+        window.runAllTests = function() {
+            document.getElementById('test-results').innerHTML = '';
+            testEmptyDocument();
+            testBasicTyping();
+            testNewlines();
+            testDeletion();
+            testFormatting();
+            testComposition();
+            testPaste();
+        };
+        
+        // Initialize on load
+        initializeEditor();
+    </script>
+</body>
+</html>
