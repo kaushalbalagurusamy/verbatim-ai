@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { PerformanceTestEditor } from '@/editor-v2/test/PerformanceTestEditor';
+import { EnhancedPerformanceTestEditor } from '@/editor-v2/test/EnhancedPerformanceTestEditor';
 
 export default function TestPerformance() {
   return (
@@ -14,7 +14,7 @@ export default function TestPerformance() {
       overflow: 'hidden',
       background: '#1e1e1e'
     }}>
-      <PerformanceTestEditor />
+      <EnhancedPerformanceTestEditor />
     </div>
   );
 }

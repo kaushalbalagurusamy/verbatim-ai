@@ -1,0 +1,270 @@
+name: Performance Tests
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  lighthouse-ci:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.0
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Build application
+        run: pnpm run build
+        
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.12.x
+        
+      - name: Run Lighthouse CI
+        run: lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          
+      - name: Upload Lighthouse results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/
+          
+  playwright-performance:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+        
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.0
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+        
+      - name: Run performance tests
+        run: pnpm exec playwright test e2e/performance-budget.spec.ts --project=${{ matrix.browser }}
+        
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-test-results-${{ matrix.browser }}
+          path: test-results/
+          
+      - name: Upload performance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-report-${{ matrix.browser }}
+          path: playwright-report/
+          
+  performance-regression:
+    runs-on: ubuntu-latest
+    needs: [lighthouse-ci, playwright-performance]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Analyze performance regression
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Read Lighthouse results
+          const lhResults = [];
+          const lhDir = 'artifacts/lighthouse-results';
+          if (fs.existsSync(lhDir)) {
+            const files = fs.readdirSync(lhDir).filter(f => f.endsWith('.json'));
+            files.forEach(file => {
+              const content = JSON.parse(fs.readFileSync(path.join(lhDir, file), 'utf-8'));
+              lhResults.push(content);
+            });
+          }
+          
+          // Check for regressions
+          let hasRegression = false;
+          const regressions = [];
+          
+          lhResults.forEach(result => {
+            const perf = result.categories?.performance?.score || 0;
+            if (perf < 0.9) {
+              hasRegression = true;
+              regressions.push(`Performance score: ${(perf * 100).toFixed(0)}% (target: 90%)`);
+            }
+            
+            const metrics = result.audits || {};
+            
+            if (metrics['largest-contentful-paint']?.numericValue > 2500) {
+              hasRegression = true;
+              regressions.push(`LCP: ${metrics['largest-contentful-paint'].numericValue}ms (target: 2500ms)`);
+            }
+            
+            if (metrics['cumulative-layout-shift']?.numericValue > 0.1) {
+              hasRegression = true;
+              regressions.push(`CLS: ${metrics['cumulative-layout-shift'].numericValue} (target: 0.1)`);
+            }
+            
+            if (metrics['interactive']?.numericValue > 2000) {
+              hasRegression = true;
+              regressions.push(`TTI: ${metrics['interactive'].numericValue}ms (target: 2000ms)`);
+            }
+          });
+          
+          // Generate report
+          const report = {
+            timestamp: new Date().toISOString(),
+            hasRegression,
+            regressions,
+            summary: hasRegression 
+              ? `Performance regression detected: ${regressions.join(', ')}`
+              : 'All performance metrics within budget'
+          };
+          
+          console.log(JSON.stringify(report, null, 2));
+          
+          // Fail if regression detected
+          if (hasRegression) {
+            process.exit(1);
+          }
+          EOF
+          
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read performance results
+            let comment = '## 📊 Performance Test Results\n\n';
+            
+            // Add Lighthouse summary
+            comment += '### Lighthouse Scores\n';
+            comment += '| Metric | Value | Budget | Status |\n';
+            comment += '|--------|-------|--------|--------|\n';
+            
+            // TODO: Parse and add actual results
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+            
+  performance-benchmark:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.11.0
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Run benchmarks
+        run: |
+          # Create benchmark script
+          cat > benchmark.js << 'EOF'
+          const { chromium } = require('playwright');
+          
+          async function runBenchmark() {
+            const browser = await chromium.launch();
+            const page = await browser.newPage();
+            
+            await page.goto('http://localhost:8080/test-performance');
+            
+            // Run performance benchmarks
+            const results = await page.evaluate(() => {
+              return new Promise((resolve) => {
+                const suite = new (window as any).PerformanceTestSuite();
+                
+                // Run tests
+                Promise.all([
+                  suite.runTypingTest(document.querySelector('[contenteditable]'), 'Lorem ipsum...', 100),
+                  suite.runScrollTest(document.querySelector('.editor-container'), 1000),
+                  // Add more tests
+                ]).then(results => {
+                  resolve(suite.exportResults());
+                });
+              });
+            });
+            
+            await browser.close();
+            return results;
+          }
+          
+          runBenchmark().then(results => {
+            console.log(JSON.stringify(results, null, 2));
+          });
+          EOF
+          
+          # Start server and run benchmark
+          pnpm run preview &
+          SERVER_PID=$!
+          sleep 5
+          
+          node benchmark.js > benchmark-results.json
+          
+          kill $SERVER_PID
+          
+      - name: Store benchmark results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'customSmallerIsBetter'
+          output-file-path: benchmark-results.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
