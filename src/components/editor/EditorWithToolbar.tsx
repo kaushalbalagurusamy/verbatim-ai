@@ -6,14 +6,18 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { EditorToolbar } from './EditorToolbar';
-// import { Editor } from '../Editor';
-import { EditorV2Adapter as Editor } from '@/editor-v2/integration/EditorV2Adapter';
+import { Editor as LegacyEditor } from '../Editor';
+import { EditorV2Adapter } from '@/editor-v2/integration/EditorV2Adapter';
 import { useEditor } from '@/hooks/useEditor';
 import { useCreateDocument } from '@/hooks/useDocuments';
 import { createNewDocument } from '@/utils/document.utils';
 import { validateDocumentContent } from '@/utils/content-validation';
 import type { HighlightColor, Document as DocumentType, ContentBlock } from '@/types/document.types';
 import { getFormatsAtCursor, getCursorInfo } from '@/utils/format-detection';
+import { isEditorV2HardeningEnabled } from '@/config/flags';
+
+// Use feature flag to determine which editor to use
+const Editor = isEditorV2HardeningEnabled() ? EditorV2Adapter : LegacyEditor;
 
 interface EditorState {
   isEmphasisActive: boolean;

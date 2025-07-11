@@ -54,8 +54,11 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
     new LineUpdateObserver(lineRegistryRef.current, documentRef.current)
   );
   const inputHandlerRef = useRef<InputHandlerService | null>(null);
-  const decoratorRef = useRef<DOMDecoratorService | null>(null);
   const toolbarStateRef = useRef<ToolbarStateService | null>(null);
+  
+  // Initialize DOM decorator early with useMemo
+  const decoratorRef = useRef<DOMDecoratorService | null>(null);
+  const isIOS = useMemo(() => /iPad|iPhone|iPod/.test(navigator.userAgent), []);
   const [editorState, setEditorState] = useState<EditorState>({
     isComposing: false,
     lastSelection: null,
@@ -66,127 +69,11 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
   // Initialize document model - moved after renderContent definition
   const [isInitialized, setIsInitialized] = useState(false);
   
-  // Expose methods to parent components
-  React.useImperativeHandle(ref, () => ({
-    applyFormatting: (type: 'bold' | 'highlight' | 'minimize', color?: string) => {
-      const selection = getDocumentSelection();
-      if (!selection || selection.isCollapsed) return;
-      
-      let formatting: any = {
-        type,
-        start: selection.start,
-        end: selection.end,
-        id: `fmt-${Date.now()}`
-      };
-      
-      if (type === 'highlight' && color) {
-        formatting.color = color;
-      }
-      
-      documentRef.current.applyFormatting(formatting);
-      renderContent();
-      
-      // Update toolbar state
-      if (toolbarStateRef.current) {
-        toolbarStateRef.current.updateSelection({
-          start: selection.start,
-          end: selection.end,
-          isCollapsed: selection.isCollapsed
-        });
-      }
-    },
-    
-    clearFormatting: () => {
-      const selection = getDocumentSelection();
-      if (!selection || selection.isCollapsed) return;
-      
-      documentRef.current.removeFormatting(selection.start, selection.end);
-      renderContent();
-      
-      // Update toolbar state
-      if (toolbarStateRef.current) {
-        toolbarStateRef.current.updateSelection({
-          start: selection.start,
-          end: selection.end,
-          isCollapsed: selection.isCollapsed
-        });
-      }
-    },
-    
-    setBlockType: (type: string) => {
-      const selection = getDocumentSelection();
-      if (!selection) return;
-      
-      // Find the block at cursor position
-      const blocks = documentRef.current.getBlocks();
-      const block = blocks.find(b => 
-        selection.start >= b.offset && selection.start <= b.offset + b.length
-      );
-      
-      if (block) {
-        block.type = type as any;
-        renderContent();
-      }
-    },
-    
-    getDocument: () => documentRef.current,
-    
-    getSelectionOffsets: () => {
-      const selection = getDocumentSelection();
-      return selection ? { start: selection.start, end: selection.end } : null;
-    },
-    
-    getFormattingAt: (start: number, end: number) => {
-      return documentRef.current.getFormattingInRange(start, end);
-    },
-    
-    removeFormatting: (start: number, end: number, type?: TextFormatting['type']) => {
-      documentRef.current.removeFormatting(start, end, type);
-      renderContent();
-      
-      // Update toolbar state
-      if (toolbarStateRef.current) {
-        toolbarStateRef.current.updateSelection({
-          start,
-          end,
-          isCollapsed: start === end
-        });
-      }
-    },
-    
-    applyFormatting: (formatting: TextFormatting) => {
-      documentRef.current.applyFormatting(formatting);
-      renderContent();
-      
-      // Update toolbar state
-      if (toolbarStateRef.current) {
-        toolbarStateRef.current.updateSelection({
-          start: formatting.start,
-          end: formatting.end,
-          isCollapsed: false
-        });
-      }
-    },
-    
-    clearFormatting: (start: number, end: number) => {
-      documentRef.current.removeFormatting(start, end);
-      renderContent();
-      
-      // Update toolbar state
-      if (toolbarStateRef.current) {
-        toolbarStateRef.current.updateSelection({
-          start,
-          end,
-          isCollapsed: start === end
-        });
-      }
-    },
-    
-    renderContent: () => {
-      renderContent();
-    }
-  }), [getDocumentSelection, renderContent]);
-
+  // Create a stable ref for renderContent to avoid TDZ issues
+  const renderRef = useRef<() => void>(() => {});
+  
+  // Helper functions need to be defined before useImperativeHandle
+  
   /**
    * Convert document offset to DOM position
    */
@@ -441,6 +328,9 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       decoratorRef.current.releaseUnusedSpans();
     }
   }, [getDocumentSelection, setDocumentSelection]);
+  
+  // Update the ref whenever renderContent changes
+  renderRef.current = renderContent;
 
   /**
    * Render formatted text for a block
@@ -488,6 +378,127 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
     
     return html;
   }, []);
+
+  // Expose methods to parent components
+  React.useImperativeHandle(ref, () => ({
+    applyFormatting: (type: 'bold' | 'highlight' | 'minimize', color?: string) => {
+      const selection = getDocumentSelection();
+      if (!selection || selection.isCollapsed) return;
+      
+      let formatting: any = {
+        type,
+        start: selection.start,
+        end: selection.end,
+        id: `fmt-${Date.now()}`
+      };
+      
+      if (type === 'highlight' && color) {
+        formatting.color = color;
+      }
+      
+      documentRef.current.applyFormatting(formatting);
+      renderRef.current();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start: selection.start,
+          end: selection.end,
+          isCollapsed: selection.isCollapsed
+        });
+      }
+    },
+    
+    clearFormatting: () => {
+      const selection = getDocumentSelection();
+      if (!selection || selection.isCollapsed) return;
+      
+      documentRef.current.removeFormatting(selection.start, selection.end);
+      renderRef.current();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start: selection.start,
+          end: selection.end,
+          isCollapsed: selection.isCollapsed
+        });
+      }
+    },
+    
+    setBlockType: (type: string) => {
+      const selection = getDocumentSelection();
+      if (!selection) return;
+      
+      // Find the block at cursor position
+      const blocks = documentRef.current.getBlocks();
+      const block = blocks.find(b => 
+        selection.start >= b.offset && selection.start <= b.offset + b.length
+      );
+      
+      if (block) {
+        block.type = type as any;
+        renderRef.current();
+      }
+    },
+    
+    getDocument: () => documentRef.current,
+    
+    getSelectionOffsets: () => {
+      const selection = getDocumentSelection();
+      return selection ? { start: selection.start, end: selection.end } : null;
+    },
+    
+    getFormattingAt: (start: number, end: number) => {
+      return documentRef.current.getFormattingInRange(start, end);
+    },
+    
+    removeFormatting: (start: number, end: number, type?: TextFormatting['type']) => {
+      documentRef.current.removeFormatting(start, end, type);
+      renderRef.current();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start,
+          end,
+          isCollapsed: start === end
+        });
+      }
+    },
+    
+    applyFormatting: (formatting: TextFormatting) => {
+      documentRef.current.applyFormatting(formatting);
+      renderRef.current();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start: formatting.start,
+          end: formatting.end,
+          isCollapsed: false
+        });
+      }
+    },
+    
+    clearFormatting: (start: number, end: number) => {
+      documentRef.current.removeFormatting(start, end);
+      renderRef.current();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start,
+          end,
+          isCollapsed: start === end
+        });
+      }
+    },
+    
+    renderContent: () => {
+      renderRef.current();
+    }
+  }), [getDocumentSelection]);
 
   /**
    * Wrap text with formatting span
@@ -590,7 +601,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
               id: `fmt-${Date.now()}`
             });
           }
-          renderContent();
+          renderRef.current();
           // Update toolbar state after formatting change
           if (toolbarStateRef.current) {
             toolbarStateRef.current.updateSelection({
@@ -618,7 +629,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
             end: selection.end,
             id: `fmt-${Date.now()}`
           });
-          renderContent();
+          renderRef.current();
           // Update toolbar state after formatting change
           if (toolbarStateRef.current) {
             toolbarStateRef.current.updateSelection({
@@ -645,7 +656,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
               id: `fmt-${Date.now()}`
             });
           }
-          renderContent();
+          renderRef.current();
           // Update toolbar state after formatting change
           if (toolbarStateRef.current) {
             toolbarStateRef.current.updateSelection({
@@ -660,7 +671,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
           if (e.shiftKey) {
             e.preventDefault();
             documentRef.current.removeFormatting(selection.start, selection.end);
-            renderContent();
+            renderRef.current();
           // Update toolbar state after formatting change
           if (toolbarStateRef.current) {
             toolbarStateRef.current.updateSelection({
@@ -689,7 +700,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       
       if (block) {
         block.type = `heading${level}` as any;
-        renderContent();
+        renderRef.current();
         
         // Update toolbar state
         if (toolbarStateRef.current) {
@@ -701,7 +712,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
         }
       }
     }
-  }, [getDocumentSelection, renderContent]);
+  }, [getDocumentSelection]);
 
   /**
    * Handle composition events
@@ -732,7 +743,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       inputHandlerRef.current = new InputHandlerService(documentRef.current, {
         getSelection: getDocumentSelection,
         setSelection: setDocumentSelection,
-        renderContent,
+        renderContent: renderRef.current,
         onChange,
         decorator: decoratorRef.current || undefined
       });
@@ -748,14 +759,23 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       }
     }
     
-    // Initialize DOM decorator
+    // Initialize DOM decorator if not already done
     if (!decoratorRef.current && editorRef.current) {
-      // Check if we need shadow DOM for iOS
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       decoratorRef.current = new DOMDecoratorService(documentRef.current, {
         container: editorRef.current,
         useShadowDOM: isIOS && (editorRef.current.getAttribute('data-plaintext-only') === 'true')
       });
+      
+      // Update input handler with decorator
+      if (inputHandlerRef.current) {
+        inputHandlerRef.current = new InputHandlerService(documentRef.current, {
+          getSelection: getDocumentSelection,
+          setSelection: setDocumentSelection,
+          renderContent: renderRef.current,
+          onChange,
+          decorator: decoratorRef.current
+        });
+      }
     }
     
     if (!isInitialized) {
@@ -773,9 +793,9 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
         }
       }
       setIsInitialized(true);
-      renderContent();
+      renderRef.current();
     }
-  }, [initialContent, renderContent, isInitialized, getDocumentSelection, setDocumentSelection, onChange]);
+  }, [initialContent, isInitialized, getDocumentSelection, setDocumentSelection, onChange, onToolbarStateChange]);
 
   /**
    * Setup event listeners
@@ -798,7 +818,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       document.removeEventListener('selectionchange', handleSelectionChange);
       lineObserverRef.current.detach();
     };
-  }, [handleBeforeInput, handleInput, handleSelectionChange, renderContent]);
+  }, [handleBeforeInput, handleInput, handleSelectionChange]);
 
   /**
    * Subscribe to document changes

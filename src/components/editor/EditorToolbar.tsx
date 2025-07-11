@@ -75,7 +75,12 @@ export function EditorToolbar({
   };
 
   return (
-    <div className="flex items-center justify-center p-2 bg-[#2d2d30] border-b border-[#3c3c3c]">
+    <div 
+      className="flex items-center justify-center p-2 bg-[#2d2d30] border-b border-[#3c3c3c]"
+      role="toolbar"
+      aria-label="Text formatting toolbar"
+      aria-orientation="horizontal"
+    >
       <div className="flex items-center gap-1">
         {/* Emphasis Button with Bold Icon */}
         <Tooltip>
@@ -84,6 +89,8 @@ export function EditorToolbar({
               variant="ghost"
               size="sm"
               onClick={onEmphasis}
+              aria-pressed={isEmphasisActive}
+              aria-label="Toggle bold formatting"
               className={`h-8 px-3 text-[#cccccc] border border-[#3c3c3c] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] ${
                 isEmphasisActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
               }`}
@@ -104,6 +111,8 @@ export function EditorToolbar({
                 variant="ghost"
                 size="sm"
                 onClick={handleHighlight}
+                aria-pressed={isHighlightActive}
+                aria-label="Toggle highlight formatting"
                 className={`h-8 px-3 border border-[#3c3c3c] border-r-0 rounded-r-none hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] ${
                   isHighlightActive ? 'bg-[#4fc3f7] text-[#1e1e1e]' : 'bg-[#2d2d30]'
                 }`}
@@ -124,6 +133,8 @@ export function EditorToolbar({
               <Button
                 variant="ghost"
                 size="sm"
+                aria-label="Select highlight color"
+                aria-haspopup="true"
                 className="h-8 w-6 px-1 text-[#cccccc] border border-[#3c3c3c] border-l-0 rounded-l-none bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
               >
                 <ChevronDown className="w-3 h-3" />
@@ -151,6 +162,7 @@ export function EditorToolbar({
               variant="ghost"
               size="sm"
               onClick={onMinimize}
+              aria-label="Apply minimize formatting"
               className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
             >
               <Minimize2 className="w-4 h-4" />
@@ -168,6 +180,7 @@ export function EditorToolbar({
               variant="ghost"
               size="sm"
               onClick={onClear}
+              aria-label="Clear all formatting"
               className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7]"
             >
               <Eraser className="w-4 h-4" />
@@ -185,6 +198,7 @@ export function EditorToolbar({
               variant="ghost"
               size="sm"
               onClick={handleHeadingClick}
+              aria-label={`Change heading level (current: ${currentHeadingLevel})`}
               className="h-8 px-3 text-[#cccccc] border border-[#3c3c3c] bg-[#2d2d30] hover:bg-[#383838] focus:ring-2 focus:ring-[#4fc3f7] relative"
             >
               <div className="flex items-center gap-1">

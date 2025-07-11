@@ -4,7 +4,7 @@
  * Maintains compatibility with existing toolbar and document management
  */
 
-import React, { useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useCallback, useEffect, useRef, useImperativeHandle, forwardRef, useLayoutEffect } from 'react';
 import { SingleContentEditableEditor } from '../components/SingleContentEditableEditor';
 import type { ContentBlock, FormattingType, HighlightColor } from '@/types/document.types';
 import type { TextFormatting } from '../data-structures/interval-tree';
@@ -98,14 +98,23 @@ export const EditorV2Adapter = forwardRef<EditorV2AdapterRef, EditorV2AdapterPro
   }, [onSelectionChange]);
   
   /**
+   * Handle toolbar state changes
+   */
+  const handleToolbarStateChange = useCallback((state: any) => {
+    // This can be used to update toolbar UI state if needed
+    // For now, we'll just log it for debugging
+    console.debug('Toolbar state changed:', state);
+  }, []);
+
+  /**
    * Initialize toolbar service when editor is ready
    */
-  useEffect(() => {
-    if (editorRef.current?.getDocument) {
+  useLayoutEffect(() => {
+    if (editorRef.current?.getDocument && !toolbarServiceRef.current) {
       const document = editorRef.current.getDocument();
-      toolbarServiceRef.current = new ToolbarIntegrationService(document);
+      toolbarServiceRef.current = new ToolbarIntegrationService(document, handleToolbarStateChange);
     }
-  }, []);
+  });
 
   /**
    * Apply formatting based on current selection
