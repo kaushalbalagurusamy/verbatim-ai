@@ -2,13 +2,17 @@
  * Export all services from the editor-v2 services directory
  */
 
-export { InputHandler } from './input-handler';
+export { InputHandlerService } from './input-handler';
 export { DocumentDiffEmitter } from './document-diff-emitter';
-export { DOMDecoratorService } from './dom-decorator';
-export type { FormattingSpan, DecoratorOptions } from './dom-decorator';
+export { UndoRedoManager } from './undo-redo-manager';
+export { SelectionOffsetMapper } from './selection-offset-mapper';
 export type { 
-  DiffOperation,
+  InputHandlerConfig,
+  EditorSelection
+} from './input-handler';
+export type { 
   DiffOperationType,
+  DiffOperation,
   InsertTextOp,
   DeleteTextOp,
   ReplaceTextOp,
@@ -22,3 +26,7 @@ export type {
   DocumentSnapshot,
   DiffResult
 } from './document-diff-emitter';
+export type {
+  UndoRedoConfig,
+  HistoryEntry
+} from './undo-redo-manager';

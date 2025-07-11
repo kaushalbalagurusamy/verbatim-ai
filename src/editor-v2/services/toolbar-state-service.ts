@@ -6,7 +6,8 @@
 
 import { DocumentModel } from '../models/document-model';
 import { TextFormatting } from '../data-structures/interval-tree';
-import type { HighlightColor } from '@/types/document.types';
+// Define HighlightColor type locally to avoid circular dependencies
+type HighlightColor = 'yellow' | 'blue' | 'green' | 'pink';
 
 export interface ToolbarState {
   isBold: boolean;
