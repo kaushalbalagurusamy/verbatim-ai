@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toolbar Integration Test - Editor V2</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #cccccc;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #252526;
+            border: 1px solid #3c3c3c;
+            border-radius: 4px;
+        }
+        
+        h1, h2 {
+            color: #4fc3f7;
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: #2d2d30;
+            border-bottom: 1px solid #3c3c3c;
+            margin-bottom: 10px;
+        }
+        
+        .toolbar button {
+            padding: 6px 12px;
+            background: #2d2d30;
+            color: #cccccc;
+            border: 1px solid #3c3c3c;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .toolbar button:hover {
+            background: #383838;
+        }
+        
+        .toolbar button.active {
+            background: #4fc3f7;
+            color: #1e1e1e;
+        }
+        
+        .editor {
+            min-height: 200px;
+            padding: 15px;
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            outline: none;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .test-case {
+            margin: 10px 0;
+            padding: 10px;
+            background: #1e1e1e;
+            border-left: 3px solid #4fc3f7;
+        }
+        
+        .shortcut {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #383838;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        /* Formatting styles */
+        .bold {
+            font-weight: bold;
+        }
+        
+        .highlight-yellow {
+            background-color: #fef08a;
+            color: #1e1e1e;
+        }
+        
+        .highlight-blue {
+            background-color: #bfdbfe;
+            color: #1e1e1e;
+        }
+        
+        .highlight-green {
+            background-color: #bbf7d0;
+            color: #1e1e1e;
+        }
+        
+        .highlight-pink {
+            background-color: #fecaca;
+            color: #1e1e1e;
+        }
+        
+        .minimize {
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Toolbar Integration Test - Editor V2</h1>
+        
+        <div class="test-section">
+            <h2>Test Instructions</h2>
+            <div class="test-case">
+                <strong>1. Bold Formatting:</strong>
+                <ul>
+                    <li>Select text and click Bold button or press <span class="shortcut">Ctrl/Cmd+B</span></li>
+                    <li>Verify button shows active state when selection has bold</li>
+                    <li>Verify toggle behavior (on/off)</li>
+                </ul>
+            </div>
+            
+            <div class="test-case">
+                <strong>2. Highlight Formatting:</strong>
+                <ul>
+                    <li>Select text and click Highlight button or press <span class="shortcut">Ctrl/Cmd+H</span></li>
+                    <li>Test color picker dropdown</li>
+                    <li>Verify keyboard shortcut cycles through colors</li>
+                    <li>Verify button shows active state with correct color</li>
+                </ul>
+            </div>
+            
+            <div class="test-case">
+                <strong>3. Minimize Formatting:</strong>
+                <ul>
+                    <li>Select text and click Minimize button or press <span class="shortcut">Ctrl/Cmd+M</span></li>
+                    <li>Verify text appears smaller and dimmed</li>
+                    <li>Verify toggle behavior</li>
+                </ul>
+            </div>
+            
+            <div class="test-case">
+                <strong>4. Clear Formatting:</strong>
+                <ul>
+                    <li>Apply multiple formats to text</li>
+                    <li>Select formatted text and click Clear or press <span class="shortcut">Ctrl/Cmd+Shift+C</span></li>
+                    <li>Verify all formatting is removed</li>
+                </ul>
+            </div>
+            
+            <div class="test-case">
+                <strong>5. Heading Levels:</strong>
+                <ul>
+                    <li>Place cursor in a line and click Heading button</li>
+                    <li>Verify it cycles through H1-H6</li>
+                    <li>Test keyboard shortcuts <span class="shortcut">Ctrl/Cmd+1</span> through <span class="shortcut">Ctrl/Cmd+6</span></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Interactive Test Area</h2>
+            
+            <div class="toolbar">
+                <button id="boldBtn">Bold</button>
+                <button id="highlightBtn">Highlight</button>
+                <select id="highlightColor">
+                    <option value="yellow">Yellow</option>
+                    <option value="blue">Blue</option>
+                    <option value="green">Green</option>
+                    <option value="pink">Pink</option>
+                </select>
+                <button id="minimizeBtn">Minimize</button>
+                <button id="clearBtn">Clear</button>
+                <button id="headingBtn">Heading <span id="headingLevel">1</span></button>
+            </div>
+            
+            <div id="editor" class="editor" contenteditable="true">
+                This is a test editor for verifying toolbar integration.
+                
+                Select this text and apply formatting using the toolbar buttons or keyboard shortcuts.
+                
+                Test multiple formats: bold, highlights, minimize, and headings.
+                
+                Verify that the toolbar state updates when you select formatted text.
+            </div>
+            
+            <div class="status">
+                <strong>Current Selection:</strong> <span id="selectionInfo">No selection</span><br>
+                <strong>Active Formats:</strong> <span id="activeFormats">None</span><br>
+                <strong>Last Action:</strong> <span id="lastAction">None</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Expected Behavior</h2>
+            <ul>
+                <li>✅ Toolbar buttons should reflect the formatting at current selection</li>
+                <li>✅ Keyboard shortcuts should produce identical results to button clicks</li>
+                <li>✅ Formatting should toggle on/off when applied to already formatted text</li>
+                <li>✅ Multiple formats should be combinable (bold + highlight + minimize)</li>
+                <li>✅ Clear formatting should remove all formats at once</li>
+                <li>✅ Heading levels should apply to entire blocks, not just selections</li>
+                <li>✅ All operations should create proper diffs in the DocumentModel</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Mock toolbar integration for testing
+        const editor = document.getElementById('editor');
+        const boldBtn = document.getElementById('boldBtn');
+        const highlightBtn = document.getElementById('highlightBtn');
+        const highlightColor = document.getElementById('highlightColor');
+        const minimizeBtn = document.getElementById('minimizeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const headingBtn = document.getElementById('headingBtn');
+        const headingLevel = document.getElementById('headingLevel');
+        
+        const selectionInfo = document.getElementById('selectionInfo');
+        const activeFormats = document.getElementById('activeFormats');
+        const lastAction = document.getElementById('lastAction');
+        
+        let currentHeadingLevel = 1;
+        
+        // Update selection info
+        function updateSelectionInfo() {
+            const selection = window.getSelection();
+            if (selection.isCollapsed) {
+                selectionInfo.textContent = 'No selection';
+                activeFormats.textContent = 'None';
+            } else {
+                const range = selection.getRangeAt(0);
+                selectionInfo.textContent = `"${selection.toString()}" (${selection.toString().length} chars)`;
+                
+                // Check active formats
+                const formats = [];
+                const container = range.commonAncestorContainer;
+                const element = container.nodeType === Node.TEXT_NODE ? container.parentElement : container;
+                
+                if (element.classList.contains('bold') || element.closest('.bold')) {
+                    formats.push('Bold');
+                    boldBtn.classList.add('active');
+                } else {
+                    boldBtn.classList.remove('active');
+                }
+                
+                const highlightClasses = ['highlight-yellow', 'highlight-blue', 'highlight-green', 'highlight-pink'];
+                const highlightClass = highlightClasses.find(cls => 
+                    element.classList.contains(cls) || element.closest('.' + cls)
+                );
+                if (highlightClass) {
+                    const color = highlightClass.replace('highlight-', '');
+                    formats.push(`Highlight (${color})`);
+                    highlightBtn.classList.add('active');
+                    highlightColor.value = color;
+                } else {
+                    highlightBtn.classList.remove('active');
+                }
+                
+                if (element.classList.contains('minimize') || element.closest('.minimize')) {
+                    formats.push('Minimize');
+                    minimizeBtn.classList.add('active');
+                } else {
+                    minimizeBtn.classList.remove('active');
+                }
+                
+                activeFormats.textContent = formats.length > 0 ? formats.join(', ') : 'None';
+            }
+        }
+        
+        // Apply formatting
+        function applyFormat(className, action) {
+            const selection = window.getSelection();
+            if (selection.isCollapsed) {
+                lastAction.textContent = 'No text selected';
+                return;
+            }
+            
+            const range = selection.getRangeAt(0);
+            const selectedText = range.extractContents();
+            const span = document.createElement('span');
+            span.appendChild(selectedText);
+            
+            if (className.startsWith('highlight-')) {
+                // Remove other highlight classes
+                span.className = span.className.replace(/highlight-\w+/g, '');
+            }
+            
+            if (span.classList.contains(className)) {
+                // Remove the format
+                while (span.firstChild) {
+                    range.insertNode(span.firstChild);
+                }
+                lastAction.textContent = `Removed ${action}`;
+            } else {
+                // Apply the format
+                span.classList.add(className);
+                range.insertNode(span);
+                lastAction.textContent = `Applied ${action}`;
+            }
+            
+            updateSelectionInfo();
+        }
+        
+        // Clear all formatting
+        function clearFormatting() {
+            const selection = window.getSelection();
+            if (selection.isCollapsed) {
+                lastAction.textContent = 'No text selected';
+                return;
+            }
+            
+            const range = selection.getRangeAt(0);
+            const text = range.toString();
+            range.deleteContents();
+            range.insertNode(document.createTextNode(text));
+            
+            lastAction.textContent = 'Cleared all formatting';
+            updateSelectionInfo();
+        }
+        
+        // Button event listeners
+        boldBtn.addEventListener('click', () => applyFormat('bold', 'Bold'));
+        highlightBtn.addEventListener('click', () => {
+            const color = highlightColor.value;
+            applyFormat(`highlight-${color}`, `Highlight (${color})`);
+        });
+        minimizeBtn.addEventListener('click', () => applyFormat('minimize', 'Minimize'));
+        clearBtn.addEventListener('click', clearFormatting);
+        
+        headingBtn.addEventListener('click', () => {
+            currentHeadingLevel = currentHeadingLevel >= 6 ? 1 : currentHeadingLevel + 1;
+            headingLevel.textContent = currentHeadingLevel;
+            lastAction.textContent = `Set heading level to H${currentHeadingLevel}`;
+        });
+        
+        // Keyboard shortcuts
+        editor.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key.toLowerCase()) {
+                    case 'b':
+                        e.preventDefault();
+                        applyFormat('bold', 'Bold');
+                        break;
+                    case 'h':
+                        e.preventDefault();
+                        const colors = ['yellow', 'blue', 'green', 'pink'];
+                        const currentColor = highlightColor.value;
+                        const nextColor = colors[(colors.indexOf(currentColor) + 1) % colors.length];
+                        highlightColor.value = nextColor;
+                        applyFormat(`highlight-${nextColor}`, `Highlight (${nextColor})`);
+                        break;
+                    case 'm':
+                        e.preventDefault();
+                        applyFormat('minimize', 'Minimize');
+                        break;
+                    case 'c':
+                        if (e.shiftKey) {
+                            e.preventDefault();
+                            clearFormatting();
+                        }
+                        break;
+                }
+                
+                // Heading shortcuts
+                if (e.key >= '1' && e.key <= '6' && !e.shiftKey) {
+                    e.preventDefault();
+                    currentHeadingLevel = parseInt(e.key);
+                    headingLevel.textContent = currentHeadingLevel;
+                    lastAction.textContent = `Set heading level to H${currentHeadingLevel}`;
+                }
+            }
+        });
+        
+        // Update selection info on selection change
+        document.addEventListener('selectionchange', updateSelectionInfo);
+        editor.addEventListener('mouseup', updateSelectionInfo);
+        editor.addEventListener('keyup', updateSelectionInfo);
+        
+        // Initial state
+        updateSelectionInfo();
+    </script>
+</body>
+</html>

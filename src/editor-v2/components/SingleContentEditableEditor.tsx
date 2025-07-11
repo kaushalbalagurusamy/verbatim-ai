@@ -180,6 +180,10 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
           isCollapsed: start === end
         });
       }
+    },
+    
+    renderContent: () => {
+      renderContent();
     }
   }), [getDocumentSelection, renderContent]);
 
@@ -573,12 +577,19 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       switch (e.key.toLowerCase()) {
         case 'b':
           e.preventDefault();
-          documentRef.current.applyFormatting({
-            type: 'bold',
-            start: selection.start,
-            end: selection.end,
-            id: `fmt-${Date.now()}`
-          });
+          // Toggle bold formatting
+          const hasBold = documentRef.current.getFormattingAt(selection.start)
+            .find(f => f.type === 'bold');
+          if (hasBold) {
+            documentRef.current.removeFormatting(selection.start, selection.end, 'bold');
+          } else {
+            documentRef.current.applyFormatting({
+              type: 'bold',
+              start: selection.start,
+              end: selection.end,
+              id: `fmt-${Date.now()}`
+            });
+          }
           renderContent();
           // Update toolbar state after formatting change
           if (toolbarStateRef.current) {
@@ -621,12 +632,19 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
           
         case 'm':
           e.preventDefault();
-          documentRef.current.applyFormatting({
-            type: 'minimize',
-            start: selection.start,
-            end: selection.end,
-            id: `fmt-${Date.now()}`
-          });
+          // Toggle minimize formatting
+          const hasMinimize = documentRef.current.getFormattingAt(selection.start)
+            .find(f => f.type === 'minimize');
+          if (hasMinimize) {
+            documentRef.current.removeFormatting(selection.start, selection.end, 'minimize');
+          } else {
+            documentRef.current.applyFormatting({
+              type: 'minimize',
+              start: selection.start,
+              end: selection.end,
+              id: `fmt-${Date.now()}`
+            });
+          }
           renderContent();
           // Update toolbar state after formatting change
           if (toolbarStateRef.current) {
@@ -653,6 +671,34 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
           }
           }
           break;
+      }
+    }
+    
+    // Handle heading shortcuts (Ctrl/Cmd + 1-6)
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key >= '1' && e.key <= '6') {
+      e.preventDefault();
+      const level = parseInt(e.key) as 1 | 2 | 3 | 4 | 5 | 6;
+      const selection = getDocumentSelection();
+      if (!selection) return;
+      
+      // Find the block at cursor position
+      const blocks = documentRef.current.getBlocks();
+      const block = blocks.find(b => 
+        selection.start >= b.offset && selection.start <= b.offset + b.length
+      );
+      
+      if (block) {
+        block.type = `heading${level}` as any;
+        renderContent();
+        
+        // Update toolbar state
+        if (toolbarStateRef.current) {
+          toolbarStateRef.current.updateSelection({
+            start: selection.start,
+            end: selection.end,
+            isCollapsed: selection.isCollapsed
+          });
+        }
       }
     }
   }, [getDocumentSelection, renderContent]);
