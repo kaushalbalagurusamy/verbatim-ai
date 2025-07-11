@@ -129,7 +129,58 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       }
     },
     
-    getDocument: () => documentRef.current
+    getDocument: () => documentRef.current,
+    
+    getSelectionOffsets: () => {
+      const selection = getDocumentSelection();
+      return selection ? { start: selection.start, end: selection.end } : null;
+    },
+    
+    getFormattingAt: (start: number, end: number) => {
+      return documentRef.current.getFormattingInRange(start, end);
+    },
+    
+    removeFormatting: (start: number, end: number, type?: TextFormatting['type']) => {
+      documentRef.current.removeFormatting(start, end, type);
+      renderContent();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start,
+          end,
+          isCollapsed: start === end
+        });
+      }
+    },
+    
+    applyFormatting: (formatting: TextFormatting) => {
+      documentRef.current.applyFormatting(formatting);
+      renderContent();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start: formatting.start,
+          end: formatting.end,
+          isCollapsed: false
+        });
+      }
+    },
+    
+    clearFormatting: (start: number, end: number) => {
+      documentRef.current.removeFormatting(start, end);
+      renderContent();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start,
+          end,
+          isCollapsed: start === end
+        });
+      }
+    }
   }), [getDocumentSelection, renderContent]);
 
   /**

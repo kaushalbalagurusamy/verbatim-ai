@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EditorV2 Full Integration Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .editor-section {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .toolbar {
+            background: #2c3e50;
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .toolbar-group {
+            display: flex;
+            gap: 5px;
+            padding: 0 10px;
+            border-right: 1px solid #34495e;
+        }
+        
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+        
+        .toolbar-btn {
+            background: #34495e;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .toolbar-btn:hover {
+            background: #4a5f7a;
+        }
+        
+        .toolbar-btn.active {
+            background: #3498db;
+        }
+        
+        .toolbar-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 3px;
+        }
+        
+        .color-btn {
+            width: 24px;
+            height: 24px;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .color-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .color-btn.active {
+            border-color: white;
+        }
+        
+        .editor-container {
+            display: flex;
+            height: 600px;
+            position: relative;
+        }
+        
+        .line-numbers {
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            padding: 20px 10px;
+            min-width: 50px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 21px;
+            color: #6c757d;
+            user-select: none;
+            overflow: hidden;
+        }
+        
+        .line-number {
+            text-align: right;
+            height: 21px;
+            padding-right: 10px;
+        }
+        
+        .line-number.active {
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        
+        .editor-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .editor-content {
+            padding: 20px;
+            min-height: 100%;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 21px;
+            outline: none;
+        }
+        
+        .editor-content:empty::before {
+            content: attr(data-placeholder);
+            color: #adb5bd;
+        }
+        
+        .editor-block {
+            min-height: 21px;
+            margin: 0;
+        }
+        
+        .editor-block-heading1 {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 0.5em 0;
+        }
+        
+        .editor-block-heading2 {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 0.4em 0;
+        }
+        
+        .editor-block-heading3 {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 0.3em 0;
+        }
+        
+        /* Formatting styles */
+        .fmt-bold {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        
+        .fmt-highlight-yellow {
+            background-color: #fff3cd;
+            padding: 2px 0;
+        }
+        
+        .fmt-highlight-blue {
+            background-color: #cfe2ff;
+            padding: 2px 0;
+        }
+        
+        .fmt-highlight-green {
+            background-color: #d1e7dd;
+            padding: 2px 0;
+        }
+        
+        .fmt-highlight-pink {
+            background-color: #f8d7da;
+            padding: 2px 0;
+        }
+        
+        .fmt-minimize {
+            font-size: 0.85em;
+            opacity: 0.7;
+        }
+        
+        /* Status Panel */
+        .status-panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            height: fit-content;
+        }
+        
+        .status-panel h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        
+        .status-item {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .status-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #6c757d;
+        }
+        
+        .formatting-list {
+            font-size: 12px;
+            margin: 5px 0;
+        }
+        
+        .formatting-item {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin: 2px 0;
+            display: inline-block;
+        }
+        
+        /* Test Controls */
+        .test-controls {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-controls h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .test-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        
+        .test-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .test-btn.success {
+            background: #27ae60;
+        }
+        
+        .test-btn.error {
+            background: #e74c3c;
+        }
+        
+        /* Diff Viewer */
+        .diff-viewer {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .diff-viewer h3 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        
+        .diff-item {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .diff-insert {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+        
+        .diff-delete {
+            background: #f8d7da;
+            color: #842029;
+        }
+        
+        .diff-format {
+            background: #cfe2ff;
+            color: #084298;
+        }
+        
+        /* Virtual Scroll Indicator */
+        .scroll-indicator {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            background: #e9ecef;
+        }
+        
+        .scroll-thumb {
+            position: absolute;
+            width: 100%;
+            background: #6c757d;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        
+        .scroll-thumb:hover {
+            background: #495057;
+        }
+        
+        /* Loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EditorV2 Full Integration Demo</h1>
+        <p class="description">
+            Comprehensive demonstration of all EditorV2 components working together. 
+            Tests typing, formatting, virtual scrolling, clipboard operations, selection mapping, 
+            undo/redo, and diff tracking in a unified interface.
+        </p>
+        
+        <div class="test-controls">
+            <h3>Automated Tests</h3>
+            <div class="test-grid">
+                <button class="test-btn" onclick="testCompleteFlow()">Complete Flow Test</button>
+                <button class="test-btn" onclick="testVirtualScrolling()">Virtual Scrolling</button>
+                <button class="test-btn" onclick="testClipboardOps()">Clipboard Operations</button>
+                <button class="test-btn" onclick="testSelectionMapping()">Selection Mapping</button>
+                <button class="test-btn" onclick="testFormattingCombos()">Formatting Combos</button>
+                <button class="test-btn" onclick="testUndoRedo()">Undo/Redo Stack</button>
+                <button class="test-btn" onclick="testDiffTracking()">Diff Tracking</button>
+                <button class="test-btn" onclick="testPerformance()">Performance Test</button>
+                <button class="test-btn" onclick="runAllTests()">Run All Tests</button>
+                <button class="test-btn" onclick="resetEditor()">Reset Editor</button>
+            </div>
+        </div>
+        
+        <div class="main-layout">
+            <div class="editor-section">
+                <div class="toolbar">
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" id="boldBtn" onclick="toggleBold()">
+                            <strong>B</strong>
+                        </button>
+                        <button class="toolbar-btn" id="minimizeBtn" onclick="toggleMinimize()">
+                            <small>Min</small>
+                        </button>
+                    </div>
+                    
+                    <div class="toolbar-group">
+                        <div class="color-picker">
+                            <div class="color-btn" style="background: #fff3cd" onclick="toggleHighlight('yellow')"></div>
+                            <div class="color-btn" style="background: #cfe2ff" onclick="toggleHighlight('blue')"></div>
+                            <div class="color-btn" style="background: #d1e7dd" onclick="toggleHighlight('green')"></div>
+                            <div class="color-btn" style="background: #f8d7da" onclick="toggleHighlight('pink')"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="clearFormatting()">Clear</button>
+                    </div>
+                    
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" id="undoBtn" onclick="performUndo()">↶ Undo</button>
+                        <button class="toolbar-btn" id="redoBtn" onclick="performRedo()">↷ Redo</button>
+                    </div>
+                    
+                    <div class="toolbar-group">
+                        <select class="toolbar-btn" onchange="setBlockType(this.value)">
+                            <option value="paragraph">Paragraph</option>
+                            <option value="heading1">Heading 1</option>
+                            <option value="heading2">Heading 2</option>
+                            <option value="heading3">Heading 3</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="editor-container">
+                    <div class="line-numbers" id="lineNumbers">
+                        <div class="line-number active">1</div>
+                    </div>
+                    <div class="editor-wrapper">
+                        <div class="editor-content" 
+                             id="editor" 
+                             contenteditable="true" 
+                             data-placeholder="Start typing to test the editor...">
+                        </div>
+                        <div class="scroll-indicator" id="scrollIndicator">
+                            <div class="scroll-thumb" id="scrollThumb"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-panel">
+                <h3>Editor Status</h3>
+                <div class="status-item">
+                    <div class="status-label">Document Stats</div>
+                    <div class="status-value" id="docStats">
+                        Length: 0 | Blocks: 1 | Lines: 1
+                    </div>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-label">Selection</div>
+                    <div class="status-value" id="selectionInfo">
+                        No selection
+                    </div>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-label">Active Formatting</div>
+                    <div class="status-value" id="activeFormatting">
+                        None
+                    </div>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-label">Undo/Redo Stack</div>
+                    <div class="status-value" id="undoRedoInfo">
+                        Undo: 0 | Redo: 0
+                    </div>
+                </div>
+                
+                <div class="status-item">
+                    <div class="status-label">Virtual Scroll</div>
+                    <div class="status-value" id="scrollInfo">
+                        Visible: 1-30 of 1 lines
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="diff-viewer">
+            <h3>Change History (Diff Tracking)</h3>
+            <div id="diffHistory"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import all the services
+        import { DocumentModel } from '/src/editor-v2/models/document-model.js';
+        import { LineRegistry } from '/src/editor-v2/models/line-registry.js';
+        import { LineUpdateObserver } from '/src/editor-v2/observers/line-update-observer.js';
+        import { InputHandlerService } from '/src/editor-v2/services/input-handler.js';
+        import { DocumentDiffEmitter } from '/src/editor-v2/services/document-diff-emitter.js';
+        import { UndoRedoManagerV2 } from '/src/editor-v2/services/undo-redo-manager-v2.js';
+        import { SelectionOffsetMapper } from '/src/editor-v2/services/selection-offset-mapper.js';
+        import { ToolbarStateService } from '/src/editor-v2/services/toolbar-state-service.js';
+        import { DOMDecoratorService } from '/src/editor-v2/services/dom-decorator.js';
+        import { VirtualRenderer } from '/src/editor-v2/rendering/virtual-renderer.js';
+        
+        // Global instances
+        let editor, lineNumbers, documentModel, lineRegistry, lineObserver;
+        let inputHandler, diffEmitter, undoRedoManager, selectionMapper;
+        let toolbarState, domDecorator, virtualRenderer;
+        let isComposing = false;
+        
+        // Initialize the editor
+        function initializeEditor() {
+            // Get DOM elements
+            editor = document.getElementById('editor');
+            lineNumbers = document.getElementById('lineNumbers');
+            
+            // Initialize all services
+            documentModel = new DocumentModel();
+            lineRegistry = new LineRegistry();
+            lineObserver = new LineUpdateObserver(lineRegistry, documentModel);
+            diffEmitter = new DocumentDiffEmitter(documentModel);
+            undoRedoManager = new UndoRedoManagerV2();
+            selectionMapper = new SelectionOffsetMapper();
+            toolbarState = new ToolbarStateService(documentModel);
+            domDecorator = new DOMDecoratorService();
+            virtualRenderer = new VirtualRenderer({
+                containerHeight: 600,
+                lineHeight: 21,
+                bufferSize: 10
+            });
+            
+            // Initialize input handler
+            inputHandler = new InputHandlerService(documentModel, {
+                getSelection: getEditorSelection,
+                setSelection: setEditorSelection,
+                renderContent: renderContent,
+                onChange: handleContentChange
+            });
+            
+            // Attach event listeners
+            editor.addEventListener('beforeinput', (e) => inputHandler.handleBeforeInput(e));
+            editor.addEventListener('compositionstart', (e) => {
+                isComposing = true;
+                inputHandler.handleCompositionStart(e);
+            });
+            editor.addEventListener('compositionupdate', (e) => inputHandler.handleCompositionUpdate(e));
+            editor.addEventListener('compositionend', (e) => {
+                isComposing = false;
+                inputHandler.handleCompositionEnd(e);
+            });
+            editor.addEventListener('input', handleInput);
+            editor.addEventListener('selectionchange', handleSelectionChange);
+            
+            // Attach scroll listener
+            const wrapper = editor.parentElement;
+            wrapper.addEventListener('scroll', handleScroll);
+            
+            // Attach line observer
+            lineObserver.attach(editor);
+            
+            // Subscribe to changes
+            diffEmitter.subscribe(handleDiffChanges);
+            toolbarState.subscribe(updateToolbarState);
+            
+            // Initial render
+            renderContent();
+            updateStatus();
+        }
+        
+        // Get editor selection with proper mapping
+        function getEditorSelection() {
+            const sel = window.getSelection();
+            if (!sel || sel.rangeCount === 0) return null;
+            
+            const range = sel.getRangeAt(0);
+            const mapped = selectionMapper.getDOMSelection(editor);
+            
+            return mapped ? {
+                start: mapped.start,
+                end: mapped.end,
+                isCollapsed: range.collapsed,
+                text: range.toString()
+            } : null;
+        }
+        
+        // Set editor selection with proper mapping
+        function setEditorSelection(start, end) {
+            const domPosition = selectionMapper.getDocumentOffsets(editor, start, end);
+            if (domPosition) {
+                const range = document.createRange();
+                range.setStart(domPosition.startNode, domPosition.startOffset);
+                range.setEnd(domPosition.endNode, domPosition.endOffset);
+                
+                const sel = window.getSelection();
+                sel?.removeAllRanges();
+                sel?.addRange(range);
+            }
+        }
+        
+        // Render editor content with virtual scrolling
+        function renderContent() {
+            const blocks = documentModel.getBlocks();
+            const visibleRange = virtualRenderer.getVisibleRange(blocks.length);
+            
+            // Update line numbers
+            updateLineNumbers(visibleRange);
+            
+            // Build content HTML
+            let html = '';
+            for (let i = visibleRange.start; i < visibleRange.end && i < blocks.length; i++) {
+                const block = blocks[i];
+                const blockHtml = renderBlock(block, i);
+                html += blockHtml;
+            }
+            
+            // Update editor content
+            editor.innerHTML = html || '<div class="editor-block"><br></div>';
+            
+            // Apply formatting decorations
+            const content = documentModel.getContent();
+            domDecorator.applyFormatting(editor, content.formatting);
+            
+            // Update scroll indicator
+            updateScrollIndicator(blocks.length);
+            
+            // Update selection mapping
+            selectionMapper.updateMapping(editor, documentModel);
+        }
+        
+        // Render a single block
+        function renderBlock(block, index) {
+            const className = `editor-block editor-block-${block.type}`;
+            const content = block.text || '<br>';
+            return `<div class="${className}" data-block-index="${index}">${content}</div>`;
+        }
+        
+        // Update line numbers
+        function updateLineNumbers(visibleRange) {
+            let html = '';
+            for (let i = visibleRange.start; i < visibleRange.end; i++) {
+                const lineNum = i + 1;
+                html += `<div class="line-number" data-line="${lineNum}">${lineNum}</div>`;
+            }
+            lineNumbers.innerHTML = html;
+        }
+        
+        // Handle content changes
+        function handleContentChange(text) {
+            // Track changes for undo/redo
+            const changes = diffEmitter.getChanges();
+            if (changes.length > 0) {
+                const selection = getEditorSelection();
+                undoRedoManager.pushChange({
+                    timestamp: Date.now(),
+                    changes: changes,
+                    selectionBefore: selection,
+                    selectionAfter: selection
+                });
+            }
+            
+            updateStatus();
+        }
+        
+        // Handle input events
+        function handleInput(e) {
+            if (!isComposing) {
+                updateStatus();
+            }
+        }
+        
+        // Handle selection changes
+        function handleSelectionChange() {
+            const selection = getEditorSelection();
+            if (selection) {
+                toolbarState.updateSelection({
+                    start: selection.start,
+                    end: selection.end,
+                    isCollapsed: selection.isCollapsed
+                });
+            }
+            updateSelectionInfo();
+        }
+        
+        // Handle scroll events
+        function handleScroll(e) {
+            const wrapper = e.target;
+            const scrollTop = wrapper.scrollTop;
+            const scrollBottom = scrollTop + wrapper.clientHeight;
+            
+            virtualRenderer.updateViewport(scrollTop, scrollBottom);
+            renderContent();
+        }
+        
+        // Handle diff changes
+        function handleDiffChanges(changes) {
+            const diffHistory = document.getElementById('diffHistory');
+            
+            changes.forEach(change => {
+                const item = document.createElement('div');
+                item.className = 'diff-item';
+                
+                switch (change.type) {
+                    case 'insert-text':
+                        item.className += ' diff-insert';
+                        item.textContent = `+ Insert "${change.text}" at ${change.offset}`;
+                        break;
+                    case 'delete-text':
+                        item.className += ' diff-delete';
+                        item.textContent = `- Delete ${change.length} chars at ${change.offset}`;
+                        break;
+                    case 'add-formatting':
+                        item.className += ' diff-format';
+                        item.textContent = `⊕ Add ${change.formatting.type} [${change.formatting.start}-${change.formatting.end}]`;
+                        break;
+                    case 'remove-formatting':
+                        item.className += ' diff-format';
+                        item.textContent = `⊖ Remove ${change.formattingId}`;
+                        break;
+                }
+                
+                diffHistory.insertBefore(item, diffHistory.firstChild);
+                
+                // Keep only last 20 changes
+                while (diffHistory.children.length > 20) {
+                    diffHistory.removeChild(diffHistory.lastChild);
+                }
+            });
+        }
+        
+        // Update toolbar state
+        function updateToolbarState(state) {
+            document.getElementById('boldBtn').classList.toggle('active', state.isBold);
+            document.getElementById('minimizeBtn').classList.toggle('active', state.isMinimized);
+            
+            // Update color buttons
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (state.isHighlighted && state.highlightColor) {
+                const colorMap = {
+                    'yellow': '#fff3cd',
+                    'blue': '#cfe2ff',
+                    'green': '#d1e7dd',
+                    'pink': '#f8d7da'
+                };
+                const colorHex = colorMap[state.highlightColor];
+                const activeBtn = document.querySelector(`.color-btn[style*="${colorHex}"]`);
+                if (activeBtn) activeBtn.classList.add('active');
+            }
+            
+            updateFormattingInfo(state);
+        }
+        
+        // Update scroll indicator
+        function updateScrollIndicator(totalLines) {
+            const wrapper = editor.parentElement;
+            const scrollHeight = totalLines * 21; // line height
+            const viewportHeight = wrapper.clientHeight;
+            const scrollTop = wrapper.scrollTop;
+            
+            const thumbHeight = Math.max(30, (viewportHeight / scrollHeight) * viewportHeight);
+            const thumbTop = (scrollTop / scrollHeight) * viewportHeight;
+            
+            const thumb = document.getElementById('scrollThumb');
+            thumb.style.height = `${thumbHeight}px`;
+            thumb.style.top = `${thumbTop}px`;
+        }
+        
+        // Update status displays
+        function updateStatus() {
+            const blocks = documentModel.getBlocks();
+            const length = documentModel.getLength();
+            const lines = lineRegistry.getLineCount();
+            
+            document.getElementById('docStats').textContent = 
+                `Length: ${length} | Blocks: ${blocks.length} | Lines: ${lines || blocks.length}`;
+            
+            document.getElementById('undoRedoInfo').textContent = 
+                `Undo: ${undoRedoManager.getUndoCount()} | Redo: ${undoRedoManager.getRedoCount()}`;
+            
+            document.getElementById('undoBtn').disabled = !undoRedoManager.canUndo();
+            document.getElementById('redoBtn').disabled = !undoRedoManager.canRedo();
+            
+            const visibleRange = virtualRenderer.getVisibleRange(blocks.length);
+            document.getElementById('scrollInfo').textContent = 
+                `Visible: ${visibleRange.start + 1}-${visibleRange.end} of ${blocks.length} lines`;
+        }
+        
+        function updateSelectionInfo() {
+            const selection = getEditorSelection();
+            const selInfo = document.getElementById('selectionInfo');
+            
+            if (!selection) {
+                selInfo.textContent = 'No selection';
+            } else if (selection.isCollapsed) {
+                selInfo.textContent = `Cursor at offset ${selection.start}`;
+            } else {
+                const length = selection.end - selection.start;
+                selInfo.textContent = `Selected ${length} chars [${selection.start}-${selection.end}]`;
+            }
+        }
+        
+        function updateFormattingInfo(state) {
+            const formatInfo = document.getElementById('activeFormatting');
+            const formats = [];
+            
+            if (state.isBold) formats.push('Bold');
+            if (state.isHighlighted) formats.push(`Highlight (${state.highlightColor})`);
+            if (state.isMinimized) formats.push('Minimized');
+            
+            formatInfo.textContent = formats.length > 0 ? formats.join(', ') : 'None';
+        }
+        
+        // Toolbar actions
+        window.toggleBold = function() {
+            const selection = getEditorSelection();
+            if (!selection || selection.isCollapsed) return;
+            
+            const isBold = toolbarState.isFormatActive('bold');
+            if (isBold) {
+                documentModel.removeFormattingInRange(selection.start, selection.end, 'bold');
+            } else {
+                documentModel.applyFormatting({
+                    type: 'bold',
+                    start: selection.start,
+                    end: selection.end,
+                    id: `fmt-bold-${Date.now()}`
+                });
+            }
+            
+            renderContent();
+            handleContentChange();
+        };
+        
+        window.toggleHighlight = function(color) {
+            const selection = getEditorSelection();
+            if (!selection || selection.isCollapsed) return;
+            
+            const currentColor = toolbarState.getCurrentHighlightColor();
+            if (currentColor === color) {
+                documentModel.removeFormattingInRange(selection.start, selection.end, 'highlight');
+            } else {
+                documentModel.applyFormatting({
+                    type: 'highlight',
+                    start: selection.start,
+                    end: selection.end,
+                    id: `fmt-highlight-${Date.now()}`,
+                    color: color
+                });
+            }
+            
+            renderContent();
+            handleContentChange();
+        };
+        
+        window.toggleMinimize = function() {
+            const selection = getEditorSelection();
+            if (!selection || selection.isCollapsed) return;
+            
+            const isMinimized = toolbarState.isFormatActive('minimize');
+            if (isMinimized) {
+                documentModel.removeFormattingInRange(selection.start, selection.end, 'minimize');
+            } else {
+                documentModel.applyFormatting({
+                    type: 'minimize',
+                    start: selection.start,
+                    end: selection.end,
+                    id: `fmt-minimize-${Date.now()}`
+                });
+            }
+            
+            renderContent();
+            handleContentChange();
+        };
+        
+        window.clearFormatting = function() {
+            const selection = getEditorSelection();
+            if (!selection || selection.isCollapsed) return;
+            
+            documentModel.clearFormattingInRange(selection.start, selection.end);
+            renderContent();
+            handleContentChange();
+        };
+        
+        window.performUndo = function() {
+            const entry = undoRedoManager.undo();
+            if (entry) {
+                // Apply inverse operations
+                applyInverseChanges(entry.changes);
+                if (entry.selectionBefore) {
+                    setEditorSelection(entry.selectionBefore.start, entry.selectionBefore.end);
+                }
+                renderContent();
+                updateStatus();
+            }
+        };
+        
+        window.performRedo = function() {
+            const entry = undoRedoManager.redo();
+            if (entry) {
+                // Apply original operations
+                applyChanges(entry.changes);
+                if (entry.selectionAfter) {
+                    setEditorSelection(entry.selectionAfter.start, entry.selectionAfter.end);
+                }
+                renderContent();
+                updateStatus();
+            }
+        };
+        
+        window.setBlockType = function(type) {
+            const selection = getEditorSelection();
+            if (!selection) return;
+            
+            // Find block at cursor
+            const offset = selection.start;
+            const blocks = documentModel.getBlocks();
+            let currentOffset = 0;
+            
+            for (let i = 0; i < blocks.length; i++) {
+                const blockLength = blocks[i].text.length + 1; // +1 for newline
+                if (offset <= currentOffset + blockLength) {
+                    // Update this block's type
+                    documentModel.updateBlockType(blocks[i].id, type);
+                    renderContent();
+                    handleContentChange();
+                    break;
+                }
+                currentOffset += blockLength;
+            }
+        };
+        
+        // Test functions
+        window.testCompleteFlow = async function() {
+            resetEditor();
+            const btn = event.target;
+            btn.classList.add('loading');
+            
+            try {
+                // 1. Type text
+                documentModel.insertText(0, 'Testing complete editor flow');
+                renderContent();
+                await delay(500);
+                
+                // 2. Apply formatting
+                documentModel.applyFormatting({
+                    type: 'bold',
+                    start: 0,
+                    end: 7,
+                    id: 'test-bold'
+                });
+                renderContent();
+                await delay(500);
+                
+                // 3. Add highlight
+                documentModel.applyFormatting({
+                    type: 'highlight',
+                    start: 8,
+                    end: 16,
+                    id: 'test-highlight',
+                    color: 'yellow'
+                });
+                renderContent();
+                await delay(500);
+                
+                // 4. Test undo
+                handleContentChange(); // Save state
+                performUndo();
+                await delay(500);
+                
+                // 5. Test redo
+                performRedo();
+                await delay(500);
+                
+                btn.classList.add('success');
+                btn.textContent = '✓ Complete Flow Test';
+            } catch (error) {
+                btn.classList.add('error');
+                btn.textContent = '✗ Test Failed';
+                console.error('Complete flow test failed:', error);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        };
+        
+        window.testVirtualScrolling = async function() {
+            resetEditor();
+            const btn = event.target;
+            btn.classList.add('loading');
+            
+            try {
+                // Add many lines
+                for (let i = 0; i < 100; i++) {
+                    if (i > 0) {
+                        documentModel.createBlock(documentModel.getLength());
+                    }
+                    documentModel.insertText(documentModel.getLength(), `Line ${i + 1}: This is a test line for virtual scrolling functionality`);
+                }
+                renderContent();
+                
+                // Scroll to middle
+                const wrapper = editor.parentElement;
+                wrapper.scrollTop = wrapper.scrollHeight / 2;
+                handleScroll({ target: wrapper });
+                
+                btn.classList.add('success');
+                btn.textContent = '✓ Virtual Scrolling Test';
+            } catch (error) {
+                btn.classList.add('error');
+                btn.textContent = '✗ Test Failed';
+                console.error('Virtual scrolling test failed:', error);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        };
+        
+        window.testClipboardOps = async function() {
+            resetEditor();
+            const btn = event.target;
+            btn.classList.add('loading');
+            
+            try {
+                // Create formatted content
+                documentModel.insertText(0, 'Copy this formatted text');
+                documentModel.applyFormatting({
+                    type: 'bold',
+                    start: 0,
+                    end: 4,
+                    id: 'clip-bold'
+                });
+                documentModel.applyFormatting({
+                    type: 'highlight',
+                    start: 5,
+                    end: 9,
+                    id: 'clip-highlight',
+                    color: 'blue'
+                });
+                renderContent();
+                
+                // Simulate copy
+                const content = documentModel.getContent();
+                const copiedText = documentModel.getText();
+                const copiedFormatting = content.formatting.filter(f => 
+                    f.start >= 0 && f.end <= copiedText.length
+                );
+                
+                // Clear and paste
+                await delay(1000);
+                resetEditor();
+                documentModel.insertText(0, copiedText);
+                copiedFormatting.forEach(fmt => {
+                    documentModel.applyFormatting({
+                        ...fmt,
+                        id: `${fmt.id}-pasted`
+                    });
+                });
+                renderContent();
+                
+                btn.classList.add('success');
+                btn.textContent = '✓ Clipboard Operations';
+            } catch (error) {
+                btn.classList.add('error');
+                btn.textContent = '✗ Test Failed';
+                console.error('Clipboard test failed:', error);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        };
+        
+        window.testSelectionMapping = async function() {
+            resetEditor();
+            const btn = event.target;
+            btn.classList.add('loading');
+            
+            try {
+                // Test various selection scenarios
+                documentModel.insertText(0, 'First line\nSecond line with formatting\nThird line');
+                documentModel.createBlock(10);
+                documentModel.createBlock(37);
+                
+                // Add formatting
+                documentModel.applyFormatting({
+                    type: 'bold',
+                    start: 11,
+                    end: 17,
+                    id: 'sel-bold'
+                });
+                
+                renderContent();
+                
+                // Test selection across blocks
+                setEditorSelection(5, 25);
+                await delay(500);
+                
+                // Test selection in formatted text
+                setEditorSelection(11, 17);
+                await delay(500);
+                
+                // Test collapsed selection
+                setEditorSelection(20, 20);
+                await delay(500);
+                
+                btn.classList.add('success');
+                btn.textContent = '✓ Selection Mapping';
+            } catch (error) {
+                btn.classList.add('error');
+                btn.textContent = '✗ Test Failed';
+                console.error('Selection mapping test failed:', error);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        };
+        
+        window.testFormattingCombos = async function() {
+            resetEditor();
+            const btn = event.target;
+            btn.classList.add('loading');
+            
+            try {
+                // Test overlapping formatting
+                documentModel.insertText(0, 'Test overlapping and nested formatting combinations');
+                
+                // Bold spanning multiple words
+                documentModel.applyFormatting({
+                    type: 'bold',
+                    start: 5,
+                    end: 20,
+                    id: 'combo-bold'
+                });
+                
+                // Highlight overlapping with bold
+                documentModel.applyFormatting({
+                    type: 'highlight',
+                    start: 10,
+                    end: 25,
+                    id: 'combo-highlight',
+                    color: 'green'
+                });
+                
+                // Minimize partially overlapping both
+                documentModel.applyFormatting({
+                    type: 'minimize',
+                    start: 15,
+                    end: 35,
+                    id: 'combo-minimize'
+                });
+                
+                renderContent();
+                
+                btn.classList.add('success');
+                btn.textContent = '✓ Formatting Combos';
+            } catch (error) {
+                btn.classList.add('error');
+                btn.textContent = '✗ Test Failed';
+                console.error('Formatting combos test failed:', error);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        };
+        
+        window.testUndoRedo = async function() {
+            resetEditor();
+            const btn = event.target;
+            btn.classList.add('loading');
+            
+            try {
+                // Build up a history
+                const operations = [
+                    () => documentModel.insertText(0, 'Step 1'),
+                    () => documentModel.insertText(6, ' - done'),
+                    () => documentModel.applyFormatting({ type: 'bold', start: 0, end: 6, id: 'undo-1' }),
+                    () => documentModel.createBlock(13),
+                    () => documentModel.insertText(14, 'Step 2'),
+                    () => documentModel.deleteText(14, 6),
+                    () => documentModel.insertText(14, 'Final step')
+                ];
+                
+                for (const op of operations) {
+                    op();
+                    renderContent();
+                    handleContentChange();
+                    await delay(300);
+                }
+                
+                // Undo all
+                while (undoRedoManager.canUndo()) {
+                    performUndo();
+                    await delay(300);
+                }
+                
+                // Redo some
+                for (let i = 0; i < 3; i++) {
+                    if (undoRedoManager.canRedo()) {
+                        performRedo();
+                        await delay(300);
+                    }
+                }
+                
+                btn.classList.add('success');
+                btn.textContent = '✓ Undo/Redo Stack';
+            } catch (error) {
+                btn.classList.add('error');
+                btn.textContent = '✗ Test Failed';
+                console.error('Undo/redo test failed:', error);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        };
+        
+        window.testDiffTracking = async function() {
+            resetEditor();
+            const btn = event.target;
+            btn.classList.add('loading');
+            
+            try {
+                // Clear diff history
+                document.getElementById('diffHistory').innerHTML = '';
+                
+                // Perform various operations
+                documentModel.insertText(0, 'Track ');
+                await delay(300);
+                
+                documentModel.insertText(6, 'these ');
+                await delay(300);
+                
+                documentModel.insertText(12, 'changes');
+                await delay(300);
+                
+                documentModel.applyFormatting({
+                    type: 'bold',
+                    start: 0,
+                    end: 5,
+                    id: 'diff-bold'
+                });
+                await delay(300);
+                
+                documentModel.deleteText(6, 6);
+                await delay(300);
+                
+                documentModel.insertText(6, 'all ');
+                await delay(300);
+                
+                renderContent();
+                
+                btn.classList.add('success');
+                btn.textContent = '✓ Diff Tracking';
+            } catch (error) {
+                btn.classList.add('error');
+                btn.textContent = '✗ Test Failed';
+                console.error('Diff tracking test failed:', error);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        };
+        
+        window.testPerformance = async function() {
+            resetEditor();
+            const btn = event.target;
+            btn.classList.add('loading');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Large document test
+                const text = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(50);
+                for (let i = 0; i < 100; i++) {
+                    if (i > 0) documentModel.createBlock(documentModel.getLength());
+                    documentModel.insertText(documentModel.getLength(), text);
+                }
+                
+                // Apply random formatting
+                for (let i = 0; i < 50; i++) {
+                    const start = Math.floor(Math.random() * documentModel.getLength() * 0.8);
+                    const end = start + Math.floor(Math.random() * 100) + 10;
+                    const types = ['bold', 'highlight', 'minimize'];
+                    const type = types[Math.floor(Math.random() * types.length)];
+                    
+                    documentModel.applyFormatting({
+                        type: type as any,
+                        start,
+                        end: Math.min(end, documentModel.getLength()),
+                        id: `perf-${i}`,
+                        color: type === 'highlight' ? ['yellow', 'blue', 'green', 'pink'][i % 4] : undefined
+                    });
+                }
+                
+                renderContent();
+                
+                const endTime = performance.now();
+                const duration = Math.round(endTime - startTime);
+                
+                btn.classList.add('success');
+                btn.textContent = `✓ Performance Test (${duration}ms)`;
+            } catch (error) {
+                btn.classList.add('error');
+                btn.textContent = '✗ Test Failed';
+                console.error('Performance test failed:', error);
+            } finally {
+                btn.classList.remove('loading');
+            }
+        };
+        
+        window.runAllTests = async function() {
+            const tests = [
+                testCompleteFlow,
+                testVirtualScrolling,
+                testClipboardOps,
+                testSelectionMapping,
+                testFormattingCombos,
+                testUndoRedo,
+                testDiffTracking,
+                testPerformance
+            ];
+            
+            for (const test of tests) {
+                await test();
+                await delay(1000);
+            }
+        };
+        
+        window.resetEditor = function() {
+            // Reset all services
+            documentModel = new DocumentModel();
+            lineRegistry = new LineRegistry();
+            undoRedoManager = new UndoRedoManagerV2();
+            document.getElementById('diffHistory').innerHTML = '';
+            
+            // Re-initialize services with new model
+            lineObserver = new LineUpdateObserver(lineRegistry, documentModel);
+            diffEmitter = new DocumentDiffEmitter(documentModel);
+            toolbarState = new ToolbarStateService(documentModel);
+            
+            // Re-attach observer
+            lineObserver.detach();
+            lineObserver.attach(editor);
+            
+            // Re-subscribe
+            diffEmitter.subscribe(handleDiffChanges);
+            toolbarState.subscribe(updateToolbarState);
+            
+            // Re-render
+            renderContent();
+            updateStatus();
+            
+            // Reset test buttons
+            document.querySelectorAll('.test-btn').forEach(btn => {
+                btn.classList.remove('success', 'error');
+                if (btn.textContent.includes('✓') || btn.textContent.includes('✗')) {
+                    btn.textContent = btn.textContent.replace(/[✓✗] /, '');
+                }
+            });
+        };
+        
+        // Helper functions
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        function applyChanges(changes) {
+            changes.forEach(change => {
+                switch (change.type) {
+                    case 'insert-text':
+                        documentModel.insertText(change.offset, change.text);
+                        break;
+                    case 'delete-text':
+                        documentModel.deleteText(change.offset, change.length);
+                        break;
+                    case 'add-formatting':
+                        documentModel.applyFormatting(change.formatting);
+                        break;
+                    case 'remove-formatting':
+                        documentModel.removeFormatting(change.formattingId);
+                        break;
+                }
+            });
+        }
+        
+        function applyInverseChanges(changes) {
+            // Apply changes in reverse order with inverse operations
+            for (let i = changes.length - 1; i >= 0; i--) {
+                const change = changes[i];
+                switch (change.type) {
+                    case 'insert-text':
+                        documentModel.deleteText(change.offset, change.text.length);
+                        break;
+                    case 'delete-text':
+                        documentModel.insertText(change.offset, change.deletedText || '');
+                        break;
+                    case 'add-formatting':
+                        documentModel.removeFormatting(change.formatting.id);
+                        break;
+                    case 'remove-formatting':
+                        if (change.formatting) {
+                            documentModel.applyFormatting(change.formatting);
+                        }
+                        break;
+                }
+            }
+        }
+        
+        // Initialize on load
+        initializeEditor();
+    </script>
+</body>
+</html>

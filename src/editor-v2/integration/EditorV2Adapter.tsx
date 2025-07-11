@@ -4,9 +4,10 @@
  * Maintains compatibility with existing toolbar and document management
  */
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { SingleContentEditableEditor } from '../components/SingleContentEditableEditor';
 import type { ContentBlock, FormattingType, HighlightColor } from '@/types/document.types';
+import type { TextFormatting } from '../data-structures/interval-tree';
 import '../styles/editor.css';
 
 interface EditorV2AdapterProps {
@@ -18,16 +19,22 @@ interface EditorV2AdapterProps {
   autoFocus?: boolean;
 }
 
-export function EditorV2Adapter({
+export interface EditorV2AdapterRef {
+  applyFormat: (type: FormattingType, color?: HighlightColor) => void;
+  getSelection: () => { start: number; end: number } | null;
+}
+
+export const EditorV2Adapter = forwardRef<EditorV2AdapterRef, EditorV2AdapterProps>(({
   content,
   onChange,
   onSelectionChange,
   setApplyFormatRef,
   placeholder,
   autoFocus
-}: EditorV2AdapterProps) {
-  const editorRef = useRef<{ applyFormat?: (type: string, color?: string) => void }>(null);
+}: EditorV2AdapterProps, ref) => {
+  const editorRef = useRef<any>(null);
   const applyFormatRef = useRef<(type: FormattingType, color?: HighlightColor) => void>(() => {});
+  const lastSelectionRef = useRef<{ start: number; end: number } | null>(null);
   
   /**
    * Convert ContentBlock[] to plain text for the new editor
@@ -62,44 +69,89 @@ export function EditorV2Adapter({
    * Handle selection changes
    */
   const handleSelectionChange = useCallback((selection: Selection | null) => {
+    // Store selection for formatting operations
+    if (selection && !selection.isCollapsed && editorRef.current?.getSelectionOffsets) {
+      const offsets = editorRef.current.getSelectionOffsets();
+      if (offsets) {
+        lastSelectionRef.current = offsets;
+      }
+    }
     onSelectionChange?.();
   }, [onSelectionChange]);
   
   /**
-   * Create formatting function that bridges to the new editor
+   * Apply formatting based on current selection
    */
-  useEffect(() => {
-    if (setApplyFormatRef) {
-      const applyFormat = (type: FormattingType, color?: HighlightColor) => {
-        console.log('Apply format:', type, color);
-        // For now, trigger a change with formatted content
-        // This is a temporary implementation until we expose formatting methods
-        const blocks = textToContentBlocks(editorRef.current?.textContent || '');
+  const applyFormat = useCallback((type: FormattingType, color?: HighlightColor) => {
+    if (!editorRef.current?.applyFormatting || !lastSelectionRef.current) {
+      console.warn('Cannot apply formatting: no editor ref or selection');
+      return;
+    }
+
+    const { start, end } = lastSelectionRef.current;
+    
+    if (type === 'clear') {
+      // Clear all formatting in the selection
+      editorRef.current.clearFormatting(start, end);
+    } else if (type === 'bold' || type === 'highlight' || type === 'minimize') {
+      // Map FormattingType to TextFormatting type
+      const formattingType = type === 'bold' ? 'bold' : 
+                            type === 'highlight' ? 'highlight' : 
+                            'minimize';
+      
+      // Check if formatting already exists
+      const existingFormats = editorRef.current.getFormattingAt(start, end);
+      const hasFormat = existingFormats.some((f: TextFormatting) => 
+        f.type === formattingType && 
+        (formattingType !== 'highlight' || f.color === color)
+      );
+      
+      if (hasFormat) {
+        // Remove formatting
+        editorRef.current.removeFormatting(start, end, formattingType);
+      } else {
+        // Apply formatting
+        const formatting: TextFormatting = {
+          type: formattingType,
+          start,
+          end,
+          id: `fmt-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        };
         
-        // Simulate formatting by updating the first block
-        if (blocks.length > 0 && type === 'highlight' && color) {
-          blocks[0].formatting = [{
-            type: 'highlight',
-            start: 0,
-            end: Math.min(9, blocks[0].content.length),
-            color: color
-          }];
+        if (formattingType === 'highlight' && color) {
+          formatting.color = color as 'yellow' | 'blue' | 'green' | 'pink';
         }
         
-        onChange(blocks);
-      };
-      
-      applyFormatRef.current = applyFormat;
+        editorRef.current.applyFormatting(formatting);
+      }
+    }
+  }, []);
+
+  /**
+   * Set up formatting function reference
+   */
+  useEffect(() => {
+    applyFormatRef.current = applyFormat;
+    if (setApplyFormatRef) {
       setApplyFormatRef(applyFormat);
     }
-  }, [setApplyFormatRef, onChange, textToContentBlocks]);
+  }, [applyFormat, setApplyFormatRef]);
+
+  /**
+   * Expose methods to parent components
+   */
+  useImperativeHandle(ref, () => ({
+    applyFormat,
+    getSelection: () => lastSelectionRef.current
+  }), [applyFormat]);
   
   // Convert initial content
   const initialText = contentBlocksToText(content);
   
   return (
-    <div ref={(el) => { editorRef.current = el; }}>
+    <div>
       <SingleContentEditableEditor
+        ref={editorRef}
         initialContent={initialText}
         onChange={handleChange}
         onSelectionChange={handleSelectionChange}
@@ -108,7 +160,10 @@ export function EditorV2Adapter({
       />
     </div>
   );
-}
+});
+
+// Set display name for debugging
+EditorV2Adapter.displayName = 'EditorV2Adapter';
 
 // Export as default to make it a drop-in replacement for the old Editor
 export default EditorV2Adapter;
