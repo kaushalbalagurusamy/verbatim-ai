@@ -1,0 +1,237 @@
+name: Line Alignment Regression Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/components/EditorV2.tsx'
+      - 'src/components/EditorV2/**'
+      - 'src/editor-v2/**'
+      - 'e2e/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/components/EditorV2.tsx'
+      - 'src/components/EditorV2/**'
+      - 'src/editor-v2/**'
+      - 'e2e/**'
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  regression-tests:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 10.11.0
+    
+    - name: Get pnpm store directory
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+    
+    - name: Setup pnpm cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    
+    - name: Install Playwright browsers
+      run: pnpm playwright install --with-deps ${{ matrix.browser }}
+    
+    - name: Run regression tests
+      run: |
+        pnpm test:e2e \
+          --project=${{ matrix.browser }} \
+          --reporter=github,html \
+          --retries=2 \
+          bug-verification.spec.ts line-alignment-regression.spec.ts
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: regression-test-results-${{ matrix.browser }}
+        path: |
+          playwright-report/
+          test-results/
+          docs/bug-repro/*.png
+        retention-days: 30
+    
+    - name: Upload test videos on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: regression-test-videos-${{ matrix.browser }}
+        path: test-results/**/*.webm
+        retention-days: 7
+
+  visual-regression:
+    runs-on: ubuntu-latest
+    needs: regression-tests
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 10.11.0
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    
+    - name: Install Playwright browsers
+      run: pnpm playwright install --with-deps chromium
+    
+    - name: Download visual regression baselines
+      uses: actions/download-artifact@v4
+      with:
+        name: visual-regression-baselines
+        path: e2e/visual-regression.spec.ts-snapshots/
+      continue-on-error: true
+    
+    - name: Run visual regression tests
+      run: pnpm test:e2e visual-regression.spec.ts --project=chromium
+    
+    - name: Upload visual regression results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: visual-regression-results
+        path: |
+          test-results/
+          e2e/visual-regression.spec.ts-snapshots/
+        retention-days: 30
+    
+    - name: Update baselines on main
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        pnpm test:e2e visual-regression.spec.ts --project=chromium --update-snapshots
+    
+    - name: Upload updated baselines
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      uses: actions/upload-artifact@v4
+      with:
+        name: visual-regression-baselines
+        path: e2e/visual-regression.spec.ts-snapshots/
+        retention-days: 90
+
+  performance-regression:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 10.11.0
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+    
+    - name: Install Playwright browsers
+      run: pnpm playwright install --with-deps chromium
+    
+    - name: Run performance tests
+      run: |
+        pnpm test:e2e \
+          --project=chromium \
+          --grep="Performance" \
+          line-alignment-regression.spec.ts bug-verification.spec.ts
+    
+    - name: Generate performance report
+      if: always()
+      run: |
+        mkdir -p performance-results
+        echo "# Performance Test Results" > performance-results/report.md
+        echo "Date: $(date)" >> performance-results/report.md
+        echo "Commit: ${{ github.sha }}" >> performance-results/report.md
+        # Extract performance metrics from test output
+    
+    - name: Upload performance results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-test-results
+        path: performance-results/
+        retention-days: 30
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('performance-results/report.md', 'utf8');
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## 🧪 Regression Test Results\n\n${report}`
+          });
+
+  test-summary:
+    runs-on: ubuntu-latest
+    needs: [regression-tests, visual-regression, performance-regression]
+    if: always()
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: all-results/
+    
+    - name: Generate summary report
+      run: |
+        echo "# EditorV2 Regression Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Check for test failures
+        if ls all-results/*/test-results/*failed* 1> /dev/null 2>&1; then
+          echo "❌ Some tests failed. Check artifacts for details." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ All regression tests passed!" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Test reports and screenshots available in workflow artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- Visual regression comparisons in visual-regression-results" >> $GITHUB_STEP_SUMMARY
+        echo "- Performance metrics in performance-test-results" >> $GITHUB_STEP_SUMMARY

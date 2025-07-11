@@ -147,10 +147,12 @@ export class DocumentDiffEmitter {
     
     // 1. Compute block differences
     const blockOps = this.computeBlockDiffs(prev.blocks, next.blocks);
-    operations.push(...blockOps);
     
-    // 2. Compute text content differences
+    // 2. Compute text content differences (may modify blockOps)
     const textOps = this.computeTextDiffs(prev, next, blockOps);
+    
+    // Add remaining block operations
+    operations.push(...blockOps);
     operations.push(...textOps);
     
     // 3. Compute formatting differences
@@ -244,6 +246,33 @@ export class DocumentDiffEmitter {
         // Simple implementation - can be optimized with Myers' algorithm
         const textOp = this.createTextDiffOp(prevBlock, nextBlock);
         if (textOp) ops.push(textOp);
+      }
+    }
+    
+    // Handle case where text was appended to last block but new block was created
+    // This happens when DocumentModel.insertText is called at totalLength
+    if (prev.blocks.length > 0 && next.blocks.length > prev.blocks.length) {
+      const lastPrevBlock = prev.blocks[prev.blocks.length - 1];
+      const newBlocks = next.blocks.slice(prev.blocks.length);
+      
+      // Check if this looks like an append operation
+      if (newBlocks.length === 1 && newBlocks[0].offset === prev.totalLength) {
+        // Convert to insert operation at end of previous document
+        ops.push({
+          type: 'insert-text',
+          offset: prev.totalLength,
+          text: newBlocks[0].text,
+          timestamp: Date.now()
+        } as InsertTextOp);
+        
+        // Remove the create-block operation for this block
+        const createOpIndex = blockOps.findIndex(
+          op => op.type === 'create-block' && 
+               (op as CreateBlockOp).block.id === newBlocks[0].id
+        );
+        if (createOpIndex !== -1) {
+          blockOps.splice(createOpIndex, 1);
+        }
       }
     }
     
