@@ -13,11 +13,14 @@ import { codeUnitLength, sliceByCodeUnits, getGraphemeAt } from '../utils/string
 import { textMeasurementService } from '../utils/text-measurement';
 import { LineUpdateObserver } from '../observers/line-update-observer';
 import { InputHandlerService } from '../services/input-handler';
+import { ToolbarStateService } from '../services/toolbar-state-service';
+import { DOMDecoratorService } from '../services/dom-decorator';
 
 interface EditorProps {
   initialContent?: string;
   onChange?: (content: string) => void;
   onSelectionChange?: (selection: EditorSelection | null) => void;
+  onToolbarStateChange?: (state: any) => void;
   placeholder?: string;
   className?: string;
 }
@@ -36,13 +39,14 @@ interface EditorState {
   viewportBottom: number;
 }
 
-export function SingleContentEditableEditor({
+export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
   initialContent = '',
   onChange,
   onSelectionChange,
+  onToolbarStateChange,
   placeholder = 'Start typing...',
   className = ''
-}: EditorProps) {
+}, ref) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const documentRef = useRef<DocumentModel>(new DocumentModel());
   const lineRegistryRef = useRef<LineRegistry>(new LineRegistry());
@@ -50,6 +54,8 @@ export function SingleContentEditableEditor({
     new LineUpdateObserver(lineRegistryRef.current, documentRef.current)
   );
   const inputHandlerRef = useRef<InputHandlerService | null>(null);
+  const decoratorRef = useRef<DOMDecoratorService | null>(null);
+  const toolbarStateRef = useRef<ToolbarStateService | null>(null);
   const [editorState, setEditorState] = useState<EditorState>({
     isComposing: false,
     lastSelection: null,
@@ -59,6 +65,72 @@ export function SingleContentEditableEditor({
   
   // Initialize document model - moved after renderContent definition
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Expose methods to parent components
+  React.useImperativeHandle(ref, () => ({
+    applyFormatting: (type: 'bold' | 'highlight' | 'minimize', color?: string) => {
+      const selection = getDocumentSelection();
+      if (!selection || selection.isCollapsed) return;
+      
+      let formatting: any = {
+        type,
+        start: selection.start,
+        end: selection.end,
+        id: `fmt-${Date.now()}`
+      };
+      
+      if (type === 'highlight' && color) {
+        formatting.color = color;
+      }
+      
+      documentRef.current.applyFormatting(formatting);
+      renderContent();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start: selection.start,
+          end: selection.end,
+          isCollapsed: selection.isCollapsed
+        });
+      }
+    },
+    
+    clearFormatting: () => {
+      const selection = getDocumentSelection();
+      if (!selection || selection.isCollapsed) return;
+      
+      documentRef.current.removeFormatting(selection.start, selection.end);
+      renderContent();
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start: selection.start,
+          end: selection.end,
+          isCollapsed: selection.isCollapsed
+        });
+      }
+    },
+    
+    setBlockType: (type: string) => {
+      const selection = getDocumentSelection();
+      if (!selection) return;
+      
+      // Find the block at cursor position
+      const blocks = documentRef.current.getBlocks();
+      const block = blocks.find(b => 
+        selection.start >= b.offset && selection.start <= b.offset + b.length
+      );
+      
+      if (block) {
+        block.type = type as any;
+        renderContent();
+      }
+    },
+    
+    getDocument: () => documentRef.current
+  }), [getDocumentSelection, renderContent]);
 
   /**
    * Convert document offset to DOM position
@@ -287,9 +359,14 @@ export function SingleContentEditableEditor({
         blockEl.style.marginBottom = '0.5rem';
       }
       
-      // Render text with formatting
-      const formattedHTML = renderFormattedText(block);
-      blockEl.innerHTML = formattedHTML || '<br>'; // Add BR for empty blocks
+      // Use DOM decorator to apply formatting
+      if (decoratorRef.current) {
+        decoratorRef.current.decorateBlock(block, blockEl);
+      } else {
+        // Fallback to simple rendering
+        const formattedHTML = renderFormattedText(block);
+        blockEl.innerHTML = formattedHTML || '<br>'; // Add BR for empty blocks
+      }
       
       // Add block to DOM first
       container.appendChild(blockEl);
@@ -302,6 +379,11 @@ export function SingleContentEditableEditor({
       requestAnimationFrame(() => {
         setDocumentSelection(selection.start, selection.end);
       });
+    }
+    
+    // Release unused spans
+    if (decoratorRef.current) {
+      decoratorRef.current.releaseUnusedSpans();
     }
   }, [getDocumentSelection, setDocumentSelection]);
 
@@ -404,6 +486,24 @@ export function SingleContentEditableEditor({
         selection.end !== editorState.lastSelection.end)) {
       setEditorState(prev => ({ ...prev, lastSelection: selection }));
       onSelectionChange?.(selection);
+      
+      // Update toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection({
+          start: selection.start,
+          end: selection.end,
+          isCollapsed: selection.isCollapsed
+        });
+      }
+    } else if (!selection && editorState.lastSelection) {
+      // Selection was cleared
+      setEditorState(prev => ({ ...prev, lastSelection: null }));
+      onSelectionChange?.(null);
+      
+      // Clear toolbar state
+      if (toolbarStateRef.current) {
+        toolbarStateRef.current.updateSelection(null);
+      }
     }
   }, [getDocumentSelection, editorState.lastSelection, onSelectionChange]);
 
@@ -429,6 +529,14 @@ export function SingleContentEditableEditor({
             id: `fmt-${Date.now()}`
           });
           renderContent();
+          // Update toolbar state after formatting change
+          if (toolbarStateRef.current) {
+            toolbarStateRef.current.updateSelection({
+              start: selection.start,
+              end: selection.end,
+              isCollapsed: selection.isCollapsed
+            });
+          }
           break;
           
         case 'h': {
@@ -449,6 +557,14 @@ export function SingleContentEditableEditor({
             id: `fmt-${Date.now()}`
           });
           renderContent();
+          // Update toolbar state after formatting change
+          if (toolbarStateRef.current) {
+            toolbarStateRef.current.updateSelection({
+              start: selection.start,
+              end: selection.end,
+              isCollapsed: selection.isCollapsed
+            });
+          }
           break;
         }
           
@@ -461,6 +577,14 @@ export function SingleContentEditableEditor({
             id: `fmt-${Date.now()}`
           });
           renderContent();
+          // Update toolbar state after formatting change
+          if (toolbarStateRef.current) {
+            toolbarStateRef.current.updateSelection({
+              start: selection.start,
+              end: selection.end,
+              isCollapsed: selection.isCollapsed
+            });
+          }
           break;
           
         case 'c':
@@ -468,6 +592,14 @@ export function SingleContentEditableEditor({
             e.preventDefault();
             documentRef.current.removeFormatting(selection.start, selection.end);
             renderContent();
+          // Update toolbar state after formatting change
+          if (toolbarStateRef.current) {
+            toolbarStateRef.current.updateSelection({
+              start: selection.start,
+              end: selection.end,
+              isCollapsed: selection.isCollapsed
+            });
+          }
           }
           break;
       }
@@ -504,7 +636,28 @@ export function SingleContentEditableEditor({
         getSelection: getDocumentSelection,
         setSelection: setDocumentSelection,
         renderContent,
-        onChange
+        onChange,
+        decorator: decoratorRef.current || undefined
+      });
+    }
+    
+    if (!toolbarStateRef.current) {
+      toolbarStateRef.current = new ToolbarStateService(documentRef.current);
+      
+      // Subscribe to toolbar state changes
+      if (onToolbarStateChange) {
+        const unsubscribe = toolbarStateRef.current.subscribe(onToolbarStateChange);
+        return unsubscribe;
+      }
+    }
+    
+    // Initialize DOM decorator
+    if (!decoratorRef.current && editorRef.current) {
+      // Check if we need shadow DOM for iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      decoratorRef.current = new DOMDecoratorService(documentRef.current, {
+        container: editorRef.current,
+        useShadowDOM: isIOS && (editorRef.current.getAttribute('data-plaintext-only') === 'true')
       });
     }
     
@@ -600,7 +753,9 @@ export function SingleContentEditableEditor({
       />
     </div>
   );
-}
+});
+
+SingleContentEditableEditor.displayName = 'SingleContentEditableEditor';
 
 /**
  * Line numbers component

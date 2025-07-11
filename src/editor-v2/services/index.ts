@@ -4,6 +4,8 @@
 
 export { InputHandler } from './input-handler';
 export { DocumentDiffEmitter } from './document-diff-emitter';
+export { DOMDecoratorService } from './dom-decorator';
+export type { FormattingSpan, DecoratorOptions } from './dom-decorator';
 export type { 
   DiffOperation,
   DiffOperationType,

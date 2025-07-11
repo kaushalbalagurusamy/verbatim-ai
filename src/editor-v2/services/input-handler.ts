@@ -6,12 +6,15 @@
 
 import { DocumentModel } from '../models/document-model';
 import { codeUnitLength, sliceByCodeUnits } from '../utils/string-utils';
+import { UndoRedoManager } from './undo-redo-manager';
+import { DOMDecoratorService } from './dom-decorator';
 
 export interface InputHandlerConfig {
   getSelection: () => EditorSelection | null;
   setSelection: (start: number, end: number) => void;
   renderContent: () => void;
   onChange?: (content: string) => void;
+  decorator?: DOMDecoratorService;
 }
 
 export interface EditorSelection {
@@ -34,6 +37,7 @@ export class InputHandlerService {
   private config: InputHandlerConfig;
   private compositionState: CompositionState;
   private inputHandlers: Map<string, InputHandler>;
+  private undoRedoManager: UndoRedoManager;
 
   constructor(document: DocumentModel, config: InputHandlerConfig) {
     this.document = document;
@@ -43,6 +47,15 @@ export class InputHandlerService {
       startOffset: 0,
       data: ''
     };
+    
+    // Initialize undo/redo manager
+    this.undoRedoManager = new UndoRedoManager(document, {
+      maxActions: 100,
+      maxMemoryMB: 10,
+      onChange: (canUndo, canRedo) => {
+        // Could emit events or update UI state here
+      }
+    });
     
     // Initialize input type handlers
     this.inputHandlers = new Map([
@@ -206,6 +219,9 @@ export class InputHandlerService {
     const newOffset = selection.start + codeUnitLength(text);
     this.config.setSelection(newOffset, newOffset);
     
+    // Record action for undo/redo
+    this.undoRedoManager.recordAction();
+    
     // Trigger updates
     this.config.onChange?.(this.document.getText());
     this.config.renderContent();
@@ -250,6 +266,9 @@ export class InputHandlerService {
       }
     }
     
+    // Record action for undo/redo
+    this.undoRedoManager.recordAction();
+    
     this.config.onChange?.(this.document.getText());
     this.config.renderContent();
   }
@@ -269,6 +288,9 @@ export class InputHandlerService {
       this.config.setSelection(selection.start, selection.start);
     }
     
+    // Record action for undo/redo
+    this.undoRedoManager.recordAction();
+    
     this.config.onChange?.(this.document.getText());
     this.config.renderContent();
   }
@@ -280,6 +302,10 @@ export class InputHandlerService {
     if (!selection.isCollapsed) {
       this.document.deleteText(selection.start, selection.end);
       this.config.setSelection(selection.start, selection.start);
+      
+      // Record action for undo/redo
+      this.undoRedoManager.recordAction();
+      
       this.config.onChange?.(this.document.getText());
       this.config.renderContent();
     }
@@ -312,6 +338,9 @@ export class InputHandlerService {
       // Update selection
       const newOffset = selection.start + codeUnitLength(pasteData);
       this.config.setSelection(newOffset, newOffset);
+      
+      // Record action for undo/redo
+      this.undoRedoManager.recordAction();
       
       this.config.onChange?.(this.document.getText());
       this.config.renderContent();
@@ -387,6 +416,10 @@ export class InputHandlerService {
     if (deleteStart < selection.start) {
       this.document.deleteText(deleteStart, selection.start);
       this.config.setSelection(deleteStart, deleteStart);
+      
+      // Record action for undo/redo
+      this.undoRedoManager.recordAction();
+      
       this.config.onChange?.(this.document.getText());
       this.config.renderContent();
     }
@@ -415,6 +448,10 @@ export class InputHandlerService {
     if (deleteEnd > selection.start) {
       this.document.deleteText(selection.start, deleteEnd);
       this.config.setSelection(selection.start, selection.start);
+      
+      // Record action for undo/redo
+      this.undoRedoManager.recordAction();
+      
       this.config.onChange?.(this.document.getText());
       this.config.renderContent();
     }
@@ -430,6 +467,10 @@ export class InputHandlerService {
       if (deleteStart < selection.start) {
         this.document.deleteText(deleteStart, selection.start);
         this.config.setSelection(deleteStart, deleteStart);
+        
+        // Record action for undo/redo
+        this.undoRedoManager.recordAction();
+        
         this.config.onChange?.(this.document.getText());
         this.config.renderContent();
       }
@@ -446,6 +487,10 @@ export class InputHandlerService {
       if (deleteEnd > selection.start) {
         this.document.deleteText(selection.start, deleteEnd);
         this.config.setSelection(selection.start, selection.start);
+        
+        // Record action for undo/redo
+        this.undoRedoManager.recordAction();
+        
         this.config.onChange?.(this.document.getText());
         this.config.renderContent();
       }
@@ -463,6 +508,10 @@ export class InputHandlerService {
         end: selection.end,
         id: `fmt-${Date.now()}`
       });
+      
+      // Record action for undo/redo
+      this.undoRedoManager.recordAction();
+      
       this.config.renderContent();
     }
   }
@@ -492,14 +541,20 @@ export class InputHandlerService {
    * Undo handler
    */
   private handleUndo(event: InputEvent, selection: EditorSelection): void {
-    // Not implemented yet - would need undo/redo stack
+    if (this.undoRedoManager.undo()) {
+      // Selection will be restored by document state
+      this.config.renderContent();
+    }
   }
 
   /**
    * Redo handler
    */
   private handleRedo(event: InputEvent, selection: EditorSelection): void {
-    // Not implemented yet - would need undo/redo stack
+    if (this.undoRedoManager.redo()) {
+      // Selection will be restored by document state
+      this.config.renderContent();
+    }
   }
   
   /**
@@ -510,6 +565,10 @@ export class InputHandlerService {
     if (line) {
       this.document.deleteText(line.startOffset, line.endOffset + 1); // +1 for newline
       this.config.setSelection(line.startOffset, line.startOffset);
+      
+      // Record action for undo/redo
+      this.undoRedoManager.recordAction();
+      
       this.config.onChange?.(this.document.getText());
       this.config.renderContent();
     }
@@ -522,6 +581,10 @@ export class InputHandlerService {
     if (!selection.isCollapsed) {
       this.document.deleteText(selection.start, selection.end);
       this.config.setSelection(selection.start, selection.start);
+      
+      // Record action for undo/redo
+      this.undoRedoManager.recordAction();
+      
       this.config.onChange?.(this.document.getText());
       this.config.renderContent();
     }
@@ -533,6 +596,10 @@ export class InputHandlerService {
   private handleFormatRemove(event: InputEvent, selection: EditorSelection): void {
     if (!selection.isCollapsed) {
       this.document.removeFormatting(selection.start, selection.end);
+      
+      // Record action for undo/redo
+      this.undoRedoManager.recordAction();
+      
       this.config.renderContent();
     }
   }
@@ -594,5 +661,20 @@ export class InputHandlerService {
            (charCode >= 0x1DC0 && charCode <= 0x1DFF) || // Combining Diacritical Marks Supplement
            (charCode >= 0x20D0 && charCode <= 0x20FF) || // Combining Diacritical Marks for Symbols
            (charCode >= 0xFE20 && charCode <= 0xFE2F);   // Combining Half Marks
+  }
+  
+  /**
+   * Handle keyboard events for undo/redo shortcuts
+   */
+  handleKeyDown(event: KeyboardEvent): boolean {
+    // Delegate to undo/redo manager for keyboard shortcuts
+    return this.undoRedoManager.handleKeyboardShortcut(event);
+  }
+  
+  /**
+   * Get the undo/redo manager instance
+   */
+  getUndoRedoManager(): UndoRedoManager {
+    return this.undoRedoManager;
   }
 }

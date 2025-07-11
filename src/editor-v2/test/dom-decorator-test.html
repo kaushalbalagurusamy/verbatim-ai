@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOM Decorator Test - Stage 3.4</title>
+    <link rel="stylesheet" href="../styles/editor.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1, h2 {
+            margin-top: 0;
+        }
+        
+        .editor-demo {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            min-height: 200px;
+            background: #1e1e1e;
+            color: #cccccc;
+            padding: 10px;
+        }
+        
+        .controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #4fc3f7;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #29b6f6;
+        }
+        
+        .paste-area {
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            padding: 20px;
+            margin-top: 10px;
+            text-align: center;
+            background: #f9f9f9;
+        }
+        
+        .format-demo {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            color: #333;
+        }
+        
+        .stats {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>DOM Decorator Test - Stage 3.4</h1>
+        
+        <div class="test-section">
+            <h2>1. Basic Formatting</h2>
+            <div id="editor1" class="editor-demo editor-content" contenteditable="true" spellcheck="false"></div>
+            <div class="controls">
+                <button onclick="applyBold()">Bold (Cmd+B)</button>
+                <button onclick="applyHighlight('yellow')">Highlight Yellow</button>
+                <button onclick="applyHighlight('blue')">Highlight Blue</button>
+                <button onclick="applyHighlight('green')">Highlight Green</button>
+                <button onclick="applyHighlight('pink')">Highlight Pink</button>
+                <button onclick="applyMinimize()">Minimize</button>
+                <button onclick="clearFormatting()">Clear Formatting</button>
+            </div>
+            <div class="stats">
+                Span pool size: <span id="spanPoolSize">0</span> | 
+                Recycled spans: <span id="recycledSpans">0</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Nested Formatting Demo</h2>
+            <div class="format-demo">
+                <span class="fmt-highlight fmt-highlight-yellow">
+                    This is highlighted text with 
+                    <span class="fmt-bold">bold text inside</span>
+                    and normal text after.
+                </span>
+            </div>
+            <div class="format-demo">
+                <span class="fmt-minimize">
+                    This is minimized text with 
+                    <span class="fmt-highlight fmt-highlight-blue">
+                        <span class="fmt-bold">bold and highlighted</span>
+                    </span>
+                    content.
+                </span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. HTML Paste Test</h2>
+            <p>Copy formatted HTML from another source and paste here:</p>
+            <div id="pasteTarget" class="paste-area" contenteditable="true">
+                Click here and paste formatted content (Cmd+V)
+            </div>
+            <div id="pasteResult" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Shadow DOM Test (iOS Mode)</h2>
+            <div id="shadowHost" class="editor-demo"></div>
+            <button onclick="toggleShadowDOM()">Toggle Shadow DOM</button>
+            <div id="shadowStatus" class="stats">Shadow DOM: OFF</div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. Performance Test</h2>
+            <button onclick="performanceTest()">Run Performance Test (1000 formats)</button>
+            <div id="perfResult" class="stats"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { DocumentModel } from '../models/document-model.js';
+        import { DOMDecoratorService } from '../services/dom-decorator.js';
+        
+        // Initialize document model and decorator
+        const doc = new DocumentModel();
+        const editor1 = document.getElementById('editor1');
+        const decorator = new DOMDecoratorService(doc, {
+            container: editor1,
+            useShadowDOM: false
+        });
+        
+        // Initialize with sample text
+        const sampleText = "This is a sample text for testing the DOM decorator service. " +
+                          "Select some text and apply formatting using the buttons above.";
+        doc.insertText(0, sampleText);
+        editor1.textContent = sampleText;
+        
+        // Global functions for buttons
+        window.applyBold = function() {
+            const selection = window.getSelection();
+            if (selection.rangeCount === 0) return;
+            
+            const range = selection.getRangeAt(0);
+            const start = getOffsetFromDOM(range.startContainer, range.startOffset);
+            const end = getOffsetFromDOM(range.endContainer, range.endOffset);
+            
+            if (start < end) {
+                doc.applyFormatting({
+                    type: 'bold',
+                    start: start,
+                    end: end,
+                    id: `fmt-${Date.now()}`
+                });
+                updateEditor();
+            }
+        };
+        
+        window.applyHighlight = function(color) {
+            const selection = window.getSelection();
+            if (selection.rangeCount === 0) return;
+            
+            const range = selection.getRangeAt(0);
+            const start = getOffsetFromDOM(range.startContainer, range.startOffset);
+            const end = getOffsetFromDOM(range.endContainer, range.endOffset);
+            
+            if (start < end) {
+                doc.applyFormatting({
+                    type: 'highlight',
+                    color: color,
+                    start: start,
+                    end: end,
+                    id: `fmt-${Date.now()}`
+                });
+                updateEditor();
+            }
+        };
+        
+        window.applyMinimize = function() {
+            const selection = window.getSelection();
+            if (selection.rangeCount === 0) return;
+            
+            const range = selection.getRangeAt(0);
+            const start = getOffsetFromDOM(range.startContainer, range.startOffset);
+            const end = getOffsetFromDOM(range.endContainer, range.endOffset);
+            
+            if (start < end) {
+                doc.applyFormatting({
+                    type: 'minimize',
+                    start: start,
+                    end: end,
+                    id: `fmt-${Date.now()}`
+                });
+                updateEditor();
+            }
+        };
+        
+        window.clearFormatting = function() {
+            const selection = window.getSelection();
+            if (selection.rangeCount === 0) return;
+            
+            const range = selection.getRangeAt(0);
+            const start = getOffsetFromDOM(range.startContainer, range.startOffset);
+            const end = getOffsetFromDOM(range.endContainer, range.endOffset);
+            
+            if (start < end) {
+                doc.removeFormatting(start, end);
+                updateEditor();
+            }
+        };
+        
+        function updateEditor() {
+            const blocks = doc.getBlocks();
+            editor1.innerHTML = '';
+            
+            blocks.forEach(block => {
+                const blockEl = document.createElement('div');
+                blockEl.className = 'editor-block editor-block-paragraph';
+                decorator.decorateBlock(block, blockEl);
+                editor1.appendChild(blockEl);
+            });
+            
+            decorator.releaseUnusedSpans();
+            updateStats();
+        }
+        
+        function updateStats() {
+            // These would be exposed by the decorator in a real implementation
+            document.getElementById('spanPoolSize').textContent = '0';
+            document.getElementById('recycledSpans').textContent = '0';
+        }
+        
+        function getOffsetFromDOM(node, offset) {
+            // Simplified offset calculation
+            let totalOffset = 0;
+            const walker = document.createTreeWalker(
+                editor1,
+                NodeFilter.SHOW_TEXT,
+                null,
+                false
+            );
+            
+            let currentNode;
+            while (currentNode = walker.nextNode()) {
+                if (currentNode === node) {
+                    return totalOffset + offset;
+                }
+                totalOffset += currentNode.textContent.length;
+            }
+            
+            return totalOffset;
+        }
+        
+        // Paste handling
+        const pasteTarget = document.getElementById('pasteTarget');
+        pasteTarget.addEventListener('paste', (e) => {
+            e.preventDefault();
+            
+            const html = e.clipboardData.getData('text/html');
+            const text = e.clipboardData.getData('text/plain');
+            
+            if (html) {
+                const normalized = decorator.normalizeHTML(html);
+                const result = document.getElementById('pasteResult');
+                result.innerHTML = `
+                    <strong>Normalized Text:</strong> ${normalized.text}<br>
+                    <strong>Formatting:</strong> <pre>${JSON.stringify(normalized.formatting, null, 2)}</pre>
+                `;
+            }
+        });
+        
+        // Shadow DOM test
+        let shadowDecorator = null;
+        window.toggleShadowDOM = function() {
+            const host = document.getElementById('shadowHost');
+            const status = document.getElementById('shadowStatus');
+            
+            if (shadowDecorator) {
+                shadowDecorator.clear();
+                shadowDecorator = null;
+                host.innerHTML = '';
+                status.textContent = 'Shadow DOM: OFF';
+            } else {
+                const shadowDoc = new DocumentModel();
+                shadowDoc.insertText(0, 'Shadow DOM test with formatting support');
+                
+                shadowDecorator = new DOMDecoratorService(shadowDoc, {
+                    container: host,
+                    useShadowDOM: true
+                });
+                
+                // Apply some formatting
+                shadowDoc.applyFormatting({
+                    type: 'bold',
+                    start: 0,
+                    end: 10,
+                    id: 'shadow-1'
+                });
+                
+                shadowDoc.applyFormatting({
+                    type: 'highlight',
+                    color: 'yellow',
+                    start: 15,
+                    end: 25,
+                    id: 'shadow-2'
+                });
+                
+                const shadowRoot = shadowDecorator.getShadowRoot();
+                if (shadowRoot) {
+                    const block = shadowDoc.getBlocks()[0];
+                    const blockEl = document.createElement('div');
+                    blockEl.className = 'editor-block';
+                    shadowDecorator.decorateBlock(block, blockEl);
+                    shadowRoot.appendChild(blockEl);
+                }
+                
+                status.textContent = 'Shadow DOM: ON';
+            }
+        };
+        
+        // Performance test
+        window.performanceTest = function() {
+            const perfDoc = new DocumentModel();
+            const testText = 'A'.repeat(10000);
+            perfDoc.insertText(0, testText);
+            
+            const perfDecorator = new DOMDecoratorService(perfDoc, {
+                container: document.createElement('div'),
+                useShadowDOM: false
+            });
+            
+            const startTime = performance.now();
+            
+            // Apply 1000 random formats
+            for (let i = 0; i < 1000; i++) {
+                const start = Math.floor(Math.random() * 9000);
+                const end = start + Math.floor(Math.random() * 100) + 1;
+                const types = ['bold', 'highlight', 'minimize'];
+                const type = types[Math.floor(Math.random() * types.length)];
+                
+                perfDoc.applyFormatting({
+                    type: type,
+                    color: type === 'highlight' ? 'yellow' : undefined,
+                    start: start,
+                    end: end,
+                    id: `perf-${i}`
+                });
+            }
+            
+            // Render
+            const block = perfDoc.getBlocks()[0];
+            const blockEl = document.createElement('div');
+            perfDecorator.decorateBlock(block, blockEl);
+            
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            
+            document.getElementById('perfResult').innerHTML = `
+                Applied 1000 formats and rendered in ${duration.toFixed(2)}ms<br>
+                Average: ${(duration / 1000).toFixed(3)}ms per format
+            `;
+        };
+    </script>
+</body>
+</html>
