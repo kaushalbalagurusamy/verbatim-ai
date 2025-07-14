@@ -26,7 +26,10 @@
       "Bash(rm:*)",
       "Bash(docker:*)",
       "Bash(open:*)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(git fetch:*)",
+      "Bash(cat:*)",
+      "Bash(git merge-base:*)"
     ],
     "deny": []
   }
