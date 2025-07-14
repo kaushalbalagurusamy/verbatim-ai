@@ -23,7 +23,10 @@
       "Bash(claude --version)",
       "Bash(rg:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(docker:*)",
+      "Bash(open:*)",
+      "Bash(pgrep:*)"
     ],
     "deny": []
   }
