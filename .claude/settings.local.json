@@ -21,7 +21,9 @@
       "Bash(git config:*)",
       "Bash(git rm:*)",
       "Bash(claude --version)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
