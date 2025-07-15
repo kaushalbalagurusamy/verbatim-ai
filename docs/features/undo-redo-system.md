@@ -203,16 +203,11 @@ Tests verify:
 - Memory limit enforcement
 - Edge case handling
 
-## Limitations
+## Limitations & Future
 
-1. **Single User**: Current implementation is single-user only
-2. **Session Based**: History is not persisted between sessions
-3. **Memory Bound**: Large documents may hit memory limits
+Current limitations:
+- Single user only (no collaborative editing)
+- Session-based (history not persisted)
+- Memory bound for very large documents
 
-## Future Enhancements
-
-- **Operation Grouping**: Multiple operations as single undo
-- **Persistent History**: Save/restore across sessions
-- **Selective Undo**: Undo specific changes
-- **Visual Timeline**: UI showing edit history
-- **Collaborative Support**: Operational transformation
+See the roadmap for planned enhancements including persistent history and collaborative support.

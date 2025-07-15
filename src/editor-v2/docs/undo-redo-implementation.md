@@ -1,4 +1,4 @@
-# Stage 5.2 - Undo/Redo History Implementation
+# Undo/Redo History Implementation
 
 ## Overview
 
