@@ -1,144 +1,178 @@
-# Welcome to your Lovable project
+# Verbatim AI
 
-## Project info
+A powerful document editor with integrated AI capabilities, built for modern workflows.
 
-**URL**: https://lovable.dev/projects/f49012d5-16f2-4255-9023-f53e0d26fd28
+## 🚀 Overview
 
-## How can I edit this code?
+Verbatim AI is a React-based web application that combines the familiarity of a VS Code-inspired interface with advanced document management and AI-powered features. It provides a seamless environment for creating, editing, and analyzing documents with real-time AI assistance.
 
-There are several ways of editing your application.
+## ✨ Key Features
 
-**Use Lovable**
+- **📝 Rich Document Editor** - Full-featured text editing with formatting tools
+- **🤖 AI Chat Integration** - Built-in AI assistant for document analysis and writing help
+- **📁 Smart File Management** - Organized file tree with search and navigation
+- **📊 Analytics Dashboard** - Track document metrics and insights
+- **🎙️ Recording Capabilities** - Integrated audio recording for notes and transcriptions
+- **🎨 VS Code-Inspired UI** - Familiar dark theme with customizable panels
+- **⚡ Real-time Collaboration** - Live updates and synchronization
+- **🔍 Advanced Search** - Quick file and content discovery
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f49012d5-16f2-4255-9023-f53e0d26fd28) and start prompting.
+## 📸 Screenshots
 
-Changes made via Lovable will be committed automatically to this repo.
+<details>
+<summary>View Application Screenshots</summary>
 
-**Use your preferred IDE**
+### Main Editor Interface
+*[Screenshot: Three-panel layout with sidebar, editor, and AI chat]*
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Document Management
+*[Screenshot: File tree and document organization]*
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### AI Assistant
+*[Screenshot: AI-powered chat panel in action]*
 
-Follow these steps:
+</details>
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🏃 Quick Start
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Node.js 20+ (LTS recommended)
+- pnpm 10.11.0+
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### Installation
 
-## Development with Dev Containers
-
-This project includes a Dev Container configuration that provides a consistent, secure development environment with all necessary tools pre-installed.
-
-### Features
-
-- **Secure Environment**: Network isolation with firewall rules limiting external access
-- **Pre-configured Tools**: Node.js 20, pnpm, Git, and development utilities
-- **VS Code Extensions**: ESLint, Prettier, Tailwind CSS IntelliSense, and more
-- **Persistent History**: Command history preserved across container sessions
-- **Port Forwarding**: Automatic forwarding for development server (port 8080)
-
-### Quick Start
-
-1. **Open in Container**:
-   - Install the "Dev Containers" extension in VS Code
-   - Open the project folder
-   - Click "Reopen in Container" when prompted
-   - Wait for the container to build (this should complete successfully now!)
-
-2. **After Container is Ready**:
-   ```bash
-   # The container will automatically run: pnpm install
-   # Then you can start development immediately:
-   pnpm dev
-   
-   # Optional: Enable secure firewall (for Claude Code safety):
-   sudo /usr/local/bin/init-firewall.sh
-   ```
-
-### Authentication Setup
-
-**You WILL need to re-authenticate in the container:**
-
-#### GitHub CLI Authentication
 ```bash
-# Login to GitHub CLI inside the container
-gh auth login
-# Follow the prompts to authenticate
+# Clone the repository
+git clone https://github.com/yourusername/verbatim-ai.git
+cd verbatim-ai
+
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
 ```
 
-#### Claude Code Authentication
+The application will be available at `http://localhost:8080`
+
+### Development Commands
+
 ```bash
-# Set up Claude Code with your API key
-claude-code auth login
-# Or set environment variable:
-export CLAUDE_API_KEY="your-api-key-here"
+# Run development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Preview production build
+pnpm preview
+
+# Run linting
+pnpm lint
 ```
 
-### Fixed Issues
+## 🛠️ Tech Stack
 
-- **Container Setup**: Now separates dependency installation from firewall setup
-- **Network Access**: Firewall setup is optional and runs after container is ready
-- **Error Handling**: Improved firewall script with timeout and fallback mechanisms
-- **Authentication**: Clear guidance on required re-authentication
+- **Frontend Framework**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: TailwindCSS + Shadcn/ui components
+- **UI Components**: Radix UI primitives
+- **State Management**: React hooks + React Query
+- **Routing**: React Router v6
+- **Icons**: Lucide React
+- **Code Quality**: ESLint + TypeScript strict mode
 
-### Troubleshooting
+## 📚 Documentation
 
-- **Container build fails**: Ensure Docker is running and you have sufficient disk space
-- **"Setting up" hangs**: The fix separates firewall from initial setup - this should resolve the issue
-- **Network issues after firewall**: The firewall restricts access to allowed domains only (GitHub, npm, Anthropic)
-- **Permission errors**: The container runs as the `node` user for security
-- **Authentication required**: You'll need to re-login to GitHub and Claude Code inside the container
+For detailed documentation, please refer to:
 
-### Firewall Details
+- [CLAUDE.md](./CLAUDE.md) - AI assistant integration guide
+- [Architecture Guide](#architecture) - System design and patterns
+- [API Reference](#) - Coming soon
 
-The optional firewall setup creates a secure environment by:
-- ✅ Allowing: GitHub, npm registry, Anthropic API, localhost
-- ❌ Blocking: All other external network access
-- 🛡️ Perfect for Claude Code "yolo mode" with network restrictions
+## 🏗️ Architecture
 
-**Edit a file directly in GitHub**
+Verbatim AI follows a modular, component-based architecture:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+src/
+├── components/       # React components
+│   ├── ui/          # Reusable UI components (Shadcn)
+│   └── ...          # Feature-specific components
+├── pages/           # Route pages
+├── hooks/           # Custom React hooks
+├── lib/             # Utilities and helpers
+└── types/           # TypeScript definitions
+```
 
-**Use GitHub Codespaces**
+### View Modes
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The application supports four distinct operational modes:
 
-## What technologies are used for this project?
+1. **Document View** - Primary editing interface
+2. **Pen View** - Analytics and note-taking
+3. **Source View** - Argument and source management
+4. **Recordings View** - Audio recording and transcription
 
-This project is built with:
+## 🤝 Contributing
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+We welcome contributions! Please follow these guidelines:
 
-## How can I deploy this project?
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow our coding standards (see CLAUDE.md)
+4. Ensure all files are under 200 lines
+5. Add proper documentation
+6. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
-Simply open [Lovable](https://lovable.dev/projects/f49012d5-16f2-4255-9023-f53e0d26fd28) and click on Share -> Publish.
+### Code Standards
 
-## Can I connect a custom domain to my Lovable project?
+- TypeScript strict mode enabled
+- Functional components with hooks
+- Comprehensive JSDoc comments
+- File size limit: 200 lines max
+- Tailwind CSS for styling
 
-Yes, you can!
+## 🔧 Development Environment
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Using DevContainers
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+This project includes DevContainer configuration for consistent development:
+
+```bash
+# Open in VS Code with Dev Containers extension
+# Click "Reopen in Container" when prompted
+# Dependencies will be installed automatically
+```
+
+### Manual Setup
+
+```bash
+# Use the correct Node version
+nvm use
+
+# Install dependencies
+pnpm install
+
+# Start development
+pnpm dev
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [Shadcn/ui](https://ui.shadcn.com/)
+- Icons by [Lucide](https://lucide.dev/)
+- Initially scaffolded with [Lovable](https://lovable.dev)
+
+---
+
+<p align="center">
+  Made with ❤️ by the Verbatim AI team
+</p>
