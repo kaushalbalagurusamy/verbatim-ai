@@ -226,42 +226,16 @@ class VirtualScrollProfiler {
 
 ### Memory Leak Detection
 
+Use the built-in memory leak detector:
+
 ```typescript
-class MemoryLeakDetector {
-  constructor(editor) {
-    this.editor = editor;
-    this.snapshots = [];
-  }
-  
-  takeSnapshot() {
-    if (!performance.memory) {
-      console.warn('Memory API not available');
-      return;
-    }
-    
-    this.snapshots.push({
-      timestamp: Date.now(),
-      usedHeap: performance.memory.usedJSHeapSize,
-      totalHeap: performance.memory.totalJSHeapSize,
-      domNodes: document.querySelectorAll('*').length,
-      editorBlocks: this.editor.getRenderedBlockCount()
-    });
-  }
-  
-  analyze() {
-    if (this.snapshots.length < 2) return null;
-    
-    const first = this.snapshots[0];
-    const last = this.snapshots[this.snapshots.length - 1];
-    const timeDelta = (last.timestamp - first.timestamp) / 1000;
-    
-    return {
-      heapGrowth: last.usedHeap - first.usedHeap,
-      heapGrowthRate: (last.usedHeap - first.usedHeap) / timeDelta,
-      domNodeGrowth: last.domNodes - first.domNodes,
-      blockGrowth: last.editorBlocks - first.editorBlocks
-    };
-  }
+const detector = editor.getMemoryLeakDetector();
+detector.start();
+
+// After scrolling...
+const report = detector.analyze();
+if (report.heapGrowthRate > 1000000) { // 1MB/sec
+  console.warn('Potential memory leak detected');
 }
 ```
 
