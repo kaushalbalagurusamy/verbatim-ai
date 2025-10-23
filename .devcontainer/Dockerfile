@@ -19,7 +19,9 @@ RUN apt update && apt install -y less \
   iproute2 \
   dnsutils \
   aggregate \
-  jq
+  jq \
+  python3 \
+  python3-pip
 
 # Ensure default node user has access to /usr/local/share
 RUN mkdir -p /usr/local/share/npm-global && \
@@ -35,10 +37,14 @@ RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhisto
 
 # Set `DEVCONTAINER` environment variable to help with orientation
 ENV DEVCONTAINER=true
+ENV OPENAI_CONFIG_DIR=/home/node/.openai
 
 # Create workspace and config directories and set permissions
-RUN mkdir -p /workspace /home/node/.claude && \
-  chown -R node:node /workspace /home/node/.claude
+RUN mkdir -p /workspace /home/node/.claude /home/node/.openai /home/node/.codex && \
+  chown -R node:node /workspace /home/node/.claude /home/node/.openai /home/node/.codex
+
+# Install OpenAI CLI (provides Codex access)
+RUN pip3 install --no-cache-dir --break-system-packages openai
 
 WORKDIR /workspace
 
@@ -56,6 +62,9 @@ ENV PATH=$PATH:/usr/local/share/npm-global/bin
 
 # Install pnpm globally
 RUN npm install -g pnpm@10.11.0
+
+# Install OpenAI Codex CLI for terminal access inside the container
+RUN npm install -g @openai/codex
 
 # Set the default shell to zsh rather than sh
 ENV SHELL=/bin/zsh

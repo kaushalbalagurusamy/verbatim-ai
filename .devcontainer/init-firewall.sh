@@ -93,6 +93,7 @@ add_domain_ips() {
 ESSENTIAL_DOMAINS=(
     "registry.npmjs.org"
     "api.anthropic.com"
+    "api.openai.com"
     "github.com"
     "api.github.com"
 )
@@ -159,4 +160,4 @@ else
 fi
 
 echo -e "${GREEN}🔒 Secure development environment is ready!${NC}"
-echo -e "${YELLOW}ℹ️  Allowed domains: GitHub, npm registry, Anthropic API${NC}"
+echo -e "${YELLOW}ℹ️  Allowed domains: GitHub, npm registry, Anthropic API, OpenAI API${NC}"

@@ -45,6 +45,33 @@ else
     echo "❌ Claude Code: Not found"
 fi
 
+# Check OpenAI CLI
+if command -v openai >/dev/null 2>&1; then
+    echo "✅ OpenAI CLI: Installed"
+    if [ -n "${OPENAI_API_KEY:-}" ]; then
+        echo "✅ OpenAI API Key: Set"
+    else
+        echo "❌ OpenAI API Key: Not set"
+        echo "   Run: export OPENAI_API_KEY='your-key-here'"
+    fi
+else
+    echo "❌ OpenAI CLI: Not found"
+fi
+
+# Check Codex CLI
+if command -v codex >/dev/null 2>&1; then
+    echo "✅ Codex CLI: Installed"
+    if [ -f "${CODEX_HOME:-$HOME/.codex}/auth.json" ]; then
+        echo "✅ Codex Auth: Detected (${CODEX_HOME:-$HOME/.codex}/auth.json)"
+    else
+        echo "⚠️  Codex Auth: Not detected"
+        echo "   Run: codex login (for ChatGPT accounts) or codex login --api-key"
+    fi
+else
+    echo "❌ Codex CLI: Not found"
+    echo "   Run: npm install -g @openai/codex"
+fi
+
 echo ""
 echo "🛡️ Security Options:"
 echo "1. Start development (no firewall) - Standard development mode"
