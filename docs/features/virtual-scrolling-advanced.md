@@ -181,47 +181,16 @@ const testFractionalPixels = () => {
 
 ### Performance Profiling
 
+Use the built-in profiler for detailed metrics:
+
 ```typescript
-class VirtualScrollProfiler {
-  constructor(editor) {
-    this.editor = editor;
-    this.metrics = [];
-  }
-  
-  start() {
-    this.observer = new PerformanceObserver((list) => {
-      const entries = list.getEntries();
-      entries.forEach(entry => {
-        this.metrics.push({
-          name: entry.name,
-          duration: entry.duration,
-          timestamp: entry.startTime
-        });
-      });
-    });
-    
-    this.observer.observe({ 
-      entryTypes: ['measure', 'navigation', 'paint'] 
-    });
-  }
-  
-  stop() {
-    this.observer.disconnect();
-    return this.analyze();
-  }
-  
-  analyze() {
-    const scrollMetrics = this.metrics.filter(m => 
-      m.name.includes('scroll')
-    );
-    
-    return {
-      avgScrollTime: average(scrollMetrics.map(m => m.duration)),
-      maxScrollTime: Math.max(...scrollMetrics.map(m => m.duration)),
-      totalScrolls: scrollMetrics.length
-    };
-  }
-}
+const profiler = editor.getVirtualScrollProfiler();
+profiler.start();
+
+// Perform scrolling operations...
+
+const report = profiler.stop();
+console.log('Scroll performance:', report);
 ```
 
 ### Memory Leak Detection

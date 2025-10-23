@@ -191,86 +191,33 @@ const detectFocusTrap = () => {
 #### Problem: Insufficient Contrast
 
 ```typescript
-// Test contrast ratios programmatically
-const getContrastRatio = (fg, bg) => {
-  // Implementation of WCAG contrast algorithm
-  return calculateContrast(fg, bg);
-};
-
-// Verify all text meets standards
-const elements = editor.querySelectorAll('*');
-elements.forEach(el => {
-  const ratio = getContrastRatio(
-    getComputedStyle(el).color,
-    getComputedStyle(el).backgroundColor
-  );
-  
-  if (ratio < 4.5) {
-    console.warn('Low contrast:', el, ratio);
-  }
-});
+// Use built-in contrast checker
+const issues = editor.checkContrastRatios();
+if (issues.length > 0) {
+  console.warn('Contrast issues found:', issues);
+}
 ```
 
 ## Testing Tools
 
-### Automated Testing
+### Testing Tools
+
+Use automated testing tools:
 
 ```typescript
 // Jest + Testing Library
 test('announces text insertion', async () => {
   const { container } = render(<AccessibleEditor />);
   const editor = container.querySelector('[role="textbox"]');
-  
-  // Type text
   await userEvent.type(editor, 'Hello');
-  
-  // Check announcement
   expect(screen.getByRole('status')).toHaveTextContent(
     'Inserted Hello at position 0'
   );
 });
-```
 
-### Manual Testing Scripts
-
-```typescript
-// Comprehensive accessibility test
-const runAccessibilityAudit = async () => {
-  const results = {
-    aria: checkAriaAttributes(),
-    contrast: checkColorContrast(),
-    keyboard: checkKeyboardAccess(),
-    screenReader: checkScreenReaderSupport()
-  };
-  
-  console.table(results);
-  return results;
-};
-```
-
-## Performance Considerations
-
-### Optimizing Announcements
-
-```typescript
-// Batch announcements for performance
-class AnnouncementQueue {
-  constructor(delay = 100) {
-    this.queue = [];
-    this.delay = delay;
-  }
-  
-  add(message, priority = 'polite') {
-    this.queue.push({ message, priority });
-    this.scheduleFlush();
-  }
-  
-  scheduleFlush = debounce(() => {
-    const summary = this.summarize(this.queue);
-    announce(summary, 'polite');
-    this.queue = [];
-  }, this.delay);
-}
+// Run accessibility audit
+const audit = await runAccessibilityAudit();
+console.table(audit);
 ```
 
 ## Resources

@@ -208,18 +208,10 @@ Use built-in accessibility tools:
 
 ### Development Guidelines
 
-```typescript
-// Good: Descriptive announcement
-announce('Bold formatting applied to 5 words');
-
-// Bad: Vague announcement  
-announce('Formatting changed');
-
-// Good: Proper ARIA
-<button aria-label="Apply bold formatting" aria-pressed={isBold}>
-
-// Bad: Missing context
-<button>B</button>
-```
+Always use descriptive announcements and proper ARIA attributes:
+- Announce specific changes ("Bold applied to 5 words")
+- Include aria-label on all interactive elements
+- Use aria-pressed for toggle states
+- Provide keyboard shortcuts in aria-keyshortcuts
 
 For advanced features and troubleshooting, see [Accessibility Advanced Guide](./accessibility-advanced.md).

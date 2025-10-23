@@ -208,18 +208,7 @@ console.log('Performance report:', report);
 
 #### Focus Loss
 
-```typescript
-// Track focus changes
-let lastFocusTime = Date.now();
-editor.on('focus', () => {
-  console.log('Focus gained');
-  lastFocusTime = Date.now();
-});
-
-editor.on('blur', () => {
-  console.log('Focus lost after', Date.now() - lastFocusTime, 'ms');
-});
-```
+Track and debug focus issues with `editor.debugFocus()`.
 
 ### Debug Mode
 
@@ -236,52 +225,24 @@ window.EDITOR_DEBUG = {
 };
 
 // Component-level debug
-<SingleContentEditableEditor 
-  debug={true}
-  debugLevel="verbose" // 'info' | 'verbose' | 'trace'
-  onDebugMessage={(msg) => console.log('[Editor]', msg)}
-/>
+<SingleContentEditableEditor debug={true} />
 ```
 
 ### Performance Profiling
 
 ```typescript
 // Enable built-in profiler
-editor.startProfiling();
-
-// Perform operations...
-
-const profile = editor.stopProfiling();
-console.log('Input handling:', profile.inputHandling);
-console.log('Render time:', profile.rendering);
-console.log('Memory delta:', profile.memoryDelta);
+const profile = await editor.profile(() => {
+  // Perform operations to profile
+});
+console.log('Performance:', profile);
 ```
 
-## Browser-Specific Fixes
+## Browser Compatibility
 
-### Safari Selection Issues
+The editor automatically detects and applies browser-specific optimizations:
+- Safari: Alternative selection API
+- Firefox: IME workarounds
+- Edge: Passive scroll listeners
 
-```typescript
-if (navigator.userAgent.includes('Safari')) {
-  editor.config.selectionRestoreDelay = 50;
-  editor.config.useAlternativeSelectionAPI = true;
-}
-```
-
-### Firefox IME Handling
-
-```typescript
-if (navigator.userAgent.includes('Firefox')) {
-  editor.config.compositionEventDelay = 100;
-  editor.config.useFirefoxIMEWorkaround = true;
-}
-```
-
-### Edge Rendering
-
-```typescript
-if (navigator.userAgent.includes('Edg')) {
-  editor.config.enableEdgeOptimizations = true;
-  editor.config.usePassiveScrollListeners = true;
-}
-```
+For manual browser detection, use `editor.getBrowserOptimizations()`.
