@@ -381,7 +381,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
 
   // Expose methods to parent components
   React.useImperativeHandle(ref, () => ({
-    applyFormatting: (type: 'bold' | 'highlight' | 'minimize', color?: string) => {
+    toggleFormatting: (type: 'bold' | 'highlight' | 'minimize', color?: string) => {
       const selection = getDocumentSelection();
       if (!selection || selection.isCollapsed) return;
       
@@ -396,7 +396,14 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
         formatting.color = color;
       }
       
-      documentRef.current.applyFormatting(formatting);
+      const existingFormatting = documentRef.current.getFormattingInRange(selection.start, selection.end)
+        .find(f => f.type === type);
+        
+      if (existingFormatting) {
+        documentRef.current.removeFormatting(selection.start, selection.end, type);
+      } else {
+        documentRef.current.applyFormatting(formatting);
+      }
       renderRef.current();
       
       // Update toolbar state
@@ -409,19 +416,24 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       }
     },
     
-    clearFormatting: () => {
+    clearFormatting: (start?: number, end?: number, type?: TextFormatting['type']) => {
       const selection = getDocumentSelection();
-      if (!selection || selection.isCollapsed) return;
       
-      documentRef.current.removeFormatting(selection.start, selection.end);
+      if (!start || !end) {
+        if (!selection || selection.isCollapsed) return;
+        start = selection.start;
+        end = selection.end;
+      }
+      
+      documentRef.current.removeFormatting(start, end, type);
       renderRef.current();
       
       // Update toolbar state
       if (toolbarStateRef.current) {
         toolbarStateRef.current.updateSelection({
-          start: selection.start,
-          end: selection.end,
-          isCollapsed: selection.isCollapsed
+          start,
+          end,
+          isCollapsed: start === end
         });
       }
     },
@@ -453,21 +465,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       return documentRef.current.getFormattingInRange(start, end);
     },
     
-    removeFormatting: (start: number, end: number, type?: TextFormatting['type']) => {
-      documentRef.current.removeFormatting(start, end, type);
-      renderRef.current();
-      
-      // Update toolbar state
-      if (toolbarStateRef.current) {
-        toolbarStateRef.current.updateSelection({
-          start,
-          end,
-          isCollapsed: start === end
-        });
-      }
-    },
-    
-    applyFormatting: (formatting: TextFormatting) => {
+    applySpecificFormatting: (formatting: TextFormatting) => {
       documentRef.current.applyFormatting(formatting);
       renderRef.current();
       
@@ -477,20 +475,6 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
           start: formatting.start,
           end: formatting.end,
           isCollapsed: false
-        });
-      }
-    },
-    
-    clearFormatting: (start: number, end: number) => {
-      documentRef.current.removeFormatting(start, end);
-      renderRef.current();
-      
-      // Update toolbar state
-      if (toolbarStateRef.current) {
-        toolbarStateRef.current.updateSelection({
-          start,
-          end,
-          isCollapsed: start === end
         });
       }
     },
