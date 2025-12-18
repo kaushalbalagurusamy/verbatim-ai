@@ -1,7 +1,15 @@
 
-import { ChevronRight, ChevronDown, File, Folder, Table, Telescope, Pen, Code, AudioWaveform } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronRight, ChevronDown, File, Folder, Table, Telescope, Pen, Code, AudioWaveform, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { ScrollArea } from './ui/scroll-area';
+import { documentStore, DocumentContent } from '@/lib/document-store';
+import { createNewDocument } from '@/utils/document.utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface FileTreeProps {
   mode: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow';
@@ -9,6 +17,7 @@ interface FileTreeProps {
 }
 
 interface FileNode {
+  id: string;
   name: string;
   type: 'file' | 'folder';
   children?: FileNode[];
@@ -16,6 +25,61 @@ interface FileNode {
 
 export function FileTree({ mode, onFileSelect }: FileTreeProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
+  const [files, setFiles] = useState<FileNode[]>([]);
+
+  useEffect(() => {
+    // Load documents from store based on mode
+    const type = mode === 'flow' ? 'flow' : 'document';
+    const docs = documentStore.getDocumentsByType(type);
+    
+    // Map to FileNode
+    const fileNodes: FileNode[] = docs.map(doc => ({
+      id: doc.id,
+      name: doc.title,
+      type: 'file'
+    }));
+    
+    setFiles(fileNodes);
+  }, [mode]);
+
+  const handleCreateDocument = () => {
+    const type = mode === 'flow' ? 'flow' : 'document';
+    const extension = type === 'flow' ? '.flow' : '.doc';
+    const title = `New ${type === 'flow' ? 'Flow' : 'Document'} ${files.length + 1}${extension}`;
+    
+    const newDoc = createNewDocument(title);
+    
+    // Add to document store
+    const docContent: DocumentContent = {
+      id: newDoc.id,
+      type: type,
+      title: newDoc.title,
+      content: newDoc.content,
+      metadata: {
+        createdAt: new Date(),
+        modifiedAt: new Date()
+      }
+    };
+    documentStore.setDocument(docContent);
+
+    // Update local state
+    setFiles(prev => [...prev, {
+      id: newDoc.id,
+      name: newDoc.title,
+      type: 'file'
+    }]);
+  };
+
+  const handleCreateFolder = () => {
+    // For now, just add a folder to local state as DocumentStore doesn't support folders explicitly yet
+    const folderName = `New Folder ${files.filter(f => f.type === 'folder').length + 1}`;
+    setFiles(prev => [...prev, {
+      id: `folder-${Date.now()}`,
+      name: folderName,
+      type: 'folder',
+      children: []
+    }]);
+  };
 
   const toggleFolder = (path: string) => {
     const newExpanded = new Set(expandedFolders);
@@ -52,10 +116,13 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
     const currentPath = path ? `${path}/${node.name}` : node.name;
     const isExpanded = expandedFolders.has(currentPath);
     const indent = level * 16; // 16px per level
+    
+    // Strip extension for display
+    const displayName = node.name.replace(/\.[^/.]+$/, "");
 
     if (node.type === 'folder') {
       return (
-        <div key={currentPath}>
+        <div key={node.id || currentPath}>
           <button
             onClick={() => toggleFolder(currentPath)}
             className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors"
@@ -80,13 +147,13 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
 
     return (
       <button
-        key={currentPath}
+        key={node.id || currentPath}
         onClick={() => {
           // Call the file selection handler
           onFileSelect?.(node.name);
           // Also call the global callback if it exists
-          if (window.fileSelectCallback) {
-            window.fileSelectCallback(node.name, mode, currentPath);
+          if ((window as any).fileSelectCallback) {
+            (window as any).fileSelectCallback(node.name, mode, currentPath);
           }
         }}
         className="flex items-center gap-1 w-full text-left text-sm text-[#cccccc] hover:bg-[#383838] px-2 py-1 rounded transition-colors"
@@ -95,7 +162,7 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
         {/* Spacer to align with folder icons (chevron width + gap) */}
         <div className="w-3 flex-shrink-0"></div>
         {getFileIcon(node.name)}
-        <span className="truncate">{node.name}</span>
+        <span className="truncate">{displayName}</span>
       </button>
     );
   };
@@ -138,81 +205,39 @@ export function FileTree({ mode, onFileSelect }: FileTreeProps) {
     }
   };
 
-  // Demo tree structure for testing - backend will populate this in production
-  const getDemoTree = (): FileNode[] => {
-    switch (mode) {
-      case 'document':
-        return [
-          {
-            name: 'Project Notes',
-            type: 'folder',
-            children: [
-              { name: 'Meeting Notes.doc', type: 'file' },
-              { name: 'Product Spec.doc', type: 'file' },
-              { name: 'Roadmap.doc', type: 'file' }
-            ]
-          },
-          { name: 'Quick Notes.doc', type: 'file' }
-        ];
-      case 'flow':
-        return [
-          {
-            name: 'Data Analysis',
-            type: 'folder',
-            children: [
-              { name: 'Sales Data.flow', type: 'file' },
-              { name: 'Customer Analytics.flow', type: 'file' }
-            ]
-          },
-          { name: 'Budget Planning.flow', type: 'file' }
-        ];
-      case 'research':
-        return [
-          { name: 'Market Research.research', type: 'file' },
-          { name: 'Competitor Analysis.research', type: 'file' }
-        ];
-      case 'pen':
-        return [
-          { name: 'Q4 Analytics.pen', type: 'file' },
-          { name: 'User Behavior.pen', type: 'file' }
-        ];
-      case 'source':
-        return [
-          {
-            name: 'References',
-            type: 'folder',
-            children: [
-              { name: 'Research Paper 1.pdf', type: 'file' },
-              { name: 'Case Study.pdf', type: 'file' }
-            ]
-          }
-        ];
-      case 'recordings':
-        return [
-          { name: 'Interview 1.rec', type: 'file' },
-          { name: 'User Testing Session.rec', type: 'file' }
-        ];
-      default:
-        return [];
-    }
-  };
-  
-  const treeData = getDemoTree();
-
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <ScrollArea className="flex-1">
         <div className="p-3">
-          <h3 className="text-xs font-medium text-[#6a6a6a] uppercase mb-2">
-            {getTitle()}
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-medium text-[#6a6a6a] uppercase">
+              {getTitle()}
+            </h3>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-[#6a6a6a] hover:text-[#cccccc] transition-colors outline-none">
+                  <Plus className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[#2d2d30] border-[#3c3c3c] text-[#cccccc]">
+                <DropdownMenuItem onClick={handleCreateDocument} className="hover:bg-[#383838] focus:bg-[#383838] cursor-pointer">
+                  <File className="w-4 h-4 mr-2" />
+                  New Document
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCreateFolder} className="hover:bg-[#383838] focus:bg-[#383838] cursor-pointer">
+                  <Folder className="w-4 h-4 mr-2" />
+                  New Folder
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <div className="space-y-1">
-            {treeData.length === 0 ? (
+            {files.length === 0 ? (
               <div className="text-xs text-[#6a6a6a] italic px-2 py-1">
                 {getEmptyMessage()}
               </div>
             ) : (
-              treeData.map(node => renderNode(node))
+              files.map(node => renderNode(node))
             )}
           </div>
         </div>
