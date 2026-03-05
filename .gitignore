@@ -31,3 +31,11 @@ dist-ssr
 
 # Local data storage
 data/
+test-results/
+test-artifacts/
+playwright-report/
+blob-report/
+playwright/.cache/
+bun.lockb
+package-lock.json
+yarn.lock
