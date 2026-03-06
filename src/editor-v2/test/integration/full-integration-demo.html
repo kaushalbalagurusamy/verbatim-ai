@@ -1311,7 +1311,7 @@
                     const type = types[Math.floor(Math.random() * types.length)];
                     
                     documentModel.applyFormatting({
-                        type: type as any,
+                        type: type,
                         start,
                         end: Math.min(end, documentModel.getLength()),
                         id: `perf-${i}`,

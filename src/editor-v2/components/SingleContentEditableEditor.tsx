@@ -449,7 +449,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       );
       
       if (block) {
-        block.type = type as any;
+        block.type = type;
         renderRef.current();
       }
     },
