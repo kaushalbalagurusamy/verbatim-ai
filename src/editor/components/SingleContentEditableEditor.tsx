@@ -778,6 +778,22 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       }
       setIsInitialized(true);
       renderRef.current();
+    } else if (initialContent !== undefined && initialContent !== documentRef.current.getText()) {
+      // Handle external updates to content
+      // Clear current content
+      documentRef.current.deleteText(0, documentRef.current.getLength());
+      // Insert new content
+      documentRef.current.insertText(0, initialContent);
+      // Rebuild blocks
+      const lines = initialContent.split('\n');
+      let offset = 0;
+      for (let i = 0; i < lines.length; i++) {
+        if (i > 0) {
+          documentRef.current.createBlock(offset);
+        }
+        offset += codeUnitLength(lines[i]) + 1;
+      }
+      renderRef.current();
     }
   }, [initialContent, isInitialized, getDocumentSelection, setDocumentSelection, onChange, onToolbarStateChange]);
 

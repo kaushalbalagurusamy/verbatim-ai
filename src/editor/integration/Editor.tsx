@@ -1,5 +1,5 @@
 /**
- * EditorV2 Adapter - Bridges the new editor with the existing application
+ * Editor Adapter - Bridges the new editor with the existing application
  * Converts between ContentBlock[] format and the new editor's text-based approach
  * Maintains compatibility with existing toolbar and document management
  */
@@ -11,7 +11,7 @@ import type { TextFormatting } from '../data-structures/interval-tree';
 import { ToolbarIntegrationService } from '../services/toolbar-integration';
 import '../styles/editor.css';
 
-interface EditorV2AdapterProps {
+interface EditorProps {
   content: ContentBlock[];
   onChange: (content: ContentBlock[]) => void;
   onSelectionChange?: () => void;
@@ -20,19 +20,19 @@ interface EditorV2AdapterProps {
   autoFocus?: boolean;
 }
 
-export interface EditorV2AdapterRef {
+export interface EditorRef {
   applyFormat: (type: FormattingType, color?: HighlightColor) => void;
   getSelection: () => { start: number; end: number } | null;
 }
 
-export const EditorV2Adapter = forwardRef<EditorV2AdapterRef, EditorV2AdapterProps>(({
+export const Editor = forwardRef<EditorRef, EditorProps>(({
   content,
   onChange,
   onSelectionChange,
   setApplyFormatRef,
   placeholder,
   autoFocus
-}: EditorV2AdapterProps, ref) => {
+}: EditorProps, ref) => {
   const editorRef = useRef<any>(null);
   const applyFormatRef = useRef<(type: FormattingType, color?: HighlightColor) => void>(() => {});
   const lastSelectionRef = useRef<{ start: number; end: number } | null>(null);
@@ -188,7 +188,7 @@ export const EditorV2Adapter = forwardRef<EditorV2AdapterRef, EditorV2AdapterPro
 });
 
 // Set display name for debugging
-EditorV2Adapter.displayName = 'EditorV2Adapter';
+Editor.displayName = 'Editor';
 
 // Export as default to make it a drop-in replacement for the old Editor
-export default EditorV2Adapter;
+export default Editor;

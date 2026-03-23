@@ -102,7 +102,7 @@ const HEX_TO_COLOR_NAME: Record<string, HighlightColor> = {
 ## Migration Path
 
 1. The new editor can be used alongside the old one
-2. `EditorV2WithToolbar` shows integration with existing components
+2. `EditorWithToolbar` shows integration with existing components
 3. Document content can be migrated between formats
 4. Gradual rollout possible with feature flags
 

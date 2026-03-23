@@ -8,7 +8,7 @@ We have successfully implemented a comprehensive undo/redo system for the editor
 
 ### Core Components
 
-1. **UndoRedoManagerV2** (`src/editor-v2/services/undo-redo-manager-v2.ts`)
+1. **UndoRedoManager** (`src/editor/services/undo-redo-manager.ts`)
    - Simplified snapshot-based approach for maximum reliability
    - Stores complete document states rather than diffs
    - Handles memory management with configurable limits

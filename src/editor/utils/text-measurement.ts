@@ -241,8 +241,9 @@ export class TextMeasurementService {
 
     const startTime = performance.now();
 
-    // Update mirror div
-    this.mirrorDiv.style.width = `${containerWidth}px`;
+    // Update mirror div - Ensure a minimum width of 10px to avoid infinite loops
+    const safeWidth = Math.max(10, containerWidth);
+    this.mirrorDiv.style.width = `${safeWidth}px`;
     this.applyBlockStyles(blockType);
     
     // Use binary search to find line breaks
@@ -307,6 +308,12 @@ export class TextMeasurementService {
       // Handle word boundaries
       lineEnd = this.adjustToWordBoundary(text, currentStart, lineEnd);
 
+      // SAFETY: Ensure we ALWAYS make progress to avoid infinite loops
+      // This is critical if the container is too narrow for even a single character
+      if (lineEnd <= currentStart && currentStart < textLength) {
+        lineEnd = currentStart + 1;
+      }
+
       // Measure the actual line width
       const lineText = sliceByCodeUnits(text, currentStart, lineEnd);
       this.mirrorDiv.textContent = lineText;
@@ -318,11 +325,17 @@ export class TextMeasurementService {
         width
       });
 
+      const lastStart = currentStart;
       currentStart = lineEnd;
       
       // Skip whitespace at the start of the next line
       while (currentStart < textLength && /\s/.test(text[currentStart])) {
         currentStart++;
+      }
+      
+      // Secondary safety check: ensure currentStart has truly advanced
+      if (currentStart <= lastStart && currentStart < textLength) {
+        currentStart = lastStart + 1;
       }
     }
 

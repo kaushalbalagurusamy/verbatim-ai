@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { EditorV2Adapter } from '../integration/EditorV2Adapter';
+import Editor from '../integration/Editor';
 
 export function DebugEditor() {
   const content = [
@@ -23,9 +23,9 @@ export function DebugEditor() {
   
   return (
     <div>
-      <h1>Debug: New Editor V2 Test</h1>
+      <h1>Debug: New Editor Test</h1>
       <div style={{ border: '2px solid red', padding: '10px' }}>
-        <EditorV2Adapter
+        <Editor
           content={content}
           onChange={(newContent) => console.log('Content changed:', newContent)}
           onSelectionChange={() => console.log('Selection changed')}

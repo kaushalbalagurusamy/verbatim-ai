@@ -5,12 +5,6 @@
 
 export interface FeatureFlags {
   /**
-   * Enable the hardened EditorV2 implementation
-   * Includes performance improvements, better text handling, and accessibility features
-   */
-  enableEditorV2Hardening: boolean;
-  
-  /**
    * Enable plugin system (Stage 7 - not yet implemented)
    */
   enableEditorPlugins: boolean;
@@ -31,7 +25,6 @@ export interface FeatureFlags {
  * Can be overridden via environment variables or runtime configuration
  */
 export const flags: FeatureFlags = {
-  enableEditorV2Hardening: true,
   enableEditorPlugins: false,
   enableAdvancedAccessibility: true,
   enablePerformanceMetrics: false
@@ -51,8 +44,3 @@ export function getFeatureFlag<K extends keyof FeatureFlags>(flagName: K): Featu
   
   return flags[flagName];
 }
-
-/**
- * Check if EditorV2 hardening is enabled
- */
-export const isEditorV2HardeningEnabled = () => getFeatureFlag('enableEditorV2Hardening');

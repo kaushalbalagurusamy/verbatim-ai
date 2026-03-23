@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { EnhancedPerformanceTestEditor } from '@/editor-v2/test/EnhancedPerformanceTestEditor';
+import { EnhancedPerformanceTestEditor } from '@/editor/test/EnhancedPerformanceTestEditor';
 
 export default function TestPerformance() {
   return (
