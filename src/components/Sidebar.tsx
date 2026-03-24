@@ -12,13 +12,6 @@ export function Sidebar({
   collapsed,
   onActiveViewChange
 }: SidebarProps) {
-  const [expandedSections, setExpandedSections] = useState({
-    logos: true,
-    notepads: true,
-    outline: true,
-    timeline: true
-  });
-
   const [searchQuery, setSearchQuery] = useState('');
   const [activeView, setActiveView] = useState<'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow' | null>('document');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -34,13 +27,6 @@ export function Sidebar({
     { key: 'source', component: Code, view: 'source' as const },
     { key: 'recordings', component: AudioWaveform, view: 'recordings' as const },
   ];
-
-  const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
 
   const handleIconClick = (view: 'document' | 'research' | 'pen' | 'source' | 'recordings' | 'flow') => {
     const newView = activeView === view ? null : view;

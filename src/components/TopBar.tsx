@@ -20,10 +20,10 @@ export function TopBar({
 }: TopBarProps) {
   return (
     <div className="h-12 bg-[#2d2d30] border-b border-[#3c3c3c] flex items-center justify-between px-4 flex-shrink-0">
-      {/* Left side - VERBATIM-AI branding */}
+      {/* Left side - Verbatim AI branding */}
       <div className="flex items-center gap-2">
         <Brain className="w-5 h-5 text-[#4fc3f7]" />
-        <span className="text-sm font-medium text-[#cccccc]">VERBATIM-AI</span>
+        <span className="text-sm font-medium text-[#cccccc] tracking-wide">Verbatim AI</span>
       </div>
       
       {/* Right side - Panel toggle buttons and settings */}
