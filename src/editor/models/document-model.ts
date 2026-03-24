@@ -527,12 +527,12 @@ export class DocumentModel {
    * Create a new block at offset
    */
   createBlock(offset: number, type: DocumentContent['type'] = 'paragraph'): void {
-    // This will split the current block if offset is in the middle
+    // This will split the current block if offset is in the middle or at the end
     const block = this.content.find(offset);
     
-    if (block && offset < block.offset + block.length) {
+    if (block && offset <= block.offset + block.length) {
       // Split existing block
-      const localOffset = offset - block.offset;
+      const localOffset = Math.min(offset - block.offset, block.length);
       const beforeText = sliceByCodeUnits(block.text, 0, localOffset);
       const afterText = sliceByCodeUnits(block.text, localOffset);
       
@@ -553,6 +553,16 @@ export class DocumentModel {
       
       // Update subsequent blocks
       this.updateBlockOffsets(offset, 0);
+    } else if (offset === this.totalLength) {
+      // Handle the case where offset is at the very end and no block was found
+      const newBlock: DocumentContent = {
+        id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        offset: offset,
+        length: 0,
+        text: '',
+        type: type
+      };
+      this.content.insert(newBlock);
     }
     
     this.recalculateLines();

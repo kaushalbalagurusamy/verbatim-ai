@@ -305,8 +305,17 @@ export class TextMeasurementService {
         }
       }
 
-      // Handle word boundaries
-      lineEnd = this.adjustToWordBoundary(text, currentStart, lineEnd);
+      // Check if there's a newline character before our calculated lineEnd
+      const textSubstr = sliceByCodeUnits(text, currentStart, Math.min(lineEnd + 1, textLength));
+      const firstNewline = textSubstr.indexOf('\n');
+      
+      if (firstNewline !== -1) {
+        // Force break at the newline
+        lineEnd = currentStart + firstNewline + 1;
+      } else {
+        // Handle word boundaries
+        lineEnd = this.adjustToWordBoundary(text, currentStart, lineEnd);
+      }
 
       // SAFETY: Ensure we ALWAYS make progress to avoid infinite loops
       // This is critical if the container is too narrow for even a single character

@@ -55,6 +55,7 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
   );
   const inputHandlerRef = useRef<InputHandlerService | null>(null);
   const toolbarStateRef = useRef<ToolbarStateService | null>(null);
+  const isProcessingInternalChange = useRef(false);
   
   // Initialize DOM decorator early with useMemo
   const decoratorRef = useRef<DOMDecoratorService | null>(null);
@@ -723,12 +724,24 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
 
   // Initialize input handler and document model after renderContent is defined
   useEffect(() => {
+    // Create a stable onChange wrapper that sets our internal change flag
+    const handleChange = (content: string) => {
+      if (onChange) {
+        isProcessingInternalChange.current = true;
+        onChange(content);
+        // Reset the flag in the next tick after React has had a chance to update
+        setTimeout(() => {
+          isProcessingInternalChange.current = false;
+        }, 0);
+      }
+    };
+
     if (!inputHandlerRef.current) {
       inputHandlerRef.current = new InputHandlerService(documentRef.current, {
         getSelection: getDocumentSelection,
         setSelection: setDocumentSelection,
         renderContent: renderRef.current,
-        onChange,
+        onChange: handleChange,
         decorator: decoratorRef.current || undefined
       });
     }
@@ -750,13 +763,13 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
         useShadowDOM: isIOS && (editorRef.current.getAttribute('data-plaintext-only') === 'true')
       });
       
-      // Update input handler with decorator
+      // Update input handler with decorator and our new handleChange
       if (inputHandlerRef.current) {
         inputHandlerRef.current = new InputHandlerService(documentRef.current, {
           getSelection: getDocumentSelection,
           setSelection: setDocumentSelection,
           renderContent: renderRef.current,
-          onChange,
+          onChange: handleChange,
           decorator: decoratorRef.current
         });
       }
@@ -778,8 +791,12 @@ export const SingleContentEditableEditor = React.forwardRef<any, EditorProps>(({
       }
       setIsInitialized(true);
       renderRef.current();
-    } else if (initialContent !== undefined && initialContent !== documentRef.current.getText()) {
-      // Handle external updates to content
+    } else if (
+      initialContent !== undefined && 
+      !isProcessingInternalChange.current && 
+      initialContent !== documentRef.current.getText()
+    ) {
+      // Handle external updates ONLY (ignore internal changes that came back via props)
       // Clear current content
       documentRef.current.deleteText(0, documentRef.current.getLength());
       // Insert new content

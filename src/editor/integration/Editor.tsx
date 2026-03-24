@@ -51,7 +51,7 @@ export const Editor = forwardRef<EditorRef, EditorProps>(({
   const textToContentBlocks = useCallback((text: string): ContentBlock[] => {
     const lines = text.split('\n');
     return lines.map((line, index) => ({
-      id: `block-${Date.now()}-${index}`,
+      id: `block-v2-${index}`, // Use stable IDs to prevent re-renders
       type: 'paragraph' as const,
       content: line,
       formatting: []
