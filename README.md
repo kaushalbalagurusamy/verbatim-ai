@@ -1,178 +1,171 @@
 # Verbatim AI
 
-A powerful document editor with integrated AI capabilities, built for modern workflows.
-
-## 🚀 Overview
-
-Verbatim AI is a React-based web application that combines the familiarity of a VS Code-inspired interface with advanced document management and AI-powered features. It provides a seamless environment for creating, editing, and analyzing documents with real-time AI assistance.
-
-## ✨ Key Features
-
-- **📝 Rich Document Editor** - Full-featured text editing with formatting tools
-- **🤖 AI Chat Integration** - Built-in AI assistant for document analysis and writing help
-- **📁 Smart File Management** - Organized file tree with search and navigation
-- **📊 Analytics Dashboard** - Track document metrics and insights
-- **🎙️ Recording Capabilities** - Integrated audio recording for notes and transcriptions
-- **🎨 VS Code-Inspired UI** - Familiar dark theme with customizable panels
-- **⚡ Real-time Collaboration** - Live updates and synchronization
-- **🔍 Advanced Search** - Quick file and content discovery
-
-## 📸 Screenshots
-
-<details>
-<summary>View Application Screenshots</summary>
-
-### Main Editor Interface
-*[Screenshot: Three-panel layout with sidebar, editor, and AI chat]*
-
-### Document Management
-*[Screenshot: File tree and document organization]*
-
-### AI Assistant
-*[Screenshot: AI-powered chat panel in action]*
-
-</details>
-
-## 🏃 Quick Start
-
-### Prerequisites
-
-- Node.js 20+ (LTS recommended)
-- pnpm 10.11.0+
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/verbatim-ai.git
-cd verbatim-ai
-
-# Install dependencies
-pnpm install
-
-# Start development server
-pnpm dev
-```
-
-The application will be available at `http://localhost:8080`
-
-### Development Commands
-
-```bash
-# Run development server
-pnpm dev
-
-# Build for production
-pnpm build
-
-# Preview production build
-pnpm preview
-
-# Run linting
-pnpm lint
-```
-
-## 🛠️ Tech Stack
-
-- **Frontend Framework**: React 18 with TypeScript
-- **Build Tool**: Vite
-- **Styling**: TailwindCSS + Shadcn/ui components
-- **UI Components**: Radix UI primitives
-- **State Management**: React hooks + React Query
-- **Routing**: React Router v6
-- **Icons**: Lucide React
-- **Code Quality**: ESLint + TypeScript strict mode
-
-## 📚 Documentation
-
-For detailed documentation, please refer to:
-
-- [CLAUDE.md](./CLAUDE.md) - AI assistant integration guide
-- [Architecture Guide](#architecture) - System design and patterns
-- [API Reference](#) - Coming soon
-
-## 🏗️ Architecture
-
-Verbatim AI follows a modular, component-based architecture:
-
-```
-src/
-├── components/       # React components
-│   ├── ui/          # Reusable UI components (Shadcn)
-│   └── ...          # Feature-specific components
-├── pages/           # Route pages
-├── hooks/           # Custom React hooks
-├── lib/             # Utilities and helpers
-└── types/           # TypeScript definitions
-```
-
-### View Modes
-
-The application supports four distinct operational modes:
-
-1. **Document View** - Primary editing interface
-2. **Pen View** - Analytics and note-taking
-3. **Source View** - Argument and source management
-4. **Recordings View** - Audio recording and transcription
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Follow our coding standards (see CLAUDE.md)
-4. Ensure all files are under 200 lines
-5. Add proper documentation
-6. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
-
-### Code Standards
-
-- TypeScript strict mode enabled
-- Functional components with hooks
-- Comprehensive JSDoc comments
-- File size limit: 200 lines max
-- Tailwind CSS for styling
-
-## 🔧 Development Environment
-
-### Using DevContainers
-
-This project includes DevContainer configuration for consistent development:
-
-```bash
-# Open in VS Code with Dev Containers extension
-# Click "Reopen in Container" when prompted
-# Dependencies will be installed automatically
-```
-
-### Manual Setup
-
-```bash
-# Use the correct Node version
-nvm use
-
-# Install dependencies
-pnpm install
-
-# Start development
-pnpm dev
-```
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [Shadcn/ui](https://ui.shadcn.com/)
-- Icons by [Lucide](https://lucide.dev/)
-- Initially scaffolded with [Lovable](https://lovable.dev)
+Modern full-stack document workspace combining a high-performance controlled-input editor (EditorV2), visual argument and logic flow mapping, and real-time context-aware AI assistance.
 
 ---
 
-<p align="center">
-  Made with ❤️ by the Verbatim AI team
-</p>
+## Architecture Overview
+
+```
++-----------------------------------------------------------------------------------+
+|                                 Client Workspace (React 18 + Vite)                |
+|                                                                                   |
+|  +---------------------+  +----------------------------------+  +--------------+  |
+|  |   Left Sidebar      |  |         Central Workspace        |  |  Right Panel |  |
+|  | - FileTree          |  |  +----------------------------+  |  | - ChatPanel  |  |
+|  | - View Selector     |  |  | Mode 1: EditorV2 (RichDoc) |  |  | - Context AI |  |
+|  | - Search & Sources  |  |  | Mode 2: FlowEditor (Graphs)|  |  | - Rewrites   |  |
+|  |                     |  |  +----------------------------+  |  |              |  |
+|  +----------+----------+  +-----------------+----------------+  +-------+------+  |
++-------------|-------------------------------|---------------------------|---------+
+              |                               |                           |
+              v                               v                           v
++-----------------------------------------------------------------------------------+
+|                         EditorV2 Controlled Input Engine                          |
+|                                                                                   |
+|  User Input Event -> InputHandlerService -> DocumentModel -> DOMDecoratorService |
+|  (beforeinput trap)   (Op Normalization)     (UTF-16 State)   (Span Recycling)   |
++---------------------------------------------+-------------------------------------+
+                                              |
+                                              v
++-----------------------------------------------------------------------------------+
+|                        Backend API Server (Node.js Express)                       |
+|  - REST endpoints for document persistence, versioning, and project metadata      |
++-----------------------------------------------------------------------------------+
+```
+
+---
+
+## Core Capabilities
+
+* **EditorV2 Controlled Input Engine**: Custom rich-text engine intercepting browser `beforeinput` events to enforce deterministic cross-platform editing, UTF-16 code unit offset tracking, and atomic operations.
+* **Span Recycling & Virtualized DOM**: Pre-allocated span pools and interval merging algorithm maintaining $< 16\text{ms}$ typing latency on long documents.
+* **Multi-View Workspace**:
+  * **Document View**: Structured long-form text editing with inline formatting.
+  * **Flow View**: Visual node-based mapping for arguments, claims, and logical structure.
+  * **Source View**: Citation, cross-reference, and evidence registry.
+  * **Recordings View**: Integrated audio dictation and transcript alignment.
+* **Context-Aware AI Assistant**: Embedded copilot panel providing real-time synthesis, claim verification, tone adjustments, and document transformations.
+* **Performance Budgeting & Testing**: Built-in test harnesses with Vitest, Playwright end-to-end suites, and Lighthouse CI performance auditing.
+
+---
+
+## Repository Structure
+
+```
+verbatim-ai/
+├── src/
+│   ├── components/           # React UI components (Sidebar, TopBar, FileTree, ChatPanel)
+│   │   ├── editor/           # Editor UI controls, format bars, and status overlays
+│   │   └── ui/               # Radix UI primitive wrappers and styled components
+│   ├── editor/               # EditorV2 core engine
+│   │   ├── data-structures/  # Document model and tree structures
+│   │   ├── formatting/       # Text format definitions and range math
+│   │   ├── observers/        # Mutation and viewport observers
+│   │   ├── rendering/        # DOM synchronization and span decorators
+│   │   ├── selection/        # Selection range and cursor management
+│   │   └── services/         # Input handler and document diff emitters
+│   ├── pages/                # Route components (Index, NotFound, TestPerformance)
+│   ├── hooks/                # Custom React state and event hooks
+│   ├── api/                  # Client-side API service connectors
+│   └── types/                # TypeScript interface definitions
+├── server/                   # Backend Express application
+│   └── src/                  # Routes, controllers, and document storage services
+├── docs/
+│   ├── adr/                  # Architectural Decision Records (ADRs 0001 - 0004)
+│   └── architecture/         # Deep dive architecture and design specifications
+├── e2e/                      # Playwright end-to-end and performance test specs
+├── tests/                    # Vitest unit and integration test suites
+├── package.json              # Workspace scripts and dependencies
+├── vite.config.ts            # Vite bundler configuration
+└── tailwind.config.ts        # Tailwind CSS design system configuration
+```
+
+---
+
+## Prerequisites
+
+* **Node.js**: 20.x or higher
+* **Package Manager**: `pnpm` (10.x recommended)
+
+---
+
+## Quickstart
+
+### 1. Installation
+
+```bash
+git clone https://github.com/kaushalbalagurusamy/verbatim-ai.git
+cd verbatim-ai
+
+pnpm install
+```
+
+### 2. Environment Configuration
+
+Create your environment configuration from the template:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `VITE_API_PORT` | `3001` | Backend Express server port |
+| `PORT` | `3001` | Server listening port |
+| `FRONTEND_URL` | `http://localhost:8072` | Allowed CORS origin for Vite dev server |
+
+### 3. Running the Development Server
+
+Start both the Vite frontend client and Express backend server concurrently:
+
+```bash
+pnpm dev
+```
+
+* **Frontend Client**: `http://localhost:8072`
+* **Backend API**: `http://localhost:3001/api`
+
+---
+
+## Testing & Quality Assurance
+
+```bash
+# Run unit tests
+pnpm test:run
+
+# Run unit tests with coverage
+pnpm test:coverage
+
+# Run Playwright end-to-end tests
+pnpm test:e2e
+
+# Run performance budget verification
+pnpm test:performance
+
+# Run linter
+pnpm lint
+```
+
+---
+
+## Technical Documentation & ADRs
+
+All core architectural decisions are recorded in [`docs/adr/`](docs/adr/):
+
+* [`docs/adr/0001-controlled-input-editor-architecture.md`](docs/adr/0001-controlled-input-editor-architecture.md) — Controlled Input Editor Architecture (EditorV2)
+* [`docs/adr/0002-utf16-block-level-document-model.md`](docs/adr/0002-utf16-block-level-document-model.md) — UTF-16 Block-Level Document Model
+* [`docs/adr/0003-dom-decorator-and-span-recycling.md`](docs/adr/0003-dom-decorator-and-span-recycling.md) — DOM Decorator and Span Recycling
+* [`docs/adr/0004-multi-panel-workspace-and-flow-editor.md`](docs/adr/0004-multi-panel-workspace-and-flow-editor.md) — Multi-Panel Workspace and Flow Editor Topology
+
+Deep architectural guides are located in [`docs/architecture/`](docs/architecture/):
+* [`docs/architecture/overview.md`](docs/architecture/overview.md) — EditorV2 System Overview
+* [`docs/architecture/core-concepts.md`](docs/architecture/core-concepts.md) — DocumentModel, Blocks, and Format Ranges
+* [`docs/architecture/dom-synchronization.md`](docs/architecture/dom-synchronization.md) — DOM Reconciliation and Span Decorators
+* [`docs/architecture/change-tracking.md`](docs/architecture/change-tracking.md) — Diff Computation and Version History
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
