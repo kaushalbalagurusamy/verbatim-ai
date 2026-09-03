@@ -1,6 +1,6 @@
 # Verbatim AI
 
-Modern full-stack document workspace combining a high-performance controlled-input editor (EditorV2), visual argument and logic flow mapping, and real-time context-aware AI assistance.
+Concurrent low-latency document workspace and controlled-input editor engineered for high-speed speech note-taking, real-time rebuttal generation, visual argument flow mapping, and topical scholarly evidential reinforcement.
 
 ---
 
