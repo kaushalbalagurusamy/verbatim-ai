@@ -1,5 +1,8 @@
 # Verbatim AI
 
+[![CI](https://github.com/kaushalbalagurusamy/verbatim-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/kaushalbalagurusamy/verbatim-ai/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Concurrent low-latency document workspace and controlled-input editor engineered for high-speed speech note-taking, real-time rebuttal generation, visual argument flow mapping, and topical scholarly evidential reinforcement.
 
 ---
