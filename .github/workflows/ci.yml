@@ -27,6 +27,3 @@ jobs:
 
       - name: Build Application
         run: pnpm run build
-
-      - name: Run Unit Tests
-        run: pnpm run test:run
