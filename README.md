@@ -95,7 +95,18 @@ verbatim-ai/
 
 ## Quickstart
 
-### 1. Installation
+### Option A: Docker Compose (Minimal ~22MB Nginx Edge)
+
+Run the containerized SPA production build behind an optimized Nginx server:
+
+```bash
+# Build and serve locally
+docker compose up --build -d
+
+# Open in browser at http://localhost:8080
+```
+
+### Option B: Local Node.js Development
 
 ```bash
 git clone https://github.com/kaushalbalagurusamy/verbatim-ai.git
